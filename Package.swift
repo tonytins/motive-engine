@@ -1,0 +1,27 @@
+// swift-tools-version: 6.3
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+
+import PackageDescription
+
+let package = Package(
+    name: "MotiveEngine",
+    products: [
+        // Products define the executables and libraries a package produces, making them visible to other packages.
+        .library(
+            name: "MotiveEngine",
+            targets: ["MotiveEngine"],
+        ),
+    ],
+    targets: [
+        // Targets are the basic building blocks of a package, defining a module or a test suite.
+        // Targets can depend on other targets in this package and products from dependencies.
+        .target(
+            name: "MotiveEngine",
+        ),
+        .testTarget(
+            name: "MotiveEngineTests",
+            dependencies: ["MotiveEngine"],
+        ),
+    ],
+    swiftLanguageModes: [.v6],
+)
