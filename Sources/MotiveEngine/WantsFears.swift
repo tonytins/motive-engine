@@ -1,24 +1,13 @@
 import Foundation
 
 enum PersonalityTrait: String, Codable, CaseIterable, Hashable {
-    case outgoing = "Outgoing"
+    case absentMinded = "Absent-minded"
+    case artistic = "Artistic"
     case ambitious = "Ambitious"
-    case creative = "Creative"
-    case imaginative = "Imaginative"
-    case adventurous = "Adventurous"
-    case curious = "Curious"
-    case nurturing = "Nurturing"
-    case familyOriented = "Family-Oriented"
-    case competitive = "Competitive"
-    case shy = "Shy"
-    case insecure = "Insecure"
-    case anxious = "Anxious"
-    case riskAverse = "Risk-Averse"
-    case social = "Social"
-    case lonely = "Lonely"
-    case avoidant = "Avoidant"
-    case independent = "Independent"
-    case nervous = "Nervous"
+    case avantGarde = "Avant garde"
+    case bookworm = "Bookworm"
+    case geek = "Geek"
+    case eccentric = "Eccentric"
 }
 
 struct WantOrFear: Codable, Hashable {
@@ -46,29 +35,148 @@ struct WantFearCatalog {
         }
     }
 
-    init(wants: [WantOrFear], fears _: [WantOrFear]) {
+    init(wants: [WantOrFear], fears: [WantOrFear]) {
         self.wants = wants
-        fears = wants
+        self.fears = fears
     }
 }
 
-// Unit testing logic
-
-internal func MatchScore(of item: WantOrFear, against personalityTraits: Set<PersonalityTrait>) -> Int {
-    item.traits.filter { personalityTraits.contains($0) }.count
+func matchScore(of item: WantOrFear, against personalityTraits: Set<PersonalityTrait>) -> Int {
+    item.traits.count(where: {
+        personalityTraits.contains($0)
+    })
 }
 
-internal func rollWantsOrFears(
+func rollWantsOrFears(
     from pool: [WantOrFear],
     matching personalityTraits: Set<PersonalityTrait>,
     count: Int,
-    using randomNumberGenerator: inout RandomNumberGenerator
+    using randomNumberGenerator: inout RandomNumberGenerator,
 ) -> [WantOrFear] {
     let shuffledPool = pool.shuffled(using: &randomNumberGenerator)
     let rankedPool = shuffledPool.sorted {
-        lhs, rhs in
-        MatchScore(of: lhs, against: personalityTraits) >
-        MatchScore(of: rhs,against: personalityTraits)
+        lhs, rhs in matchScore(of: lhs, against: personalityTraits) > matchScore(
+            of: rhs,
+            against: personalityTraits,
+        )
     }
     return Array(rankedPool.prefix(count))
+}
+
+enum SimState: Equatable {
+    case waking
+    case idle
+    case fulfilledWant(WantOrFear)
+    case fulfilledFear(WantOrFear)
+}
+
+enum IdleAction: Equatable {
+    case fulfilledWant(WantOrFear)
+    case fulfilledFear(WantOrFear)
+    case remainIdle
+}
+
+func chooseIdleAction(
+    wants: [WantOrFear],
+    fears: [WantOrFear],
+    using randomNumberGenerator: inout RandomNumberGenerator,
+) -> IdleAction {
+    guard !wants.isEmpty || !fears.isEmpty else { return .remainIdle }
+
+    let shouldFavorFear = Bool.random(using: &randomNumberGenerator)
+    guard shouldFavorFear else {
+        guard let want = wants.randomElement(using: &randomNumberGenerator) else {
+            guard let fear = fears.randomElement(using: &randomNumberGenerator) else { return .remainIdle }
+            return .fulfilledFear(fear)
+        }
+        return .fulfilledWant(want)
+    }
+
+    guard let fear = fears.randomElement(using: &randomNumberGenerator) else {
+        guard let want = wants.randomElement(using: &randomNumberGenerator) else { return .remainIdle }
+        return .fulfilledWant(want)
+    }
+    return .fulfilledFear(fear)
+}
+
+func nextState(for action: IdleAction) -> SimState {
+    switch action {
+    case let .fulfilledWant(want):
+        return .fulfilledWant(want)
+    case let .fulfilledFear(fear):
+        return .fulfilledFear(fear)
+    case .remainIdle:
+    default:
+        return .idle
+    }
+}
+
+actor Sim {
+    let name: String
+    let personalityTraits: Set<PersonalityTrait>
+
+    private let catalog: WantFearCatalog
+    private let activeWantCount: Int
+    private let activeFearCount: Int
+    private var randomNumberGenerator: RandomNumberGenerator
+
+    private(set) var state: SimState = .waking
+    private(set) var activeWants: [WantOrFear] = []
+    private(set) var activeFears: [WantOrFear] = []
+
+    init(
+        name: String,
+        personalityTraits: Set<PersonalityTrait>,
+        catalog: WantFearCatalog,
+        activeWantCount: Int = 3,
+        activeFearCount: Int = 2,
+        randomNumberGenerator: RandomNumberGenerator = SystemRandomNumberGenerator(),
+    ) async {
+        self.name = name
+        self.personalityTraits = personalityTraits
+        self.catalog = catalog
+        self.activeWantCount = activeWantCount
+        self.activeFearCount = activeFearCount
+        self.randomNumberGenerator = randomNumberGenerator
+    }
+
+    func wakeUp() {
+        state = .waking
+    }
+
+    private func reshuffleWantsAndFears() {
+        activeWants = rollWantsOrFears(
+            from: catalog.wants,
+            matching: personalityTraits,
+            count: activeFearCount,
+            using: &randomNumberGenerator,
+        )
+
+        activeFears = rollWantsOrFears(
+            from: catalog.fears,
+            matching: personalityTraits,
+            count: activeFearCount,
+            using: &randomNumberGenerator,
+        )
+    }
+
+    func step() {
+        switch state {
+        case .waking:
+            state = .idle
+        case .idle:
+            let action = chooseIdleAction(
+                wants: activeWants,
+                fears: activeFears,
+                using: &randomNumberGenerator,
+            )
+            state = nextState(for: action)
+        case let .fulfilledWant(wantOrFear):
+            reshuffleWantsAndFears()
+            state = .idle
+        case let .fulfilledFear(wantOrFear):
+            reshuffleWantsAndFears()
+            state = .idle
+        }
+    }
 }

@@ -1,0 +1,50 @@
+{
+   "$schema": "http://json-schema.org/draft-07/schema#",
+   "additionalProperties": false,
+   "definitions": {
+      "entryMap": {
+         "additionalProperties": {
+            "$ref": "#/definitions/traitList"
+         },
+         "description": "Maps a want or fear description to the list of traits associated with it.",
+         "minProperties": 1,
+         "type": "object"
+      },
+      "personalityTrait": {
+         "enum": [
+            "Absent-minded",
+            "Ambitious",
+            "Artistic",
+            "Avant garde",
+            "Bookworm",
+            "Geek",
+            "Eccentric"
+         ],
+         "type": "string"
+      },
+      "traitList": {
+         "description": "Personality traits associated with this want or fear.",
+         "items": {
+            "$ref": "#/definitions/personalityTrait"
+         },
+         "minItems": 1,
+         "type": "array",
+         "uniqueItems": true
+      }
+   },
+   "description": "Catalog of wants and fears mapped to the personality traits that make a sim likely to roll them.",
+   "properties": {
+      "fear": {
+         "$ref": "#/definitions/entryMap"
+      },
+      "want": {
+         "$ref": "#/definitions/entryMap"
+      }
+   },
+   "required": [
+      "want",
+      "fear"
+   ],
+   "title": "WantsFearsPayload",
+   "type": "object"
+}

@@ -1,58 +1,22 @@
 @testable import MotiveEngine
+import Foundation
 import Testing
 
-let itemsJSON = """
-[
-    {
-        "name": "Fridge",
-        "itemType": "fridge",
-        "signals": [
-            { "motiveType": "hunger", "strengthPerSecond": 2.0 }
-        ]
-    },
-    {
-        "name": "Bed",
-        "itemType": "bed",
-        "signals": [
-            { "motiveType": "energy", "strengthPerSecond": 1.5 }
-        ]
-    },
-    {
-        "name": "Shower",
-        "itemType": "shower",
-        "signals": [
-            { "motiveType": "hygiene", "strengthPerSecond": 2.5 }
-        ]
-    },
-    {
-        "name": "Toilet",
-        "itemType": "toilet",
-        "signals": [
-            { "motiveType": "bladder", "strengthPerSecond": 3.0 }
-        ]
-    },
-    {
-        "name": "Television",
-        "itemType": "television",
-        "signals": [
-            { "motiveType": "fun", "strengthPerSecond": 1.0 },
-            { "motiveType": "social", "strengthPerSecond": 0.3 }
-        ]
-    },
-    {
-        "name": "Telephone",
-        "itemType": "telephone",
-        "signals": [
-            { "motiveType": "social", "strengthPerSecond": 2.0 }
-        ]
-    }
-]
-"""
+@Test func swafTest() async throws {
+    let wantsFearsJSON = """
+    {"want":{"be famous":["Outgoing","Ambitious"],"write a book":["Creative","Imaginative"],"travel the world":["Adventurous","Curious"],"have a family":["Nurturing","Family-Oriented"],"succeed in career":["Competitive","Ambitious"],"be respected":["Competitive","Nurturing"],"master a skill":["Ambitious","Independent"],"make new friends":["Outgoing","Social"],"explore the unknown":["Curious","Imaginative"],"build something lasting":["Creative","Family-Oriented"],"live off the grid":["Independent","Adventurous"],"find true love":["Nurturing","Social"],"start a business":["Ambitious","Creative"],"learn everything":["Outgoing","Curious"]},"fear":{"failure":["Shy","Insecure"],"heights":["Anxious","Risk-Averse"],"loneliness":["Social","Lonely"],"commitment":["Avoidant","Independent"],"not being liked":["Nervous","Shy"],"rejection":["Insecure","Nervous"],"being forgotten":["Lonely","Insecure"],"losing control":["Anxious","Avoidant"],"change":["Risk-Averse","Avoidant"],"intimacy":["Avoidant","Nervous"],"judgment":["Shy","Anxious"],"abandonment":["Lonely","Avoidant"],"isolation":["Independent","Lonely"],"conflict":["Competitive","Nervous"]}}
+    """
 
-@Test func example() {
-    let tickDurationSeconds = 60.0
+    let wantsFearsData = Data(wantsFearsJSON.utf8)
+    let catalog = try WantFearCatalog(jsonData: wantsFearsData)
 
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    // Swift Testing Documentation
-    // https://swiftpackageindex.com/swiftlang/swift-testing/documentation
+    let sim = await Sim(
+        name: "Tom",
+        personalityTraits: [.eccentric, .geek, .avantGarde],
+        catalog: catalog,
+    )
+
+    let state = await sim.state
+    let wants = await sim.activeWants
+    let fears = await sim.activeFears
 }
