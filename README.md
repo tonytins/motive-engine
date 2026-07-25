@@ -1,23 +1,36 @@
 # Motive Engine
 
-Motive Engine is a life simulation engine for creating simulated indivuals.
+Motive Engine is a life simulation engine for creating simulated characters with needs or wants and fears. 
 
-## Minimum Requirements
+You can simulate basic needs or wants and fears. The latter of which is based on a 
 
-### Development
+## Installation
 
-- Swift 6.3+
+```swift
+let package = Package(
+    // name, platforms, products, etc.
+    dependencies: [
+        // other dependencies
+        .package(url: "https://github.com/tonytins/motive-engine.git", branche: "main"),
+    ],
+    targets: [
+        .executableTarget(name: "<your-game>", dependencies: [
+            // other dependencies
+            .product(name: "MotiveEngine", package: "motive-engine"),
+        ]),
+        // other targets
+    ]
+)
+```
 
-### Deployment
+Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
 
-| Target  | Version |
-| ------- | ------- |
-| macOS   | 10.13   |
-| Windows | 10      |
-| Ubuntu  | 20.04   |
-| Debian  | 12      |
-| Fedora  | 39      |
+## Supported Versions
+
+| swift-cst    | Minimum Swift Version |
+| ------- | --------------------- |
+| ``main`` | 6.3                   |
 
 ## License
 
-I license the source code under the BSD-3-Clause license - see [LICENSE](LICENSE) for details.
+I license this project under BSD-3-Clause license — see the [LICENSE](LICENSE) file for full text.

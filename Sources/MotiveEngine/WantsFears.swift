@@ -41,6 +41,26 @@ struct WantFearCatalog {
     }
 }
 
+internal struct FullfilledMotive {
+    static let miniumValue: Double = 0.0
+    static let maximumValue: Double = 100.0
+    
+    private(set) var value: Double
+    
+    init(startingValue: Double = maximumValue) {
+        value = startingValue.clamped(to: Self.miniumValue...Self.maximumValue)
+    }
+    
+    mutating func decay(by amount: Double) {
+        value = (value - amount).clamped(to: Self.miniumValue...Self.maximumValue)
+    }
+    
+    mutating func boost(by amount: Double) {
+        value = (value + amount).clamped(to: Self.miniumValue...Self.maximumValue)
+    }
+    
+}
+
 func matchScore(of item: WantOrFear, against personalityTraits: Set<PersonalityTrait>) -> Int {
     item.traits.count(where: {
         personalityTraits.contains($0)
@@ -61,122 +81,4 @@ func rollWantsOrFears(
         )
     }
     return Array(rankedPool.prefix(count))
-}
-
-enum SimState: Equatable {
-    case waking
-    case idle
-    case fulfilledWant(WantOrFear)
-    case fulfilledFear(WantOrFear)
-}
-
-enum IdleAction: Equatable {
-    case fulfilledWant(WantOrFear)
-    case fulfilledFear(WantOrFear)
-    case remainIdle
-}
-
-func chooseIdleAction(
-    wants: [WantOrFear],
-    fears: [WantOrFear],
-    using randomNumberGenerator: inout RandomNumberGenerator,
-) -> IdleAction {
-    guard !wants.isEmpty || !fears.isEmpty else { return .remainIdle }
-
-    let shouldFavorFear = Bool.random(using: &randomNumberGenerator)
-    guard shouldFavorFear else {
-        guard let want = wants.randomElement(using: &randomNumberGenerator) else {
-            guard let fear = fears.randomElement(using: &randomNumberGenerator) else { return .remainIdle }
-            return .fulfilledFear(fear)
-        }
-        return .fulfilledWant(want)
-    }
-
-    guard let fear = fears.randomElement(using: &randomNumberGenerator) else {
-        guard let want = wants.randomElement(using: &randomNumberGenerator) else { return .remainIdle }
-        return .fulfilledWant(want)
-    }
-    return .fulfilledFear(fear)
-}
-
-func nextState(for action: IdleAction) -> SimState {
-    switch action {
-    case let .fulfilledWant(want):
-        return .fulfilledWant(want)
-    case let .fulfilledFear(fear):
-        return .fulfilledFear(fear)
-    case .remainIdle:
-    default:
-        return .idle
-    }
-}
-
-actor Sim {
-    let name: String
-    let personalityTraits: Set<PersonalityTrait>
-
-    private let catalog: WantFearCatalog
-    private let activeWantCount: Int
-    private let activeFearCount: Int
-    private var randomNumberGenerator: RandomNumberGenerator
-
-    private(set) var state: SimState = .waking
-    private(set) var activeWants: [WantOrFear] = []
-    private(set) var activeFears: [WantOrFear] = []
-
-    init(
-        name: String,
-        personalityTraits: Set<PersonalityTrait>,
-        catalog: WantFearCatalog,
-        activeWantCount: Int = 3,
-        activeFearCount: Int = 2,
-        randomNumberGenerator: RandomNumberGenerator = SystemRandomNumberGenerator(),
-    ) async {
-        self.name = name
-        self.personalityTraits = personalityTraits
-        self.catalog = catalog
-        self.activeWantCount = activeWantCount
-        self.activeFearCount = activeFearCount
-        self.randomNumberGenerator = randomNumberGenerator
-    }
-
-    func wakeUp() {
-        state = .waking
-    }
-
-    private func reshuffleWantsAndFears() {
-        activeWants = rollWantsOrFears(
-            from: catalog.wants,
-            matching: personalityTraits,
-            count: activeFearCount,
-            using: &randomNumberGenerator,
-        )
-
-        activeFears = rollWantsOrFears(
-            from: catalog.fears,
-            matching: personalityTraits,
-            count: activeFearCount,
-            using: &randomNumberGenerator,
-        )
-    }
-
-    func step() {
-        switch state {
-        case .waking:
-            state = .idle
-        case .idle:
-            let action = chooseIdleAction(
-                wants: activeWants,
-                fears: activeFears,
-                using: &randomNumberGenerator,
-            )
-            state = nextState(for: action)
-        case let .fulfilledWant(wantOrFear):
-            reshuffleWantsAndFears()
-            state = .idle
-        case let .fulfilledFear(wantOrFear):
-            reshuffleWantsAndFears()
-            state = .idle
-        }
-    }
 }

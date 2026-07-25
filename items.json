@@ -1,0 +1,67 @@
+{
+   "$defs": {
+      "motiveSignal": {
+         "additionalProperties": false,
+         "description": "A single motive paired with the strength this item fulfills it at.",
+         "maxProperties": 1,
+         "minProperties": 1,
+         "patternProperties": {
+            "^(hunger|energy|hygiene|bladder|social|fun)$": {
+               "maximum": 100,
+               "minimum": 0,
+               "type": "number"
+            }
+         },
+         "type": "object"
+      },
+      "motiveType": {
+         "description": "A Sim need that decays over time and rises when fulfilled.",
+         "enum": [
+            "hunger",
+            "energy",
+            "hygiene",
+            "bladder",
+            "social",
+            "fun"
+         ],
+         "type": "string"
+      }
+   },
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "description": "An interactable object that broadcasts motive-fulfilling signals to a Sim.",
+   "properties": {
+      "item": {
+         "description": "The item's category.",
+         "enum": [
+            "fridge",
+            "bed",
+            "shower",
+            "toilet",
+            "television",
+            "telephone"
+         ],
+         "type": "string"
+      },
+      "motives": {
+         "description": "Motive-fulfilling signals this item broadcasts. A higher value fulfills its motive faster.",
+         "items": {
+            "$ref": "#/$defs/motiveSignal"
+         },
+         "minItems": 1,
+         "type": "array"
+      },
+      "name": {
+         "description": "Display name of the item.",
+         "minLength": 1,
+         "type": "string"
+      }
+   },
+   "required": [
+      "name",
+      "item",
+      "motives"
+   ],
+   "title": "Item",
+   "type": "object"
+}
