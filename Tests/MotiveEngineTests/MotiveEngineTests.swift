@@ -1,8 +1,8 @@
-@testable import MotiveEngine
 import Foundation
+@testable import MotiveEngine
 import Testing
 
-@Test func swafTest() async throws {
+@Test func `swaf test`() async throws {
     let wantsFearsJSON = """
     {
     "want":{},

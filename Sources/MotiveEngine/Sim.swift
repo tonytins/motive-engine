@@ -1,5 +1,5 @@
 
-enum IdleAction: Equatable, Sendable {
+enum IdleAction: Equatable {
     case fullfillWant(WantOrFear)
     case fullfillFear(WantOrFear)
     case remainIdle
@@ -19,15 +19,15 @@ enum SimState: Equatable {
 actor Sim {
     let name: String
     let personalityTraits: Set<PersonalityTrait>
-    
+
     let mmotiveDecayPerTick: Double
     let motiveBoostPerWant: Double
-    
+
     init(
         name: String,
         personalityTraits: Set<PersonalityTrait>,
         mmotiveDecayPerTick: Double = 3,
-        motiveBoostPerWant: Double = 15
+        motiveBoostPerWant: Double = 15,
     ) {
         self.name = name
         self.personalityTraits = personalityTraits

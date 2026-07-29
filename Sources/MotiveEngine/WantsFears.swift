@@ -8,6 +8,22 @@ enum PersonalityTrait: String, Codable, CaseIterable, Hashable {
     case bookworm = "Bookworm"
     case geek = "Geek"
     case eccentric = "Eccentric"
+    case creative = "Creative"
+    case hotHeaded = "Hot-headed"
+    case paranoid = "Paranoid"
+    case plantLover = "Plant Lover"
+    case proper = "Proper"
+    case muscLover = "Music Lover"
+    case artLover = "Art Lover"
+    case competitive = "Competitive"
+    case lazy = "Lazy"
+    case active = "Active"
+    case goofball = "Goofball"
+    case romatic = "Romatic"
+    case erratic = "Erratic"
+    case selfAssured = "Self-Assured"
+    case unflirty = "Unflirty"
+    case flirty = "Flirty"
 }
 
 struct WantOrFear: Codable, Hashable {
@@ -41,24 +57,23 @@ struct WantFearCatalog {
     }
 }
 
-internal struct FullfilledMotive {
+struct FullfilledMotive {
     static let miniumValue: Double = 0.0
     static let maximumValue: Double = 100.0
-    
+
     private(set) var value: Double
-    
+
     init(startingValue: Double = maximumValue) {
-        value = startingValue.clamped(to: Self.miniumValue...Self.maximumValue)
+        value = startingValue.clamped(to: Self.miniumValue ... Self.maximumValue)
     }
-    
+
     mutating func decay(by amount: Double) {
-        value = (value - amount).clamped(to: Self.miniumValue...Self.maximumValue)
+        value = (value - amount).clamped(to: Self.miniumValue ... Self.maximumValue)
     }
-    
+
     mutating func boost(by amount: Double) {
-        value = (value + amount).clamped(to: Self.miniumValue...Self.maximumValue)
+        value = (value + amount).clamped(to: Self.miniumValue ... Self.maximumValue)
     }
-    
 }
 
 func matchScore(of item: WantOrFear, against personalityTraits: Set<PersonalityTrait>) -> Int {
