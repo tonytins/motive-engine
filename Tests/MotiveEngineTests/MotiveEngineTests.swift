@@ -42,7 +42,10 @@ struct ItemTests {
 struct BuffTests {
     @Test func bindToAmbientItemsOnly() async throws {
         let stereo = Item(
-            identity: ItemIdentity(name: "Steroe", itemType: .ambient),
+            identity: ItemIdentity(
+                name: "Stereo",
+                itemTypes: .ambient
+            ),
             signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
         )
         
