@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://motivesengine.dev/schemas/item.schema.json",
+  "title": "Item",
+  "description": "",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The broadcaster's display name and lookup key. Item names must be unique within whatever list they're decoded into — nothing in this schema enforces that across array elements, since JSON Schema can't express uniqueness on a derived key alone."
+    },
+    "item": {
+      "$ref": "common.schema.json#/$defs/itemType"
+    },
+    "motives": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "common.schema.json#/$defs/motiveSignal" },
+      "description": "Every motive this item fulfills while a Sim is actively using it. A skill item still needs at least one entry here to say which motive slot it occupies, even though (as of the Buffs.swift refactor) it fulfills that motive directly like everything else."
+    },
+    "blocking": {
+      "type": "boolean",
+      "description": "Optional. When present, used as-is. When absent, the item falls back to its type's default (ItemType.isBlockingByDefault): true for everything except sim and ambient."
+    }
+  },
+  "required": ["name", "item", "motives"],
+  "additionalProperties": false,
+  "examples": [
+    { "name": "Fridge", "item": "fridge", "motives": [{ "hunger": 50 }] },
+    { "name": "Television", "item": "recreation", "motives": [{ "fun": 25 }, { "social": 7.5 }] },
+    { "name": "Custom Fridge", "item": "fridge", "motives": [{ "hunger": 50 }], "blocking": false }
+  ]
+}

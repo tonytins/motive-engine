@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://motivesengine.dev/schemas/swaf.schema.json",
+  "title": "SWAF Wants & Fears Catalog",
+  "description": "",
+  "type": "object",
+  "$defs": {
+    "personalityTrait": {
+      "type": "string",
+      "description": "PersonalityTrait in SWAF.swift. Raw values match these strings exactly, not the Swift case names (e.g. the case is `.hotHeaded`, the JSON value is \"Hot-headed\").",
+      "enum": [
+        "Absent-minded",
+        "Artistic",
+        "Ambitious",
+        "Avant garde",
+        "Bookworm",
+        "Geek",
+        "Eccentric",
+        "Creative",
+        "Hot-headed",
+        "Paranoid",
+        "Plant Lover",
+        "Proper",
+        "Music Lover",
+        "Art Lover",
+        "Competitive",
+        "Lazy",
+        "Active",
+        "Goofball",
+        "Romantic",
+        "Erratic",
+        "Self-Assured",
+        "Unflirty",
+        "Flirty"
+      ]
+    },
+    "traitList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/personalityTrait" },
+      "uniqueItems": true,
+      "description": "The decoder itself doesn't reject duplicate traits — this schema is stricter than Swift's [PersonalityTrait] array on purpose, to catch a likely copy-paste mistake in authored JSON rather than because duplicates would break anything at runtime."
+    }
+  },
+  "properties": {
+    "want": {
+      "type": "object",
+      "description": "Every possible want: description text mapped to its traits.",
+      "additionalProperties": { "$ref": "#/$defs/traitList" },
+      "propertyNames": { "type": "string", "minLength": 1 }
+    },
+    "fear": {
+      "type": "object",
+      "description": "Every possible fear: description text mapped to its traits.",
+      "additionalProperties": { "$ref": "#/$defs/traitList" },
+      "propertyNames": { "type": "string", "minLength": 1 }
+    }
+  },
+  "required": ["want", "fear"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "want": {
+        "write a novel": ["Bookworm", "Creative"],
+        "throw a party": ["Flirty", "Goofball"]
+      },
+      "fear": {
+        "public embarrassment": ["Paranoid", "Self-Assured"],
+        "losing focus": ["Absent-minded", "Geek"]
+      }
+    }
+  ]
+}

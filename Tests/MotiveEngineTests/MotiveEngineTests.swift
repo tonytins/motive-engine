@@ -37,3 +37,17 @@ struct ItemTests {
         
     }
 }
+
+@Suite("Buff Tests")
+struct BuffTests {
+    @Test func bindToAmbientItemsOnly() async throws {
+        let stereo = Item(
+            identity: ItemIdentity(name: "Steroe", itemType: .ambient),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
+        )
+        
+        #expect(BuffRegistry.buffs(for: stereo).contains {
+                $0 is AmbientBuff
+            })
+    }
+}

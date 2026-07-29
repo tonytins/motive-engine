@@ -6,7 +6,7 @@ Motive Engine is a life simulation engine for creating simulated characters with
 
 - [ ] Motives
 - [ ] Aspirations
-- [ ] Buffs
+- [x] Buffs
 - [ ] Sim
 
 ## 📦 Installation
