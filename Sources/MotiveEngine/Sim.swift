@@ -35,3 +35,30 @@ actor Sim {
         self.motiveBoostPerWant = motiveBoostPerWant
     }
 }
+
+enum SimPosture: String, Equatable, Sendable {
+    case sitting
+    case standing
+}
+
+extension ItemType {
+    func delegatesTo(posture: SimPosture) -> Set<ItemType> {
+        switch self {
+        case .chair:
+            return [.recreation, .sim]
+        case .recreation, .fridge:
+            return posture == .standing ? [.sim]: []
+        default:
+            return []
+        }
+    }
+    
+    var grantsSittingPosture: Bool {
+        switch self {
+        case .chair, .toilet:
+            return true
+        default:
+            return false
+        }
+    }
+}
