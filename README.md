@@ -8,6 +8,17 @@ Motive Engine is a life simulation engine for creating simulated characters with
 - [ ] Aspirations
 - [x] Buffs
 - [ ] Sim
+- [ ] Lot
+
+## Architecture diagram
+
+```mermaid
+graph TD;
+    Sim-->Motives;
+    Sim --> Buffs
+    Sim-->SWAF;
+    Sim <--> Lot
+```
 
 ## 📦 Installation
 

@@ -10,6 +10,8 @@ struct BuffContext: Sendable {
     let elepsedSeconds: Double
 }
 
+///  Ambient items (de)buff a sim just by existing
+///  Some items are a hybrid. For example, can be a ambient and recreation item.
 struct AmbientBuff: Buff {
     func apply(in context: BuffContext) async -> [MotiveSignal] {
         context.broadcaster.signals

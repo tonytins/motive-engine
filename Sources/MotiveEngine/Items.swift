@@ -1,4 +1,6 @@
 
+let motiveStrengthScale = 25.0
+
 enum ItemType: String, CaseIterable, Hashable, Codable {
     case fridge
     case bed
@@ -47,31 +49,19 @@ struct ItemIdentity: Equatable, Sendable {
     let itemTypes: Set<ItemType>
     let isBlocking: Bool
     
-    init(name: String, itemTypes: Set<ItemType>, isBlocking: Bool) {
+    init<S: Sequence>(name: String,
+                      itemTypes: S,
+                      isBlocking: Bool? = nil)
+    where S.Element == ItemType {
+        let set = Set(itemTypes)
         self.name = name
-        self.itemTypes = itemTypes
-        self.isBlocking = isBlocking
-    }
-    
-    init(name: String, itemTypes: ItemType, isBlocking: Bool) {
-        self.init(name: name, itemTypes: [itemTypes], isBlocking: isBlocking)
-    }
+        self.itemTypes = set
+        self.isBlocking = isBlocking ?? set.isBlockingByDefualt
+        }
     
     init(name: String, itemTypes: ItemType) {
-        self.init(
-            name: name,
-            itemTypes: [itemTypes],
-            isBlocking: itemTypes.isBlockingByDefault
-        )
+        self.init(name: name, itemTypes: [itemTypes])
     }
-    
-    init(name: String, itemTypes: Set<ItemType>) {
-        self.init(
-            name: name,
-            itemTypes: itemTypes
-        )
-    }
-    
 }
 
 struct Item: Broadcasting, Codable, Equatable, Sendable {
@@ -123,13 +113,25 @@ struct Item: Broadcasting, Codable, Equatable, Sendable {
     }
     
     func encode(to encoder: any Encoder) throws {
-        let container = try encoder.container(keyedBy: CodingKeys.self)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(identity.name, forKey: .name)
         
+        if identity.itemTypes.count == 1, let onlyType = identity.itemTypes.first {
+            try container.encode(onlyType, forKey: .itemType)
+        } else {
+            try container.encode(identity.itemTypes.sorted { $0.rawValue < $1.rawValue }, forKey: .itemType)
+        }
         
+        try container.encode(identity.isBlocking, forKey: .blocking)
+        
+        let rawMotives = signals.map {
+            signal in
+            [signal.motiveType.rawValue: signal.strengthPerSecond * motiveStrengthScale]
+        }
+        
+        try container.encode(rawMotives, forKey: .motives)
     }
 }
-
-let motiveStrengthScale = 25.0
 
 extension Item {
     
@@ -160,6 +162,17 @@ extension Broadcasting {
     var isBlocking: Bool { identity.isBlocking }
     
     var isAmbient: Bool { identity.itemTypes == [.ambient] }
+    
+    var isSelectable: Bool {
+        !identity.itemTypes.subtracting([.ambient]).isEmpty
+    }
+    
+    var strongestMotiveType: MotiveType? {
+        signals
+            .max(
+                by: { $0.strengthPerSecond < $1.strengthPerSecond
+                })?.motiveType
+    }
     
     var buffSignals: [MotiveSignal] {
         isAmbient ? signals : []
