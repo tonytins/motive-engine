@@ -16,12 +16,12 @@ struct ItemTests {
     @Test func fridgeDelegation() async throws {
         
         #expect(
-            ItemType.fridge
+            ItemType.appliance
                 .delegatesTo(posture: .standing) == [.sim]
         )
         
         #expect(
-            ItemType.fridge
+            ItemType.appliance
                 .delegatesTo(posture: .sitting)
                 .isEmpty
         )

@@ -2,7 +2,7 @@
 let motiveStrengthScale = 25.0
 
 enum ItemType: String, CaseIterable, Hashable, Codable {
-    case fridge
+    case appliance
     case bed
     case shower
     case toilet
@@ -14,7 +14,7 @@ enum ItemType: String, CaseIterable, Hashable, Codable {
     
     var isBlockingByDefault: Bool {
         switch self {
-        case .fridge, .bed, .shower, .toilet, .recreation, .chair, .skill:
+        case .appliance, .bed, .shower, .toilet, .recreation, .chair, .skill:
             return true
         case .sim, .ambient:
                 return false
@@ -38,7 +38,7 @@ enum ItemType: String, CaseIterable, Hashable, Codable {
         switch self {
         case .chair:
             return [.recreation, .sim]
-        case .recreation, .fridge:
+        case .recreation, .appliance:
             return posture == .standing ? [.sim] : []
         default:
             return []
