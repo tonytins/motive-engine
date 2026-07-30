@@ -1,24 +1,28 @@
-# Motive Engine
+# Motives Engine
 
-Motive Engine is a life simulation engine for creating simulated characters with needs or wants and fears.
+Motive Engine provides the framework for creating characters with needs, aspirations, and interacting with simulated world.
 
 ## 📝 Goals
 
 - [ ] Motives
-- [ ] Aspirations
+- [ ] Items
+- [ ] Aspirations (SWAF)
 - [x] Buffs
 - [ ] Sim
 - [ ] Lot
 
-## Architecture diagram
+## 🧱 Architecture
 
 ```mermaid
 graph TD;
+	Lot <--> Sim;
+	Items <--> Sim;
     Sim-->Motives;
-    Sim --> Buffs
+    Sim --> Buffs;
     Sim-->SWAF;
-    Sim <--> Lot
 ```
+
+
 
 ## 📦 Installation
 

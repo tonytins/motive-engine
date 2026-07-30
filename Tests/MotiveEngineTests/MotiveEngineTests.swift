@@ -4,7 +4,8 @@ import Testing
 
 @Suite("Item Tests")
 struct ItemTests {
-    @Test func chairDelegation() async throws {
+    @Test()
+    func chairDelegation() async throws {
         
         #expect(
             ItemType.chair.delegatesTo(posture: .sitting) == [.recreation, .sim]
@@ -35,6 +36,25 @@ struct ItemTests {
             .isEmpty
         )
         
+    }
+}
+
+@Suite("Multi-role Items")
+struct MultiRoleItemsTests {
+    @Test()
+    func itemCanBeAbmientAndSelected() {
+        withKnownIssue {
+            let stereo = Item(
+                identity: ItemIdentity(
+                    name: "Stereo",
+                    itemTypes: [.ambient, .recreation]
+                ),
+                signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
+            )
+            
+            #expect(stereo.isAmbient)
+            #expect(stereo.isSelectable)
+        }
     }
 }
 

@@ -24,6 +24,26 @@ enum ItemType: String, CaseIterable, Hashable, Codable {
     var motivesFullfilledDirectly: Bool {
         self != .skill
     }
+    
+    var grantsSittingPosture: Bool {
+        switch self {
+        case .chair, .toilet:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    func delegatesTo(posture: SimPosture) -> Set<ItemType> {
+        switch self {
+        case .chair:
+            return [.recreation, .sim]
+        case .recreation, .fridge:
+            return posture == .standing ? [.sim] : []
+        default:
+            return []
+        }
+    }
 }
 
 extension ItemType {
@@ -69,12 +89,11 @@ struct Item: Broadcasting, Codable, Equatable, Sendable {
     let identity: ItemIdentity
     let signals: [MotiveSignal]
     
-
     init(identity: ItemIdentity, signals: [MotiveSignal]) {
         self.identity = identity
         self.signals = signals
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case name
         case itemType = "item"
@@ -149,32 +168,4 @@ extension Item {
         }
     }
     
-}
-
-protocol Broadcasting: Sendable {
-    var identity: ItemIdentity { get }
-    var signals: [MotiveSignal] { get }
-}
-
-extension Broadcasting {
-    var name: String { identity.name }
-    var itemType: Set<ItemType> { identity.itemTypes }
-    var isBlocking: Bool { identity.isBlocking }
-    
-    var isAmbient: Bool { identity.itemTypes == [.ambient] }
-    
-    var isSelectable: Bool {
-        !identity.itemTypes.subtracting([.ambient]).isEmpty
-    }
-    
-    var strongestMotiveType: MotiveType? {
-        signals
-            .max(
-                by: { $0.strengthPerSecond < $1.strengthPerSecond
-                })?.motiveType
-    }
-    
-    var buffSignals: [MotiveSignal] {
-        isAmbient ? signals : []
-    }
 }
