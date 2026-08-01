@@ -11,7 +11,7 @@ Motive Engine provides the framework for creating characters with needs, aspirat
 - [ ] Sim
 - [ ] Lot
 
-## 🧱 Architecture
+## 🏗️ Architecture
 
 ```mermaid
 graph TD;

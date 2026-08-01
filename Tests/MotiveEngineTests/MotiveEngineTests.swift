@@ -8,7 +8,7 @@ struct ItemTests {
     func chairDelegation() async throws {
         
         #expect(
-            ItemType.chair.delegatesTo(posture: .sitting) == [.recreation, .sim]
+            ItemModifer.chair.delegatesTo(posture: .sitting) == [.recreation, .sim]
         )
         
     }
@@ -16,12 +16,12 @@ struct ItemTests {
     @Test func fridgeDelegation() async throws {
         
         #expect(
-            ItemType.appliance
+            ItemModifer.appliance
                 .delegatesTo(posture: .standing) == [.sim]
         )
         
         #expect(
-            ItemType.appliance
+            ItemModifer.appliance
                 .delegatesTo(posture: .sitting)
                 .isEmpty
         )
@@ -29,9 +29,9 @@ struct ItemTests {
     
     @Test func toiletSitsButDelegatesNothings() {
         
-        #expect(ItemType.toilet.grantsSittingPosture)
+        #expect(ItemModifer.toilet.grantsSittingPosture)
         
-        #expect(ItemType.toilet
+        #expect(ItemModifer.toilet
             .delegatesTo(posture: .sitting)
             .isEmpty
         )

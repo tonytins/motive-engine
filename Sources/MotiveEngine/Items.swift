@@ -1,7 +1,14 @@
 
 let motiveStrengthScale = 25.0
 
-enum ItemType: String, CaseIterable, Hashable, Codable {
+enum ItemFunction: String, CaseIterable, Hashable, Codable {
+    case comfort
+    case plumbing
+    case activity
+    case toilet
+}
+
+enum ItemModifer: String, CaseIterable, Hashable, Codable {
     case appliance
     case bed
     case shower
@@ -34,7 +41,7 @@ enum ItemType: String, CaseIterable, Hashable, Codable {
         }
     }
     
-    func delegatesTo(posture: SimPosture) -> Set<ItemType> {
+    func delegatesTo(posture: SimPosture) -> Set<ItemModifer> {
         switch self {
         case .chair:
             return [.recreation, .sim]
@@ -46,9 +53,9 @@ enum ItemType: String, CaseIterable, Hashable, Codable {
     }
 }
 
-extension ItemType {
-    static func decodedSet<Key: CodingKey>(from container: KeyedDecodingContainer<Key>, forKey key: Key) throws -> Set<ItemType> {
-        if let multiple = try? container.decode([ItemType].self, forKey: key) {
+extension ItemModifer {
+    static func decodedSet<Key: CodingKey>(from container: KeyedDecodingContainer<Key>, forKey key: Key) throws -> Set<ItemModifer> {
+        if let multiple = try? container.decode([ItemModifer].self, forKey: key) {
             guard !multiple.isEmpty else {
                 throw DecodingError
                     .dataCorruptedError(
@@ -60,26 +67,26 @@ extension ItemType {
             return Set(multiple)
         }
         
-        return [try container.decode(ItemType.self, forKey: key)]
+        return [try container.decode(ItemModifer.self, forKey: key)]
     }
 }
 
 struct ItemIdentity: Equatable, Sendable {
     let name: String
-    let itemTypes: Set<ItemType>
+    let itemTypes: Set<ItemModifer>
     let isBlocking: Bool
     
     init<S: Sequence>(name: String,
                       itemTypes: S,
                       isBlocking: Bool? = nil)
-    where S.Element == ItemType {
+    where S.Element == ItemModifer {
         let set = Set(itemTypes)
         self.name = name
         self.itemTypes = set
         self.isBlocking = isBlocking ?? set.isBlockingByDefualt
         }
     
-    init(name: String, itemTypes: ItemType) {
+    init(name: String, itemTypes: ItemModifer) {
         self.init(name: name, itemTypes: [itemTypes])
     }
 }
@@ -104,7 +111,7 @@ struct Item: Broadcasting, Codable, Equatable, Sendable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(String.self, forKey: .name)
-        let itemTypes = try ItemType.decodedSet(
+        let itemTypes = try ItemModifer.decodedSet(
             from: container,
             forKey: .itemType
         )

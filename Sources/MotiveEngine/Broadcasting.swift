@@ -6,7 +6,7 @@ protocol Broadcasting: Sendable {
 
 extension Broadcasting {
     var name: String { identity.name }
-    var itemType: Set<ItemType> { identity.itemTypes }
+    var itemType: Set<ItemModifer> { identity.itemTypes }
     var isBlocking: Bool { identity.isBlocking }
     
     var isAmbient: Bool { identity.itemTypes == [.ambient] }
@@ -25,4 +25,13 @@ extension Broadcasting {
     var buffSignals: [MotiveSignal] {
         isAmbient ? signals : []
     }
+}
+
+
+enum BroadcastEvent {
+    case fallAsleep
+    case wokeUp
+    case fullfilledWant(WantOrFear)
+    case fullfilledFear(WantOrFear)
+
 }
