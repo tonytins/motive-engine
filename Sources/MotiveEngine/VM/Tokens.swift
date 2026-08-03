@@ -12,8 +12,3 @@ struct Token: Equatable {
     let kind: TokenKind
     let line: Int
 }
-
-private let scriptKeywords: Set<String> = [
-    "let", "emit", "if", "then", "else", "end", "and", "or", "not",
-    "true", "false", "hasmodifier"
-]
