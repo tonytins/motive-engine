@@ -1,6 +1,6 @@
 # Basil VM
 
-The Basil (BASIC-like Application Scripting for Item Logic) is a planned virtual machine intended to develop more complex objects that go beyond what any fixed motives can do. The VM uses JSON as a intermediate representation with a schema inspired by WebAssembly. 
+The Basil (BASIC-like Application Scripting for Item Logic) is a planned virtual machine intended to develop more complex objects that go beyond what any fixed motives can do. The VM uses JSON as an intermediate representation (IR) with a schema inspired by WebAssembly. 
 
 ## Scripting
 
@@ -36,3 +36,9 @@ state off
 end
 
 ```
+
+## FAQ
+
+### Why JSON, Though?
+
+Because an intermediate representation (IR) is *technically* different from an intermediate language (IL). JSON is provided for free and I'm just one person who can't be bothered to write an IL from scratch if I don't have to.
