@@ -8,7 +8,7 @@ The Basil (BASIC Application Scripting for Item Logic) is a virtual machine curr
 -->
 ## 🚦 Dispatching
 
-Characters have a radar that allows them to "see" the room and items emit a signal what needs they offer a character. Characters themselves also emit signals for socializing and buffs. Items broadcast what they offer to characters. If their need is low enough that overwrites their normal bias for fun and social, it will go and full fill those needs.[^1] 
+Characters have a radar that allows them to "see" the room and items emit a signal what needs they offer a character. Characters themselves also emit signals for socializing and buffs. Items broadcast what they offer to characters. If their need is low enough that overwrites their normal bias for fun and social, it will go and full fill those needs.
 
 ## ⌨️ Scripting
 
@@ -54,5 +54,3 @@ Compiling is very straight forward (even at an internal level) as it just encode
 ### Why JSON, Though?
 
 Because an intermediate representation (IR) is *technically* different from an intermediate language (IL). JSON is provided for free and I'm just one person who can't be bothered to write an IL from scratch if I don't have to.
-
-[^1]: One thing I'm still trying to figure out are phones and similar objects. Obviously, they provide all the same benefits as characters when they're not around. Maxis solved by having Sims as objects (it's what makes all the magic stuff) but I also wanted to separate them and put them on their own Household layer. I dunno. Bit of a catch-22.

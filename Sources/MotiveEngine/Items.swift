@@ -4,11 +4,15 @@ let motiveStrengthScale = 25.0
 enum ItemFunction: String, CaseIterable, Hashable, Codable {
     case comfort
     case plumbing
+    case appliance
+    case recreation
     case activity
-    case toilet
+    case lighting
+    case decoration
+    case sim
 }
 
-enum ItemModifer: String, CaseIterable, Hashable, Codable {
+enum ItemModifier: String, CaseIterable, Hashable, Codable {
     case appliance
     case bed
     case shower
@@ -41,7 +45,7 @@ enum ItemModifer: String, CaseIterable, Hashable, Codable {
         }
     }
 
-    func delegatesTo(posture: SimPosture) -> Set<ItemModifer> {
+    func delegatesTo(posture: SimPosture) -> Set<ItemModifier> {
         switch self {
         case .chair:
             [.recreation, .sim]
@@ -53,9 +57,9 @@ enum ItemModifer: String, CaseIterable, Hashable, Codable {
     }
 }
 
-extension ItemModifer {
-    static func decodedSet<Key: CodingKey>(from container: KeyedDecodingContainer<Key>, forKey key: Key) throws -> Set<ItemModifer> {
-        if let multiple = try? container.decode([ItemModifer].self, forKey: key) {
+extension ItemModifier {
+    static func decodedSet<Key: CodingKey>(from container: KeyedDecodingContainer<Key>, forKey key: Key) throws -> Set<ItemModifier> {
+        if let multiple = try? container.decode([ItemModifier].self, forKey: key) {
             guard !multiple.isEmpty else {
                 throw DecodingError
                     .dataCorruptedError(
@@ -67,17 +71,17 @@ extension ItemModifer {
             return Set(multiple)
         }
 
-        return try [container.decode(ItemModifer.self, forKey: key)]
+        return try [container.decode(ItemModifier.self, forKey: key)]
     }
 }
 
 struct ItemIdentity: Equatable {
     let name: String
-    let itemTypes: Set<ItemModifer>
+    let itemTypes: Set<ItemModifier>
     let isBlocking: Bool
 
     init(name: String,
-         itemTypes: some Sequence<ItemModifer>,
+         itemTypes: some Sequence<ItemModifier>,
          isBlocking: Bool? = nil)
     {
         let set = Set(itemTypes)
@@ -86,7 +90,7 @@ struct ItemIdentity: Equatable {
         self.isBlocking = isBlocking ?? set.isBlockingByDefualt
     }
 
-    init(name: String, itemTypes: ItemModifer) {
+    init(name: String, itemTypes: ItemModifier) {
         self.init(name: name, itemTypes: [itemTypes])
     }
 }
@@ -110,7 +114,7 @@ struct Item: Broadcasting, Codable, Equatable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(String.self, forKey: .name)
-        let itemTypes = try ItemModifer.decodedSet(
+        let itemTypes = try ItemModifier.decodedSet(
             from: container,
             forKey: .itemType,
         )

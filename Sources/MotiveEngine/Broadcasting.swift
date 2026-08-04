@@ -9,7 +9,7 @@ extension Broadcasting {
         identity.name
     }
 
-    var itemType: Set<ItemModifer> {
+    var itemType: Set<ItemModifier> {
         identity.itemTypes
     }
 

@@ -10,13 +10,13 @@ extension Double {
     }
 }
 
-extension Set<ItemModifer> {
+extension Set<ItemModifier> {
     var isBlockingByDefualt: Bool {
         contains { $0.isBlockingByDefault }
     }
 }
 
-extension Sequence<ItemModifer> {
+extension Sequence<ItemModifier> {
     var isBlockingByDefualt: Bool {
         contains { $0.isBlockingByDefault }
     }
@@ -25,11 +25,11 @@ extension Sequence<ItemModifer> {
         contains { $0.grantsSittingPosture }
     }
 
-    func delegatesTo(posture: SimPosture) -> Set<ItemModifer> {
-        reduce(into: Set<ItemModifer>()) { $0.formUnion($1.delegatesTo(posture: posture)) }
+    func delegatesTo(posture: SimPosture) -> Set<ItemModifier> {
+        reduce(into: Set<ItemModifier>()) { $0.formUnion($1.delegatesTo(posture: posture)) }
     }
 
-    func toSet() -> Set<ItemModifer> {
+    func toSet() -> Set<ItemModifier> {
         Set(self)
     }
 }
