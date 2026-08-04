@@ -4,7 +4,7 @@ protocol Buff: Sendable {
     func apply(in context: BuffContext) async -> [MotiveSignal]
 }
 
-struct BuffContext: Sendable {
+struct BuffContext {
     let recipentName: String
     let broadcaster: Broadcasting
     let elepsedSeconds: Double
@@ -24,7 +24,7 @@ enum BuffRegistry {
         if broadcaster.isAmbient {
             boundBuffs.append(AmbientBuff())
         }
-        
+
         return boundBuffs
     }
 }

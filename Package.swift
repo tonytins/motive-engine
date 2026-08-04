@@ -19,8 +19,8 @@ let package = Package(
         .target(
             name: "MotiveEngine",
             exclude: [
-                "VM/README.md"
-            ]
+                "VM/README.md",
+            ],
         ),
         .testTarget(
             name: "MotiveEngineTests",

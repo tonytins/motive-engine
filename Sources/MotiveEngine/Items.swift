@@ -18,37 +18,37 @@ enum ItemModifer: String, CaseIterable, Hashable, Codable {
     case ambient
     case chair
     case skill
-    
+
     var isBlockingByDefault: Bool {
         switch self {
         case .appliance, .bed, .shower, .toilet, .recreation, .chair, .skill:
-            return true
+            true
         case .sim, .ambient:
-                return false
+            false
         }
     }
-    
+
     var motivesFullfilledDirectly: Bool {
         self != .skill
     }
-    
+
     var grantsSittingPosture: Bool {
         switch self {
         case .chair, .toilet:
-            return true
+            true
         default:
-            return false
+            false
         }
     }
-    
+
     func delegatesTo(posture: SimPosture) -> Set<ItemModifer> {
         switch self {
         case .chair:
-            return [.recreation, .sim]
+            [.recreation, .sim]
         case .recreation, .appliance:
-            return posture == .standing ? [.sim] : []
+            posture == .standing ? [.sim] : []
         default:
-            return []
+            []
         }
     }
 }
@@ -61,41 +61,40 @@ extension ItemModifer {
                     .dataCorruptedError(
                         forKey: key,
                         in: container,
-                        debugDescription: "Item must contain name of at least one type"
+                        debugDescription: "Item must contain name of at least one type",
                     )
             }
             return Set(multiple)
         }
-        
-        return [try container.decode(ItemModifer.self, forKey: key)]
+
+        return try [container.decode(ItemModifer.self, forKey: key)]
     }
 }
 
-struct ItemIdentity: Equatable, Sendable {
+struct ItemIdentity: Equatable {
     let name: String
     let itemTypes: Set<ItemModifer>
     let isBlocking: Bool
-    
-    init<S: Sequence>(name: String,
-                      itemTypes: S,
-                      isBlocking: Bool? = nil)
-    where S.Element == ItemModifer {
+
+    init(name: String,
+         itemTypes: some Sequence<ItemModifer>,
+         isBlocking: Bool? = nil)
+    {
         let set = Set(itemTypes)
         self.name = name
         self.itemTypes = set
         self.isBlocking = isBlocking ?? set.isBlockingByDefualt
-        }
-    
+    }
+
     init(name: String, itemTypes: ItemModifer) {
         self.init(name: name, itemTypes: [itemTypes])
     }
 }
 
-struct Item: Broadcasting, Codable, Equatable, Sendable {
-
+struct Item: Broadcasting, Codable, Equatable {
     let identity: ItemIdentity
     let signals: [MotiveSignal]
-    
+
     init(identity: ItemIdentity, signals: [MotiveSignal]) {
         self.identity = identity
         self.signals = signals
@@ -107,60 +106,58 @@ struct Item: Broadcasting, Codable, Equatable, Sendable {
         case motives
         case blocking
     }
-    
+
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(String.self, forKey: .name)
         let itemTypes = try ItemModifer.decodedSet(
             from: container,
-            forKey: .itemType
+            forKey: .itemType,
         )
-    
+
         if let explicitIsBlocking = try container.decodeIfPresent(
             Bool.self,
-            forKey: .blocking
+            forKey: .blocking,
         ) {
             identity = ItemIdentity(
                 name: name,
                 itemTypes: itemTypes,
-                isBlocking: explicitIsBlocking
+                isBlocking: explicitIsBlocking,
             )
         } else {
             identity = ItemIdentity(
                 name: name,
-                itemTypes: itemTypes
+                itemTypes: itemTypes,
             )
         }
-        
-        
+
         let rawMotives = try container.decode([[String: Double]].self, forKey: .motives)
-        
+
         signals = Item.signals(fromRawMotives: rawMotives)
     }
-    
+
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(identity.name, forKey: .name)
-        
+
         if identity.itemTypes.count == 1, let onlyType = identity.itemTypes.first {
             try container.encode(onlyType, forKey: .itemType)
         } else {
             try container.encode(identity.itemTypes.sorted { $0.rawValue < $1.rawValue }, forKey: .itemType)
         }
-        
+
         try container.encode(identity.isBlocking, forKey: .blocking)
-        
+
         let rawMotives = signals.map {
             signal in
             [signal.motiveType.rawValue: signal.strengthPerSecond * motiveStrengthScale]
         }
-        
+
         try container.encode(rawMotives, forKey: .motives)
     }
 }
 
 extension Item {
-    
     static func signals(fromRawMotives rawMotives: [[String: Double]]) -> [MotiveSignal] {
         rawMotives.flatMap {
             motivepair -> [MotiveSignal] in
@@ -170,9 +167,9 @@ extension Item {
                 return MotiveSignal(
                     motiveType: motiveType,
                     strengthPerSecond: needValue
-                 / motiveStrengthScale)
+                        / motiveStrengthScale,
+                )
             }
         }
     }
-    
 }

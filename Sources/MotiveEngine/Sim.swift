@@ -17,7 +17,7 @@ enum SimState: Equatable {
     case fullfillFear(WantOrFear)
 }
 
-struct SimStateMachine: Equatable, Sendable {
+struct SimStateMachine: Equatable {
     // private(set) var activeFulfillments: [ActiveFulfillment]
     // private(set) var commandQueue: [PlayerCommand]
     let urgencyThreshold: Double
@@ -28,7 +28,7 @@ struct SimStateMachine: Equatable, Sendable {
     let freeWillMotivePreference: [MotiveType]
 }
 
-enum SimPosture: String, Equatable, Sendable {
+enum SimPosture: String, Equatable {
     case sitting
     case standing
 }

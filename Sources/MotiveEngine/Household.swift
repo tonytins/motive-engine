@@ -1,9 +1,9 @@
 import Foundation
 
-struct HouseholdRoster: Sendable {
+struct HouseholdRoster {
     private(set) var sleepingSimNames: Set<String> = []
     private(set) var lastBroadcast: [String: BroadcastEvent] = [:]
-    
+
     mutating func receive(_ event: BroadcastEvent, from senderName: String) {
         lastBroadcast[senderName] = event
         switch event {
@@ -15,11 +15,11 @@ struct HouseholdRoster: Sendable {
             break
         }
     }
-    
-    func isSleeping(simNamed name: String) -> Bool {
-        return false
+
+    func isSleeping(simNamed _: String) -> Bool {
+        false
     }
-    
+
     func reachableSims(excluding name: String, among allNames: [String]) -> [String] {
         allNames.filter {
             $0 != name && sleepingSimNames.contains($0)

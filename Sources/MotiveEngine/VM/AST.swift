@@ -1,6 +1,6 @@
 import Foundation
 
-enum Opcode: String, CaseIterable, Sendable {
+enum Opcode: String, CaseIterable {
     case number, boolean, none
     case variable, hasModifier, not, negate
     case add, sub, mul, div, and, or, eq, neq, lt, gt, lte, gte
@@ -8,7 +8,7 @@ enum Opcode: String, CaseIterable, Sendable {
     case val, assign, emit, match, matchModifier
 }
 
-enum BinaryOperator: String, CaseIterable, Sendable {
+enum BinaryOperator: String, CaseIterable {
     case add, sub, mul, div, and, or, eq, neq, lt, gt, lte, gte
 
     init?(symbol: String) {
@@ -31,30 +31,30 @@ enum BinaryOperator: String, CaseIterable, Sendable {
 
     var symbol: String {
         switch self {
-        case .add: return "+"
-        case .sub: return "-"
-        case .mul: return "*"
-        case .div: return "/"
-        case .and: return "and"
-        case .or: return "or"
-        case .eq: return "="
-        case .neq: return "<>"
-        case .lt: return "<"
-        case .gt: return ">"
-        case .lte: return "<="
-        case .gte: return ">="
+        case .add: "+"
+        case .sub: "-"
+        case .mul: "*"
+        case .div: "/"
+        case .and: "and"
+        case .or: "or"
+        case .eq: "="
+        case .neq: "<>"
+        case .lt: "<"
+        case .gt: ">"
+        case .lte: "<="
+        case .gte: ">="
         }
     }
 }
 
-enum Pattern: Sendable, Equatable {
+enum Pattern: Equatable {
     case boolean(Bool)
     case number(Double)
     case none
     case wildcard
 }
 
-enum Stmt: Sendable {
+enum Stmt {
     case val(name: String, isMutable: Bool, value: Expr, line: Int)
     case assign(name: String, value: Expr, line: Int)
     case emit(motive: MotiveType, value: Expr, line: Int)
@@ -62,22 +62,21 @@ enum Stmt: Sendable {
     case transition(state: String, line: Int)
 }
 
-struct MatchArm: Sendable {
+struct MatchArm {
     let pattern: Pattern
     let body: [Stmt]
     let line: Int
 }
 
-struct FuncDecl: Sendable {
+struct FuncDecl {
     let name: String
     let body: [Stmt]
     let line: Int
 }
 
-
-struct StateDecl: Sendable {
+struct StateDecl {
     let name: String
-    // let functions: [FuncDecl]
+    /// let functions: [FuncDecl]
     let line: Int
 }
 
@@ -88,7 +87,7 @@ extension StateDecl: Codable {
         // try container.encode(functions)
         try container.encode(line)
     }
-    
+
     init(from decoder: any Decoder) throws {
         var container = try decoder.unkeyedContainer()
         name = try container.decode(String.self)
@@ -97,7 +96,7 @@ extension StateDecl: Codable {
     }
 }
 
-indirect enum Expr: Sendable {
+indirect enum Expr {
     case number(Double)
     case boolean(Bool)
     case none
@@ -109,41 +108,40 @@ indirect enum Expr: Sendable {
 }
 
 extension Expr: Codable {
-    
     static let binaryOperators: Set<String> = [
         "+", "-", "*", "/", "%", "==",
-        "!=", "<", ">", "<=", ">="
+        "!=", "<", ">", "<=", ">=",
     ]
-    
-    public func encode(to encoder: any Encoder) throws {
+
+    func encode(to encoder: any Encoder) throws {
         var container = encoder.unkeyedContainer()
         switch self {
-        case .number(let value):
+        case let .number(value):
             try container.encode(Opcode.number.rawValue)
             try container.encode(value)
-        case .boolean(let value):
+        case let .boolean(value):
             try container.encode(Opcode.boolean.rawValue)
             try container.encode(value)
-        case .variable(let name, let line):
+        case let .variable(name, line):
             try container.encode(Opcode.variable.rawValue)
             try container.encode(name)
             try container.encode(line)
-        case .binary(let left, let op, let right, let line):
+        case let .binary(left, op, right, line):
             try container.encode(op.rawValue)
             try container.encode(left)
             try container.encode(right)
         case .none:
             break
-        case .hasModifier(_, line: let line):
+        case let .hasModifier(_, line: line):
             break
-        case .not(_, line: let line):
+        case let .not(_, line: line):
             break
-        case .unaryMinus(_, line: let line):
+        case let .unaryMinus(_, line: line):
             break
         }
     }
-    
-    public init(from decoder: Decoder) throws {
+
+    init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         let tag = try container.decode(String.self)
         switch Opcode(rawValue: tag) {

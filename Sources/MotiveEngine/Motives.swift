@@ -22,20 +22,19 @@ struct MotiveDecayRates {
     }
 }
 
-struct MotiveLevels: Equatable, Sendable {
+struct MotiveLevels: Equatable {
     private var levels: [MotiveType: Double]
-    
+
     init(levels: [MotiveType: Double]) {
         self.levels = levels
     }
-    
+
     var lowest: (motiveType: MotiveType, level: Double)? {
         guard let entry = levels.min(by: { $0.value < $1.value }) else { return nil }
-        
-        return (entry.key, entry.value)
-        }
-}
 
+        return (entry.key, entry.value)
+    }
+}
 
 protocol Motivated: Sendable {
     var name: String { get }

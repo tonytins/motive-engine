@@ -10,25 +10,26 @@ extension Double {
     }
 }
 
-extension Set where Element == ItemModifer {
+extension Set<ItemModifer> {
     var isBlockingByDefualt: Bool {
-        contains{ $0.isBlockingByDefault }
+        contains { $0.isBlockingByDefault }
     }
 }
 
-
-extension Sequence where Element == ItemModifer {
+extension Sequence<ItemModifer> {
     var isBlockingByDefualt: Bool {
-        contains{ $0.isBlockingByDefault }
+        contains { $0.isBlockingByDefault }
     }
-    
+
     var grantsSittingPosture: Bool {
-        contains{ $0.grantsSittingPosture }
+        contains { $0.grantsSittingPosture }
     }
-    
+
     func delegatesTo(posture: SimPosture) -> Set<ItemModifer> {
         reduce(into: Set<ItemModifer>()) { $0.formUnion($1.delegatesTo(posture: posture)) }
     }
-    
-    func toSet() -> Set<ItemModifer> { Set(self) }
+
+    func toSet() -> Set<ItemModifer> {
+        Set(self)
+    }
 }

@@ -31,33 +31,31 @@ private enum Keyword: String, CaseIterable, Equatable {
     case bladder = "Bladder"
     case social = "Social"
     case fun = "Fun"
-    
+
     init?(matching text: String) {
         let lower = text.lowercased()
         guard let match = Keyword.allCases.first(
             where: {
                 $0.rawValue.lowercased() == lower
-            }
+            },
         ) else {
             return nil
         }
-        
+
         self = match
     }
-    
 }
 
 extension Keyword {
     var motiveType: MotiveType? {
         switch self {
-        case .hunger: return .hunger
-        case .energy: return .energy
-        case .hygiene: return .hygiene
-        case .bladder: return .bladder
-        case .social: return .social
-        case .fun: return .fun
-        default: return nil
+        case .hunger: .hunger
+        case .energy: .energy
+        case .hygiene: .hygiene
+        case .bladder: .bladder
+        case .social: .social
+        case .fun: .fun
+        default: nil
         }
     }
 }
-
