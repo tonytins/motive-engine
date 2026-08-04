@@ -4,8 +4,13 @@ Motive Engine provides the framework for creating characters with needs, aspirat
 
 ## 📝 Goals
 
-- [ ] Motives
+- [ ] [Scripting](./MotiveEngine/VM/README)
+	- [ ] AST
+	- [ ] Lexer
+	- [ ] IR
+	- [ ] Bindings
 - [ ] Items
+- [ ] Motives
 - [ ] Aspirations (SWAF)
 - [x] Buffs
 - [ ] Sim

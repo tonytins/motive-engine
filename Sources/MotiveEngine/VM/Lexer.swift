@@ -3,120 +3,76 @@ import Foundation
 
 let unterminatedStringMessage = "unterminated string"
 
+enum LexingError: Error, CustomStringConvertible {
+    case unexpectedCharacter(Character, at: Int)
+    case malformedNumber(String)
+    
+    var description: String {
+        switch self {
+        case .unexpectedCharacter(let character, let index):
+            return "Unexpected character \(character) at position \(index)"
+        case .malformedNumber(let text):
+            return "Malformed number literal \(text)"
+        }
+    }
+}
+
 struct Lexer {
-    private let characters: [Character]
-    private var position = 0
-    private var line = 1
+    private static let remarkKeyword = "rimarko"
     
-    init(_ source: String) {
-        characters = Array(source)
-    }
-    
-    
-    func peek() -> Character? {
-        position < characters.count ? characters[position] : nil
-    }
-    
-    func peekNext() -> Character? {
-        position < characters.count ? characters[position + 1] : nil
-    }
-    
-    mutating func advance() {
-        position += 1
-    }
-    
-    
-    mutating func tokenize() -> [Token] {
+    mutating func tokens(from source: String) throws -> [Token] {
         var tokens: [Token] = []
         while true {
-            // let token = try nextToken()
-            // tokens.append(tokens)
-        
+         
         }
         return tokens
     }
     
-    mutating func nextToken() throws -> Token {
-        skipSpacesAndComments()
-        guard let character = peek() else {
-            return Token(kind: .endOfInput, line: line)
-        }
-        
-        if character == "\n" {
-                    advance()
-                    let token = Token(kind: .newline, line: line)
-                    line += 1
-                    return token
-                }
-                if character.isNumber {
-                    return lexNumber()
-                }
-                if character == "\"" {
-                    return try lexString()
-                }
-                if character.isLetter || character == "_" {
-                    return lexWord()
-                }
-        
-        return try lexSymbol()
-    }
-    
-    func lexNumber() -> Token {
-        var startLine = line
-        var text = ""
-        
-        return Token(kind: .number(Double(text) ?? 0), line: startLine)
-    }
-    
-    mutating func lexString() throws -> Token {
-        var startLine = line
-        advance()
-        var text = ""
-        
-        while let character = peek(), character != "\"" {
-            if character == "\n" {
-                throw ItemScriptError(message:unterminatedStringMessage, line: startLine)
-                text.append(character)
-                advance()
-            }
-            guard peek() == "\"" else {
-                throw ItemScriptError(message:unterminatedStringMessage, line: startLine)
-            }
-            advance()
-            return Token(kind: .string(text), line: startLine)
-        }
-        
-        return Token(kind: .number(Double(text) ?? 0), line: startLine)
-    }
-    
-    func lexWord() -> Token {
-        var startLine = line
-        var text = ""
-        
-        return Token(kind: .number(Double(text) ?? 0), line: startLine)
-    }
-    
-    mutating func skipSpacesAndComments() {
-        while let character = peek() {
-            switch character {
-            case " ", "\t", "\r":
-                advance()
-            case "#":
-                while let inner = peek(), inner != "\n" {
-                    advance()
-                }
-            default:
-                break
-            }
-        }
-    }
-
-    func lexSymbol() throws -> Token {
-        let character = characters[position]
-        throw ItemScriptError(
-            message: "unexpected character \(character)",
-            line: line
+    func startLineComment(_ characters: [Character], at index: Int) -> Bool {
+        if characters[index] == "#" { return true }
+        return matchesStandaloneWord(
+            Self.remarkKeyword,
+            in: characters,
+            at: index
         )
+    }
+    
+    func matchesStandaloneWord(_ word: String, in characters: [Character], at index: Int) -> Bool {
+        
+        return true
+    }
+    
+    func normalizedLineEndings(in source: String) -> String {
+        source.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+    }
+    
+    func sanitized(_ source: String) -> String {
+        let normalized = normalizedLineEndings(in: source)
+        let characters = Array(normalized)
+        var result = ""
+        result.reserveCapacity(characters.count)
+        var index = 0
+        
+        while index < characters.count {
+            if startLineComment(characters, at: index) {
+                index = endOfLine(characters, from: index)
+                continue
+            }
+            result.append(characters[index])
+            index += 1
+        }
+        
+        return ""
+    }
+    
+    func endOfLine(_ characters: [Character],
+                       from start: Int)  -> Int {
+        var index = start
+        while index < characters.count, characters[index] != "\n" {
+            index += 1
+        }
+        return index
     }
 }
 
