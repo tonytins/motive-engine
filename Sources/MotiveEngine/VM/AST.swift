@@ -1,6 +1,6 @@
 import Foundation
 
-private enum Opcode: String, CaseIterable, Sendable {
+enum Opcode: String, CaseIterable, Sendable {
     case number, boolean, none
     case variable, hasModifier, not, negate
     case add, sub, mul, div, and, or, eq, neq, lt, gt, lte, gte
@@ -8,7 +8,7 @@ private enum Opcode: String, CaseIterable, Sendable {
     case val, assign, emit, match, matchModifier
 }
 
-private enum BinaryOperator: String, CaseIterable, Sendable {
+enum BinaryOperator: String, CaseIterable, Sendable {
     case add, sub, mul, div, and, or, eq, neq, lt, gt, lte, gte
 
     init?(symbol: String) {
@@ -47,7 +47,57 @@ private enum BinaryOperator: String, CaseIterable, Sendable {
     }
 }
 
-private indirect enum Expr: Sendable {
+enum Pattern: Sendable, Equatable {
+    case boolean(Bool)
+    case number(Double)
+    case none
+    case wildcard
+}
+
+enum Stmt: Sendable {
+    case val(name: String, isMutable: Bool, value: Expr, line: Int)
+    case assign(name: String, value: Expr, line: Int)
+    case emit(motive: MotiveType, value: Expr, line: Int)
+    case match(scrutinee: Expr, arms: [MatchArm], line: Int)
+    case transition(state: String, line: Int)
+}
+
+struct MatchArm: Sendable {
+    let pattern: Pattern
+    let body: [Stmt]
+    let line: Int
+}
+
+struct FuncDecl: Sendable {
+    let name: String
+    let body: [Stmt]
+    let line: Int
+}
+
+
+struct StateDecl: Sendable {
+    let name: String
+    // let functions: [FuncDecl]
+    let line: Int
+}
+
+extension StateDecl: Codable {
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(name)
+        // try container.encode(functions)
+        try container.encode(line)
+    }
+    
+    init(from decoder: any Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        name = try container.decode(String.self)
+        // functions = try container.decode([FuncDecl].self)
+        line = try container.decode(Int.self)
+    }
+}
+
+indirect enum Expr: Sendable {
     case number(Double)
     case boolean(Bool)
     case none
@@ -60,7 +110,10 @@ private indirect enum Expr: Sendable {
 
 extension Expr: Codable {
     
-    static let binaryOperators: Set<String> = ["+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">="]
+    static let binaryOperators: Set<String> = [
+        "+", "-", "*", "/", "%", "==",
+        "!=", "<", ">", "<=", ">="
+    ]
     
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.unkeyedContainer()

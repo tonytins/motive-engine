@@ -14,3 +14,13 @@ struct ItemScriptError: Error, CustomStringConvertible, Equatable {
         "line \(line): \(message)"
     }
 }
+
+
+struct ItemScript: Sendable {
+    private let states: String
+    
+    init(sources: String) throws {
+        var lexer = Lexer()
+        // let tokens = try lexer.
+    }
+}
