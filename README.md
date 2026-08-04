@@ -2,6 +2,12 @@
 
 Motive Engine provides the framework for creating characters with needs, aspirations, and interacting with simulated world.
 
+## 🏗️ Architecture
+
+I am designing this framework around the idea of being easily unit testable and render-agnostic as possible. All the engine ever does is pass information back downstream to the frontend.
+
+In theory, it should be possible run this from the terminal using nothing ASCII interface and emojis to represent varies items.
+
 ## 📝 Goals
 
 - [ ] [Scripting](./MotiveEngine/VM/README)
@@ -15,18 +21,6 @@ Motive Engine provides the framework for creating characters with needs, aspirat
 - [x] Buffs
 - [ ] Sim
 - [ ] Lot
-
-## 🏗️ Architecture
-
-```mermaid
-graph TD;
-	Lot <--> Sim;
-	Items <--> Sim;
-    Sim-->Motives;
-    Sim --> Buffs;
-    Sim-->SWAF;
-```
-
 
 
 ## 📦 Installation

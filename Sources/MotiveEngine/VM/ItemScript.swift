@@ -20,7 +20,7 @@ struct ItemScript: Sendable {
     private let states: String
     
     init(sources: String) throws {
-        var lexer = Lexer()
+        var lexer = Lexer(source)
         // let tokens = try lexer.
     }
 }

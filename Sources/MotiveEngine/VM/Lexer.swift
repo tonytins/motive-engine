@@ -18,53 +18,71 @@ enum LexingError: Error, CustomStringConvertible {
 }
 
 struct Lexer {
-    private static let remarkKeyword = "rimarko"
+    let characters: [Character]
+    var position = 0
+    var line = 1
     
-    mutating func tokens(from source: String) throws -> [Token] {
+    init(_ source: String) {
+        characters = Array(source)
+    }
+    
+    mutating func tokenize(from source: String) throws -> [Token] {
         var tokens: [Token] = []
         while true {
-         
+            let token = try nextToken()
+            tokens.append(token)
+            if token.kind == .endOfInput { break }
         }
         return tokens
     }
     
-    func startLineComment(_ characters: [Character], at index: Int) -> Bool {
-        if characters[index] == "#" { return true }
-        return matchesStandaloneWord(
-            Self.remarkKeyword,
-            in: characters,
-            at: index
-        )
-    }
-    
-    func matchesStandaloneWord(_ word: String, in characters: [Character], at index: Int) -> Bool {
+    func peek(next: Bool = false) -> Character? {
         
-        return true
-    }
-    
-    func normalizedLineEndings(in source: String) -> String {
-        source.replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
-    }
-    
-    func sanitized(_ source: String) -> String {
-        let normalized = normalizedLineEndings(in: source)
-        let characters = Array(normalized)
-        var result = ""
-        result.reserveCapacity(characters.count)
-        var index = 0
-        
-        while index < characters.count {
-            if startLineComment(characters, at: index) {
-                index = endOfLine(characters, from: index)
-                continue
-            }
-            result.append(characters[index])
-            index += 1
+        if next {
+            return position < characters.count ? characters[position + 1] : nil
         }
         
-        return ""
+        return position < characters.count ? characters[position] : nil
     }
+    
+    mutating func advance() {
+        position += 1
+    }
+    
+    mutating func nextToken() throws -> Token {
+        guard let character = peek() else {
+            return Token(kind: .endOfInput, line: line)
+        }
+        if character == "\n" {
+            advance()
+            let token = Token(kind: .newline, line: line)
+            line += 1
+            return token
+        }
+        
+        // TODO: replace filler with lexSymbol()
+        return (Token(kind: .endOfInput, line: line))
+    }
+    
+    mutating func skipSpacesAndComments() {
+        let nextChar = peek(next: true)
+            while let character = peek() {
+                switch character {
+                case " ", "\t", "\r":
+                    advance()
+                case "#":
+                    while let inner = peek(), inner != "\n" {
+                        advance()
+                    }
+                case "/" where nextChar == "/":
+                    while let inner = peek(), inner != "\n" {
+                        advance()
+                    }
+                default:
+                    break
+                }
+            }
+        }
     
     func endOfLine(_ characters: [Character],
                        from start: Int)  -> Int {
