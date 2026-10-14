@@ -5,6 +5,9 @@ public enum AspirationEvent: Equatable, Sendable {
     /// Every unlocked slot was rerolled.
     case boardRerolled(simID: SimID)
 
+    /// An unlocked entry reached the profile's offer lifetime and was removed.
+    case offerExpired(simID: SimID, wantFearID: WantFearID)
+
     /// A want was fulfilled. Changes are the amounts actually applied.
     case wantFulfilled(
         simID: SimID,
@@ -70,7 +73,8 @@ public enum AspirationSystem {
     /// Interaction triggers match `actionChanged` events for this Sim whose
     /// action completed. Motive triggers compare against `motives`, the
     /// Sim's current levels. Each fulfilled slot is rerolled once, and never
-    /// to the entry that was just fulfilled.
+    /// to the entry that was just fulfilled. When the profile requires
+    /// promises, only promised entries are fulfilled.
     public static func observe(
         _ state: AspirationState,
         events: [SimulationEvent],
@@ -116,6 +120,9 @@ public enum AspirationSystem {
 
     /// Fulfills one entry on the board regardless of its trigger.
     ///
+    /// When the profile requires promises, an unpromised entry is left
+    /// unchanged.
+    ///
     /// - Throws: `AspirationError.notOnBoard` if the entry is not shown.
     public static func fulfill(
         _ id: WantFearID,
@@ -143,6 +150,61 @@ public enum AspirationSystem {
     /// - Throws: `AspirationError.notOnBoard` if the entry is not shown.
     public static func unlock(_ id: WantFearID, in state: AspirationState) throws -> AspirationState {
         try setLock(false, on: id, in: state)
+    }
+
+    /// Removes an entry, locked or not, leaving its slot empty until the next reroll.
+    ///
+    /// - Throws: `AspirationError.notOnBoard` if the entry is not shown.
+    public static func cancel(_ id: WantFearID, in state: AspirationState) throws -> AspirationState {
+        var next = state
+        for kind in [WantFearKind.want, .fear] {
+            var slots = state.slots(for: kind)
+            guard let index = slots.firstIndex(where: { $0.definitionID == id }) else {
+                continue
+            }
+            slots.remove(at: index)
+            next.setSlots(slots, for: kind)
+            return next
+        }
+        throw AspirationError.notOnBoard(id)
+    }
+
+    /// Ages every entry and removes unlocked entries past the offer lifetime.
+    ///
+    /// Expired slots stay empty until the next reroll. Without an offer
+    /// lifetime, entries only age.
+    ///
+    /// - Throws: `AspirationError.invalidElapsedTime` for negative or
+    ///   non-finite time.
+    public static func advance(
+        _ state: AspirationState,
+        bySeconds elapsedSeconds: Double
+    ) throws -> AspirationUpdate {
+        guard elapsedSeconds.isFinite, elapsedSeconds >= 0 else {
+            throw AspirationError.invalidElapsedTime
+        }
+        var next = state
+        var events: [AspirationEvent] = []
+        for kind in [WantFearKind.want, .fear] {
+            var slots: [WantFearSlot] = []
+            for slot in state.slots(for: kind) {
+                let aged = WantFearSlot(
+                    definitionID: slot.definitionID,
+                    isLocked: slot.isLocked,
+                    ageSeconds: slot.ageSeconds + elapsedSeconds
+                )
+                if !aged.isLocked,
+                   let lifetime = state.profile.offerLifetimeSeconds,
+                   aged.ageSeconds >= lifetime
+                {
+                    events.append(.offerExpired(simID: state.simID, wantFearID: aged.definitionID))
+                    continue
+                }
+                slots.append(aged)
+            }
+            next.setSlots(slots, for: kind)
+        }
+        return AspirationUpdate(state: next, events: events)
     }
 
     /// Lowers aspiration over time. Sims that do not track aspiration are unchanged.
@@ -183,7 +245,9 @@ public enum AspirationSystem {
             var fulfilledIndices: [Int] = []
             for (index, slot) in original.enumerated() {
                 let definition = try definition(for: slot, of: kind, in: catalog)
-                guard isTriggered(definition) else {
+                guard slot.isLocked || !state.profile.requiresPromise,
+                      isTriggered(definition)
+                else {
                     continue
                 }
                 fulfilledIndices.append(index)
@@ -302,7 +366,11 @@ public enum AspirationSystem {
                     throw AspirationError.lockLimitReached
                 }
             }
-            slots[index] = WantFearSlot(definitionID: id, isLocked: isLocked)
+            slots[index] = WantFearSlot(
+                definitionID: id,
+                isLocked: isLocked,
+                ageSeconds: slots[index].ageSeconds
+            )
             next.setSlots(slots, for: kind)
             return next
         }

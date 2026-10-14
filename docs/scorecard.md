@@ -35,6 +35,8 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 128 tests after adding SWAF wish mode.
+
 - 2026-10-14: `swift test` passed 123 tests across 14 suites after moving
   SWAF into the `MotiveEngineSWAF` target with its own test target.
 
@@ -72,7 +74,7 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
 | Interaction scripts | Read every declared input, report effects in call order, reject the reserved `effect` module and input assignment, report each invalid-effect error, propagate runtime failures and the instruction limit without partial effects, and evaluate repeatably. |
 | Optional extensions | Run a session through autonomous selection, movement, and completion with no extensions; show default, empty, and inert buff rule sets produce identical step results; and execute authored effects without a script. |
-| Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, and invalid restored boards. |
+| Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, invalid restored boards, and wish mode: promise-only fulfillment, offer expiry leaving empty slots, aging without a lifetime, cancellation, and invalid lifetimes and ages. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
 
 ## Per-area checklists

@@ -324,7 +324,112 @@ struct AspirationTests {
         }
     }
 
+    // MARK: Wish mode
+
+    @Test func wishModeFulfillsOnlyPromisedEntries() throws {
+        let catalog = try makeCatalog()
+        let profile = try wishProfile()
+        var state = try AspirationState(
+            simID: simID(),
+            profile: profile,
+            wants: [WantFearSlot(definitionID: id("sleep")), WantFearSlot(definitionID: id("promoted"))],
+            seed: 1
+        )
+
+        let unpromised = try AspirationSystem.report(event("promoted"), to: state, catalog: catalog, motives: motives())
+        #expect(unpromised.events.isEmpty)
+        #expect(unpromised.state == state)
+        #expect(try AspirationSystem.fulfill(id("promoted"), in: state, catalog: catalog, motives: motives()).state == state)
+
+        state = try AspirationSystem.lock(id("promoted"), in: state)
+        let promised = try AspirationSystem.report(event("promoted"), to: state, catalog: catalog, motives: motives())
+
+        #expect(promised.events == [
+            .wantFulfilled(simID: try simID(), wantFearID: try id("promoted"), aspirationChange: 0, rewardPointChange: 1500),
+        ])
+        #expect(promised.state.aspiration == 50)
+    }
+
+    @Test func unpromisedOffersExpireAndLeaveTheirSlotEmpty() throws {
+        var state = try AspirationState(
+            simID: simID(),
+            profile: wishProfile(),
+            wants: [WantFearSlot(definitionID: id("sleep")), WantFearSlot(definitionID: id("promoted"))],
+            seed: 1
+        )
+        state = try AspirationSystem.lock(id("promoted"), in: state)
+
+        let early = try AspirationSystem.advance(state, bySeconds: 9)
+        #expect(early.events.isEmpty)
+        #expect(early.state.wants.map(\.ageSeconds) == [9, 9])
+
+        let expired = try AspirationSystem.advance(early.state, bySeconds: 1)
+        #expect(expired.events == [.offerExpired(simID: try simID(), wantFearID: try id("sleep"))])
+        #expect(expired.state.wants == [WantFearSlot(definitionID: try id("promoted"), isLocked: true, ageSeconds: 10)])
+
+        let refilled = try AspirationSystem.reroll(expired.state, catalog: makeCatalog(), motives: motives())
+        #expect(refilled.state.wants.count == 2)
+        #expect(refilled.state.wants.first?.ageSeconds == 10)
+        #expect(refilled.state.wants.last?.ageSeconds == 0)
+    }
+
+    @Test func entriesOnlyAgeWithoutAnOfferLifetime() throws {
+        let state = try board(makeState(), wants: ["sleep"], fears: [])
+
+        let update = try AspirationSystem.advance(state, bySeconds: 1_000)
+
+        #expect(update.events.isEmpty)
+        #expect(update.state.wants == [WantFearSlot(definitionID: try id("sleep"), ageSeconds: 1_000)])
+        #expect(throws: AspirationError.invalidElapsedTime) {
+            try AspirationSystem.advance(state, bySeconds: -1)
+        }
+    }
+
+    @Test func cancelRemovesPromisedAndOfferedEntries() throws {
+        var state = try board(makeState(), wants: ["sleep", "promoted"], fears: ["starve"])
+        state = try AspirationSystem.lock(id("promoted"), in: state)
+
+        state = try AspirationSystem.cancel(id("promoted"), in: state)
+        state = try AspirationSystem.cancel(id("starve"), in: state)
+
+        #expect(state.wants == [WantFearSlot(definitionID: try id("sleep"))])
+        #expect(state.fears.isEmpty)
+        #expect(throws: AspirationError.notOnBoard(try id("promoted"))) {
+            try AspirationSystem.cancel(id("promoted"), in: state)
+        }
+    }
+
+    @Test func wishProfilesRejectInvalidLifetimesAndRestoredAges() throws {
+        #expect(throws: AspirationError.invalidProfile) {
+            try AspirationProfile(offerLifetimeSeconds: 0)
+        }
+        #expect(throws: AspirationError.invalidProfile) {
+            try AspirationProfile(offerLifetimeSeconds: .infinity)
+        }
+        #expect(throws: AspirationError.invalidSlotAge(try id("sleep"))) {
+            try AspirationState(
+                simID: simID(),
+                profile: AspirationProfile(),
+                wants: [WantFearSlot(definitionID: id("sleep"), ageSeconds: -1)],
+                seed: 1
+            )
+        }
+    }
+
     // MARK: - Fixtures
+
+    /// Sims 3-style wishes: no fears or aspiration bar, four promises, and
+    /// offers that expire after ten seconds.
+    private func wishProfile() throws -> AspirationProfile {
+        try AspirationProfile(
+            wantSlots: 2,
+            fearSlots: 0,
+            lockLimit: 4,
+            tracksAspiration: false,
+            requiresPromise: true,
+            offerLifetimeSeconds: 10
+        )
+    }
 
     /// Three wants and two fears, with simple triggers.
     private func makeCatalog() throws -> WantFearCatalog {

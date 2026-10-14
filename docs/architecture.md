@@ -300,6 +300,13 @@ actions, or free will.
   the bar, as for townies, while reward points still change. What happens at
   a low bar, and what reward points buy, is game policy.
 
+- **Wish mode.** Profile options give Sims 3-style wishes: no fear slots,
+  no aspiration tracking, `requiresPromise` so only locked (promised)
+  entries can be fulfilled, and `offerLifetimeSeconds` so `advance` removes
+  unpromised entries that reach that age. An expired slot stays empty until
+  the next reroll. `cancel` removes any entry. The lock limit is the number
+  of wishes that can be promised at once.
+
 Operations are pure: each returns a new state and ordered
 `AspirationEvent` values, and leaves the state unchanged on error. Wants and
 fears that target a specific Sim or item, and lifetime wants, are planned.
