@@ -99,7 +99,7 @@ unchecked item is planned work, not an implemented feature.
   idempotency.
 - [ ] Implement aspirations as an optional, independently testable extension
   that can express wants and fears.
-- [ ] Define the typed data boundary between the Robusta VM and item
+- [x] Define the typed data boundary between the Robusta VM and item
   interactions.
 - [ ] Verify simulations remain usable when optional extensions are absent.
 

@@ -12,6 +12,16 @@ public enum RobustaCompiler {
         statements.flatMap(lower)
     }
 
+    /// Parses and validates a program, then lowers it to instructions.
+    static func validatedInstructions(
+        _ source: String,
+        using frontend: any Frontend
+    ) throws -> [Instruction] {
+        let statements = try frontend.parse(source)
+        try ProgramValidator.validate(statements)
+        return lower(statements: statements)
+    }
+
     static func decode(ir: Data) throws -> [Instruction] {
         try JSONDecoder().decode([Instruction].self, from: ir)
     }
@@ -128,9 +138,7 @@ public enum RobustaVM {
         _ source: String,
         using frontend: any Frontend = RobustaFrontend()
     ) throws -> [String] {
-        let statements = try frontend.parse(source)
-        try ProgramValidator.validate(statements)
-        let ir = try JSONEncoder().encode(RobustaCompiler.lower(statements: statements))
+        let ir = try JSONEncoder().encode(RobustaCompiler.validatedInstructions(source, using: frontend))
         return try run(ir: ir)
     }
 

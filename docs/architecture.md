@@ -268,9 +268,17 @@ goals, not simply another physical motive, and their relationship to buffs
 remains to be designed.
 
 Robusta is an independent scripting subsystem for authorable behavior.
-Future integration should use a narrow, typed boundary: scripts receive
-declared data and return declared offers or effects. Core simulation
-rules and authoritative state remain owned by engine systems.
+It connects to item interactions through a narrow, typed boundary:
+`InteractionScript` compiles a program once, and
+`InteractionScriptSystem.evaluate` runs it against an
+`InteractionScriptInput` built from a Sim and an offer. Scripts read
+immutable inputs such as `sim.hunger` and `interaction.duration`, and
+report effects only by calling `effect.fulfill(motive, strengthPerSecond)`.
+The engine validates those calls into `MotiveSignal` values; scripts never
+read or write authoritative state. Evaluation is pure and deterministic.
+The session does not run interaction scripts yet. See the
+[Robusta README](../Sources/MotiveEngine/VM/README.md#host-boundary) for
+the full input table and error behavior.
 
 ## A gradual implementation path
 
@@ -285,7 +293,8 @@ rules and authoritative state remain owned by engine systems.
    and testable transformations.
 6. Define event and extension contracts for buffs (done) and aspirations.
 7. Coordinate systems through explicit simulation phases and snapshots.
-8. Integrate movement, lot/household state, and the scripting boundary.
+8. Integrate movement, lot/household state, and the scripting boundary
+   (boundary defined; session integration planned).
 
 Each step should preserve working behavior, add focused tests, and
 document user-facing APIs once they are supported.
