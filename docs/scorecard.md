@@ -1,167 +1,171 @@
-# Engineering Scorecard
+# Motive Engine scorecard
 
-> Generated scorecard for performance budgets, corpus floors, and per-area
-> regression checklists. Update this document when the workloads or supported
-> behavior change.
+Maintained by hand until a generator checks it in CI (planned in Akita; see
+the [roadmap](./ROADMAP.md)). Every status below was verified against the
+code and tests on 2026-10-14: each note names the source file or test that
+proves it. Numbers here supersede estimates elsewhere.
 
-## Performance budgets
+When a change affects a row, update its status and evidence in the same
+pull request. Statuses are `done`, `partial`, and `missing`.
 
-The p95 budgets below are enforced by the `ci.yml` workflow. The measurements
-are an initial local baseline and are not from a pinned runner. Re-run them on
-a consistent host before using them to compare changes.
+## Summary
 
-Use an optimized Swift build, warm each workload before sampling, and report
-the p95 of at least 30 timed iterations. Exclude fixture construction and
-include the full operation under test. Record the Swift version, machine, and
-build configuration with results.
+| Area | Done | Partial | Missing | Key numbers |
+|---|---:|---:|---:|---|
+| [Performance](#performance) | 4 | 0 | 4 | 4 benchmarks, all within budget; 4 scenarios not benchmarked yet (baseline 2026-10-14) |
+| [Simulation core](#simulation-core) | 10 | 1 | 3 | |
+| [Buffs](#buffs) | 5 | 0 | 0 | |
+| [Scripting](#scripting) | 6 | 1 | 1 | 100,000-instruction and 256-call limits |
+| [Content packs](#content-packs) | 7 | 0 | 2 | pack format 1 |
+| [Wants and fears](#wants-and-fears) | 8 | 0 | 1 | |
+| [Reliability](#reliability) | 4 | 1 | 1 | 0 force unwraps, `try!`, `fatalError`, or `precondition` in `Sources/` |
+| [Documentation and schemas](#documentation-and-schemas) | 2 | 1 | 1 | 4 schemas, 3 with decoded examples |
+| [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
+| [Known issues](#known-issues) | | | | 6 open |
 
-| Area | Workload | Budget (p95) | Measured p50 | Measured p95 |
-| --- | --- | ---: | ---: | ---: |
-| Motives | Decay 10,000 complete motive snapshots across all 6 motive types for one simulated second | 50 ms | 24.353 ms | 35.050 ms |
-| Eligibility | Evaluate 10,000 offers against prebuilt actor and item snapshots | 50 ms | 0.675 ms | 0.881 ms |
-| Autonomy | Rank 1,000 eligible offers against a complete 6-motive snapshot | 25 ms | 1.291 ms | 1.516 ms |
-| Robusta | Tokenize and compile a 10,001-token representative source corpus | 100 ms | 16.697 ms | 19.534 ms |
+`swift test` passed all 169 tests across both libraries on 2026-10-14.
 
-Measurements were collected on 2026-10-14 with Swift 6.3.3 in release
-configuration on Linux x86_64 (Bazzite, kernel 7.2.9). Each workload used one
-warm-up followed by 30 timed samples. The benchmark executable is
-`swift run -c release MotiveEngineBenchmarks`; fixture construction is outside
-the timed region. CI runs the same command and writes its results to the
-workflow summary. The Robusta corpus has 10,001 tokens including EOF.
+## Performance
 
-Do not trade determinism, validation, or observable behavior for a budget.
-When a workload exceeds its limit, profile it first and keep the benchmark
-input and environment fixed while comparing changes.
+Budgets are p95 limits for one workload run. The benchmark executable warms
+each workload once, then times 30 samples; fixture setup is outside the
+timed region. Run it with:
 
-## Latest test result
+```sh
+swift run -c release MotiveEngineBenchmarks
+```
 
-- 2026-10-14: `swift test` passed 160 tests after adding content packs.
+It exits with an error when a workload breaks its budget. CI doesn't run it
+yet, so budgets are only checked when someone runs it locally.
 
-- 2026-10-14: `swift test` passed 144 tests after adding typed script
-  failures and load-time `effect.fulfill` checks.
+Baseline: 2026-10-14, Swift 6.3.3, release configuration, Linux x86_64
+(Bazzite, kernel 7.2.9). Not a pinned machine: compare changes on the same
+host.
 
-- 2026-10-14: `swift test` passed 141 tests after running interaction scripts
-  in the simulation session.
+| Id | Workload | Budget (p95) | p50 ms | p95 ms | Status |
+|---|---|---:|---:|---:|---|
+| P1 | Decay 10,000 complete motive snapshots over one simulated second | 50 ms | 24.84 | 26.10 | within budget |
+| P2 | Evaluate eligibility for 10,000 offers | 50 ms | 0.72 | 0.93 | within budget |
+| P3 | Rank 1,000 eligible offers for one Sim | 25 ms | 1.13 | 1.42 | within budget |
+| P4 | Tokenize and compile a 10,001-token Robusta program | 100 ms | 18.15 | 23.70 | within budget |
 
-- 2026-10-14: `swift test` passed 136 tests after aligning the code with the
-  Swift style guide: shared `StringIdentifier` conformance, removed dead
-  code, documented public API, and parameterized tests.
+**Not benchmarked yet.** These paths exist but have no benchmark, so no
+number is recorded. Budgets are proposals until a first measurement.
 
-- 2026-10-14: `swift test` passed 134 tests after adding timed buffs and the
-  SWAF fulfillment buff.
+| Id | Scenario | Proposed budget | Why not yet |
+|---|---|---:|---|
+| P5 | One session step with 100 Sims and 200 items | 16 ms | no session benchmark fixture |
+| P6 | Load and compose 50 packs with 2,000 items | 500 ms | no generated pack corpus |
+| P7 | Start 1,000 scripted actions | 50 ms | no session benchmark fixture |
+| P8 | Reroll wants and fears for 100 Sims | 10 ms | SWAF has no benchmark target |
 
-- 2026-10-14: `swift test` passed 128 tests after adding SWAF wish mode.
+## Simulation core
 
-- 2026-10-14: `swift test` passed 123 tests across 14 suites after moving
-  SWAF into the `MotiveEngineSWAF` target with its own test target.
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| CORE-1 | Motive snapshots and decay rates are complete, finite, and clamped to 0–100 | done | `Motives.swift`; `requiresEveryMotiveAndClampsFiniteLevels`, `requiresFiniteNonnegativeDecayRateForEveryMotive`, `rejectsMissingAndNonFiniteMotiveLevels` |
+| CORE-2 | Decay and fulfillment are pure, clamped transformations | done | `decayAndFulfillmentReturnClampedNewValues`, `finiteExtremeRatesAndSignalsSaturateAtBounds`, `rejectsInvalidElapsedTimeAndNonFiniteSignals` |
+| CORE-3 | Item definitions are separate from placed instances | done | `definitionCatalogAndPlacedInstancesUseDifferentIDs` |
+| CORE-4 | Interaction content is validated: names, durations, strengths, duplicate IDs, capacity | done | `interactionDefinitionsRejectInvalidContent`, `catalogRejectsDuplicateDefinitionIDs`, `catalogRejectsDuplicateInteractionIDsWithinADefinition`, `itemDefinitionsRejectNonpositiveInteractionCapacity` |
+| CORE-5 | Eligibility reports every unmet requirement in a stable order, including capacity edges | done | `eligibilityReportsEveryUnmetRequirementInStableOrder`, `eligibilityAllowsAvailableActorAndItemAtCapacityBoundary`, `zeroCapacityAndOverCapacityItemsAreUnavailable`, `missingEligibilitySnapshotsAreReported` |
+| CORE-6 | Free will scores by urgency, breaks ties by stable ID, and picks nothing when nothing helps | done | `autonomyScoresAdvertisedBenefitsByCurrentMotiveUrgency`, `autonomyRankingUsesStableIDsForTiesAndRejectsNonPositiveChoices`, `autonomyScoringReportsOverflowInsteadOfReturningInvalidScores` |
+| CORE-7 | Actions start, progress, complete, and stop without undoing applied effects | done | `actionProgressAppliesEffectsAndCompletesAtConfiguredDuration`, `actionInterruptionAndFailurePreservePriorProgressAndEffects`, `actionProgressRejectsInvalidElapsedTime` |
+| CORE-8 | World state validates IDs, references, households, positions, and occupancy | done | `simulationStateRejectsMissingAndDuplicateReferences`, `simulationStateValidatesSimPositionsAndUniqueOccupancy`, `lotStateValidatesGridBoundsAndUniqueItemIDs`, `simulationEntitiesRejectDuplicateIDsAndHouseholdMembers` |
+| CORE-9 | The session runs every phase in the declared order and reserves capacity | done | `standardSimulationPhaseOrderMatchesTheDeclaredWriteSequence`, `simulationSessionRoutesThenExecutesRequestedInteraction`, `simulationSessionReservesItemCapacityAndRollsBackInvalidCommands` |
+| CORE-10 | Routing avoids blocking items and Sims, and waits when approaches are temporarily full | done | `interactionRoutingAvoidsBlockedAndOccupiedPositions`, `interactionRoutingReportsNoFreeApproachTile`, `simulationSessionWaitsWhenSimsBlockEveryApproachTile` |
+| CORE-11 | Sims interact with each other, with relationships | missing | No Sim-to-Sim offers or relationship state; lot files' `relationship` field is ignored (Chuo) |
+| CORE-12 | A game in progress saves and restores, including running actions | partial | `ContentHealth` is `Codable` (`healthSurvivesASaveAndRejectsTamperedValues`); `SimulationState` is not, and `InteractionActionState` has no public initializer (Shikoku) |
+| CORE-13 | The world changes while running: items placed or removed, Sims arriving, leaving, or changing lots | missing | `SimulationSession` has no commands for these; a game must build a new session (Shikoku) |
+| CORE-14 | Posture changes and sleep | missing | `SimPosture` exists but the session never changes it; sleep tracking in `Household.swift` is internal and unused by the session (San'in) |
 
-- 2026-10-14: `swift test` passed 124 tests across 14 suites after replacing
-  the sample wants and fears utilities with the SWAF extension.
+## Buffs
 
-- 2026-10-14: `swift test` passed 112 tests across 14 suites after adding
-  optional-extension absence tests.
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| BUFF-1 | Rule sets reject duplicate IDs and run rules in ID order | done | `ruleSetsRejectDuplicateIDsAndSortRulesByID` |
+| BUFF-2 | Evaluation is pure, sums before clamping, and changes nothing over zero time | done | `evaluationOrdersEffectsByIDAndSumsBeforeClamping`, `evaluationIsRepeatableAndZeroTimeLeavesMotivesUnchanged`, `evaluationRejectsInvalidTimeAndNonFiniteSignals` |
+| BUFF-3 | Ambient buffs reach Sims on the same lot within a radius, including hybrid items | done | `ambientRuleAppliesNearbyAmbientItemsOnTheSimsLot`, `ambientRuleIncludesHybridItemsAndOrdersByInstanceID`, `ambientRuleIgnoresSimsWithoutALotOrPosition`, `ambientRuleRejectsNegativeRadiusAndUnknownDefinitions` |
+| BUFF-4 | The session applies buffs after decay, and changes nothing without them | done | `sessionAppliesBuffsAfterMotiveDecay`, `sessionWithoutBuffsEmitsNoBuffEvents`, `emptyAndInertBuffRulesMatchASessionWithoutBuffs` |
+| BUFF-5 | Timed buffs apply only for their remaining time, restart without stacking, and expire with an event | done | `timedBuffsApplyOnlyForTheirRemainingTime`, `sessionAppliesRestartsAndExpiresTimedBuffs`, `timedBuffsRejectInvalidDurations`, `timedBuffCommandsAndStateAreValidated` |
 
-- 2026-10-14: `swift test` passed 109 tests across 13 suites after adding
-  the typed Robusta interaction-script boundary.
+## Scripting
 
-- 2026-10-14: `swift test` passed 101 tests across 12 suites after adding
-  the buff contract, the `buffs` session phase, and the ambient buff rule.
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| SCRIPT-1 | The lexer handles every token kind and reports errors with line numbers | done | `LexerTests.swift`: 13 tests, including `unterminatedStringThrows` and `unrecognizedCharacterThrows` |
+| SCRIPT-2 | Source, syntax tree, and JSON IR run identically; malformed IR is rejected | done | `supportsAllPipelineRunEntryPoints`, `roundTripsMutableAndNestedInstructions`, `rejectsUnknownInstructions`, `rejectsUnexpectedOperands` |
+| SCRIPT-3 | Language semantics: references, Bool and Trilean logic, `match`, `try`, states | done | `aliasesShareTheReferencedValue`, `keepsBooleanAndTrileanLogicSeparate`, `runsMatchAndTryCatch`, `transitionsBetweenStates`, `rejectsUnknownStateTransition` |
+| SCRIPT-4 | Runaway scripts stop at the instruction and call-depth limits | partial | The instruction limit is tested (`runtimeFailuresPropagateWithoutPartialEffects`); the 256-call depth limit in `Runtime.swift` has no test |
+| SCRIPT-5 | Interaction scripts read declared, read-only inputs and report effects only through `effect.fulfill` | done | `scriptsReadDeclaredInputsAndReportEffects`, `everyMotiveIsAvailableAsAnInput`, `scriptsCannotRedeclareInputsOrHostFunctions` |
+| SCRIPT-6 | Invalid effects are rejected at load when literal, and at run time otherwise | done | `invalidLiteralEffectsAreRejectedWhenLoaded`, `invalidComputedEffectsAreRejectedWhenRun`, `computedArgumentsAreAcceptedWhenLoaded` |
+| SCRIPT-7 | The session runs scripts when actions start; a failure fails only that action | done | `ScriptedSessionTests.swift`: `scriptEffectsReplaceWrittenEffectsAndStayFixedForTheAction`, `autonomyReportsAFailedScriptAndChoosesTheNextUsefulOffer`, `invalidRuntimeEffectsAreReportedAsTypedFailures` |
+| SCRIPT-8 | Runtime errors report the source line | missing | The JSON IR carries no line information (Yamagata Phase 5) |
 
-- 2026-10-14: `swift test` passed 95 tests across 12 suites after adding
-  Sim positions, interaction routing, and the simulation session. The
-  optimized benchmark measurements above were collected on the same date.
+## Content packs
 
-## Regression corpus floors
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| PACK-1 | Manifests validate IDs, names, format, dependencies, and overrides | done | `packIDsRejectSeparatorsAndWhitespace`, `manifestsDecodeWithDefaults`, `manifestsRejectInvalidValues` |
+| PACK-2 | Packs load items and compile scripts, reporting each bad file with its path | done | `packsLoadManifestItemsAndScripts`, `packsWithoutItemsLoadEmpty`, `invalidFilesAreReportedWithTheirPath` |
+| PACK-3 | Unpacked folders load, and no path or symbolic link can leave the pack | done | `unpackedFoldersLoadThroughTheDirectorySource`, `directorySourcesRejectPathsOutsideThePack`, `directorySourcesRejectLinksThatLeaveThePack` |
+| PACK-4 | Composition orders packs after dependencies, namespaces IDs, and rejects broken sets | done | `compositionQualifiesIDsAndOrdersDependenciesFirst`, `compositionRejectsBrokenPackSets` |
+| PACK-5 | Overrides must be declared and come from dependencies; conflicts are reported | done | `declaredOverridesReplaceDependencyContent`, `invalidOverridesAreRejected`, `competingOverridesUseTheLatestPackAndReportTheConflict` |
+| PACK-6 | Failing scripts escalate: cooldown, fallback, disabled interaction, disabled pack and dependents | done | `ContentHealthTests.swift`: `failingScriptsCoolDownThenFallBackToWrittenEffects`, `scriptOnlyInteractionsAreDisabledAndCommandsRejected`, `repeatedBreakageDisablesThePackAndItsDependents`, `enablingAPackRestoresItsDependentsAndInteractions` |
+| PACK-7 | Content health saves and restores; tampered values are rejected | done | `healthSurvivesASaveAndRejectsTamperedValues` |
+| PACK-8 | A packed format for distributing packs | missing | Format not chosen yet (Yamagata Phase 4) |
+| PACK-9 | Wants and fears load from packs | missing | `MotiveEngineSWAF` reads only standalone JSON (Nishi-Kyushu) |
 
-These are minimum coverage expectations for the maintained test corpus, not
-claims about the current number of tests. Keep fixtures small and deterministic.
+## Wants and fears
 
-| Area | Minimum corpus floor |
-| --- | --- |
-| Motives | Exercise all 6 `MotiveType` values; cover levels 0, 50, and 100; cover zero and positive decay; reject missing values, out-of-range/non-finite values, negative elapsed time, and non-finite signals. |
-| Item definitions and offers | Use 1 definition referenced by at least 2 placed instances; cover default and invalid interaction capacity, a valid offer, duplicate IDs, an unknown definition, invalid duration, and non-finite benefit/effect strengths. |
-| Eligibility | Cover every declared eligibility failure reason, missing snapshots, a passing case, occupancy exactly at capacity, and occupancy above capacity. |
-| Autonomy | Cover all 6 motives, positive/zero/negative scores, no useful offer, non-finite scoring input, and ties resolved by each documented identifier key. |
-| Actions | Cover start, progress, completion, duration overrun, interruption, failure, and attempts to advance or terminate a terminal action. |
-| Buffs | Cover rule-set ID validation and ordering, effect attribution, summing before clamping, repeatable and zero-time evaluation, invalid time and non-finite signals, ambient radius and lot boundaries, hybrid ambient items, a session with and without buffs, and timed buffs: invalid durations and signals, partial and overrun time, zero time, start, restart without stacking, expiry, missing Sims, and duplicate IDs. |
-| Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, routes around blocked and occupied cells, ambient classifications, and sleep/wake roster changes including repeated events. |
-| World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, Sim position and occupancy, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, session phase behavior, and the declared phase order. |
-| Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
-| Interaction scripts | Read every declared input, report effects in call order, reject the reserved `effect` module and input assignment, reject each invalid literal `effect.fulfill` call at load time (including nested blocks and wrong argument counts), accept computed arguments, report each invalid computed effect when run, propagate runtime failures and the instruction limit without partial effects, and evaluate repeatably. |
-| Scripted interactions in a session | Cover script effects replacing written effects, effects fixed for the action's duration, a failed command script that fails only that action without same-step autonomy, typed runtime and invalid-effect failures, autonomy falling back to the next useful offer, unscripted actions, and offers carrying scripts. |
-| Optional extensions | Run a session through autonomous selection, movement, and completion with no extensions; show default, empty, and inert buff rule sets produce identical step results; and execute authored effects without a script. |
-| Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, invalid restored boards, and wish mode: promise-only fulfillment, offer expiry leaving empty slots, aging without a lifetime, cancellation, invalid lifetimes and ages, and fulfillment buffs granted once per update and applied through session commands. |
-| Content packs | Reject invalid pack IDs and manifest values; load manifests, items, and scripts from memory and from a folder; report each invalid file with its path; reject paths and symbolic links that leave the pack; order packs after their dependencies; reject duplicate packs, missing dependencies, and cycles; qualify IDs; apply declared overrides and reject undeclared, non-dependency, missing, never-defined, and malformed ones; report competing overrides; decode both schema examples; and run composed content in a session. |
-| Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| SWAF-1 | Catalogs decode every trigger form and reject invalid content | done | `catalogDecodesEveryTriggerAndWeight`, `catalogRejectsInvalidContent`, `schemaExampleDecodes` |
+| SWAF-2 | Rolls are seeded and weighted by tags and motive urgency | done | `rerollIsRepeatableForASeedAndFillsEachSlotOnce`, `rollWeightCombinesTagsAndMotiveUrgency`, `tiredSimsRollTheSleepWant` |
+| SWAF-3 | Entries are fulfilled by interactions, low motives, game events, or directly | done | `completedInteractionsFulfillWantsAndRerollThatSlot`, `realizedFearsLowerAspirationAndRewardPointsWithoutGoingNegative`, `gameEventsAndDirectFulfillmentUseTheSameRules` |
+| SWAF-4 | Aspiration and reward points stay in range; untracked Sims still earn points | done | `untrackedSimsEarnPointsWithoutMovingTheBar`, `aspirationDecaysAndRejectsInvalidInput` |
+| SWAF-5 | Locked entries survive rerolls, including when slots shrink | done | `lockedEntriesSurviveRerollsUntilFulfilled`, `lockedEntriesAreKeptWhenSlotsShrink` |
+| SWAF-6 | Wish mode: promises, expiring offers, cancellation | done | `wishModeFulfillsOnlyPromisedEntries`, `unpromisedOffersExpireAndLeaveTheirSlotEmpty`, `cancelRemovesPromisedAndOfferedEntries` |
+| SWAF-7 | Fulfilled wishes grant a timed buff through session commands | done | `fulfilledWishesGrantTheFulfillmentBuff`, `fulfillmentBuffCommandsDriveTheSession` |
+| SWAF-8 | Wants targeting a specific Sim or item; lifetime wants | missing | Nishi-Kyushu |
+| SWAF-9 | SWAF ships separately and uses only the core's public API | done | `Package.swift`: the `MotiveEngineSWAF` target depends only on `MotiveEngine`, so the compiler enforces the boundary |
 
-## Per-area checklists
+## Reliability
 
-### Motives
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| REL-1 | No force unwraps, `try!`, `fatalError`, or `precondition` in library code | done | Searched `Sources/` on 2026-10-14: none. Not yet enforced automatically (REL-6) |
+| REL-2 | Invalid input is reported as typed errors where it enters the engine | done | Validation tests in every area above; content errors carry the file path (`invalidFilesAreReportedWithTheirPath`) |
+| REL-3 | Results are deterministic | done | `rerollIsRepeatableForASeedAndFillsEachSlotOnce`, `evaluationIsRepeatableAndZeroTimeLeavesMotivesUnchanged`, `simulationSnapshotOrdersTopLevelEntitiesByStableID`, `emptyAndInertBuffRulesMatchASessionWithoutBuffs` |
+| REL-4 | A failed step leaves the session unchanged | done | `simulationSessionReservesItemCapacityAndRollsBackInvalidCommands`, `timedBuffCommandsAndStateAreValidated` |
+| REL-5 | Hostile content can't hang the engine or read outside its pack | partial | Instruction limit and path and link checks are tested; the lexer, parser, and decoders are not fuzzed |
+| REL-6 | A lint enforces REL-1 in CI | missing | Checked by hand only |
 
-- [ ] Values and rates remain complete across all 6 motive types.
-- [ ] Bounds, finite-number validation, clamping, and deterministic ties are tested.
-- [ ] Pure transformations do not mutate their input snapshots.
-- [x] Performance is measured with the 10,000-snapshot workload.
+## Documentation and schemas
 
-### Content, offers, and eligibility
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| DOC-1 | Every public declaration has a documentation comment | done | Checked across `Sources/` on 2026-10-14 |
+| DOC-2 | Every content file has a schema whose example is decoded by a test | partial | `pack.json`, `pack-items.json`, and `swaf.json` examples are decoded (`schemaExamplesLoadAndCompose`, `schemaExampleDecodes`); legacy `schema/items.json` has no decode test and references a missing `common.schema.json` |
+| DOC-3 | Schemas are checked by a JSON Schema validator | missing | Tests decode examples with the engine only |
+| DOC-4 | Architecture, modding, and contributor guides match the code | done | Reviewed 2026-10-14 |
 
-- [ ] Definitions remain separate from placed-item identity and position.
-- [ ] Advertised benefits remain separate from effects applied by actions.
-- [ ] Every explicit eligibility reason has a regression case.
-- [ ] Capacity boundaries and missing-context behavior are covered.
-- [x] Performance is measured with the 10,000-offer workload.
+## Distribution
 
-### Autonomy and actions
+| Id | Target | Status | Evidence |
+|---|---|---|---|
+| DIST-1 | Swift Package Manager products `MotiveEngine` and `MotiveEngineSWAF` | done | `Package.swift` |
+| DIST-2 | CI builds and tests every push and pull request to `main` | done | `.github/workflows/swift.yml` (macOS) |
+| DIST-3 | CI also builds and tests on Linux | missing | CI runs on macOS only; Linux is tested locally |
+| DIST-4 | Release archives are built from `rel/*` and `release/*` after tests pass | done | `.github/workflows/release.yml` |
+| DIST-5 | CI runs the benchmarks and checks this scorecard | missing | Removed from CI; planned in Akita |
 
-- [ ] Ranking considers eligible offers only and does not mutate simulation state.
-- [ ] Positive-score usefulness and deterministic tie-breaking are covered.
-- [ ] Action transitions apply effects only for active elapsed time.
-- [ ] Completion, interruption, failure, and terminal-state behavior are covered.
-- [x] Performance is measured with the 1,000-offer workload.
+## Known issues
 
-### Buffs
-
-- [x] Rule sets reject duplicate IDs and evaluate rules in ID order.
-- [x] Evaluation is pure, repeatable, and independent of rule order.
-- [x] Sessions without buffs are unchanged; sessions with buffs apply them
-  after motive decay.
-
-### Grid and household
-
-- [ ] Non-square maps and edge coordinates are covered.
-- [ ] Pathfinding handles blocked, reachable, and unreachable destinations.
-- [ ] Sleep/wake tracking is consistent under duplicate or out-of-order events.
-
-### World state and phase plan
-
-- [x] Stable identities, duplicate IDs, and missing world references are
-  validated by public API tests.
-- [x] Household membership is independent from current lot occupancy.
-- [x] Lot bounds and placed-item uniqueness are validated locally and across
-  lots.
-- [x] The standard simulation phase order is covered by a public API test.
-- [x] Snapshots sort entities by stable ID; step results preserve event order.
-- [x] Routing avoids blocking items and occupied Sim tiles.
-- [x] Session commands, motive decay, autonomy, movement, and action execution
-  produce validated state and ordered events.
-- [x] Item occupancy reservations respect definition capacity; temporary
-  Sim-occupied routes wait instead of failing.
-
-### Robusta
-
-- [ ] Lexer and parser fixtures cover successful and invalid input.
-- [ ] IR encode/decode behavior rejects unknown or malformed instructions.
-- [ ] Runtime errors remain explicit and do not terminate the host process.
-- [x] Performance is measured using the same 10,001-token source corpus.
-
-### Interaction scripts
-
-- [x] Scripts read only declared, immutable inputs.
-- [x] Effects are validated by the engine and never applied by the script.
-- [x] Failures are explicit errors and return no partial effects.
-
-### Documentation and schemas
-
-- [ ] Schemas match the supported decoding and validation behavior.
-- [ ] Proposed behavior is labeled as planned rather than implemented.
-- [ ] Public API or behavior changes are reflected in the relevant docs.
+| Id | Issue | Status | Note |
+|---|---|---|---|
+| BUG-1 | A file could be swapped between `DirectoryContentSource`'s link check and its read | accepted | Closing it needs lower-level file handling; acceptable for mod folders |
+| BUG-2 | One Sim's state-specific script failures count toward disabling the script for every Sim | accepted | By design; the threshold and reset on success soften it |
+| BUG-3 | A disabled pack's overrides leave the original item inert until the game recomposes | accepted | By design; recomposing without the pack restores the original |
+| BUG-4 | The legacy item decoder (`Item`) skips unknown motive names silently | open | Content packs reject them; the legacy lot format doesn't |
+| BUG-5 | Enabling a pack that isn't disabled still clears its interactions' history and reports `packEnabled` | open | Owner decision: keep as a reset, or make it a no-op |
+| BUG-6 | The manifest's `version` and `format` field names | deferred | Owner decision pending |

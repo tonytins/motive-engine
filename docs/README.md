@@ -13,15 +13,16 @@ In theory, it should be possible run this from the terminal using nothing but an
 
 ## Start here
 
-- [Roadmap](./ROADMAP.md) — completed foundations and planned milestones.
+- [Roadmap](./ROADMAP.md) — the alpha gate, milestones, estimates, and
+  what comes next.
 - [Architecture overview](./architecture.md) — current foundations and
   the proposed data-oriented direction.
 - [Modding guide](./modding.md) — building content packs: manifests,
   items, scripts, and overrides.
 - [Contributor guide](./contributing.md) — build, test, and contribution
   expectations.
-- [Engineering scorecard](./scorecard.md) — advisory performance budgets
-  and regression-corpus floors.
+- [Engineering scorecard](./scorecard.md) — performance budgets and verified
+  status for every area, with the tests that prove it.
 
 ## Documentation roadmap
 

@@ -19,7 +19,7 @@ The Motives Engine provides the framework for creating characters with needs, as
 	- [x] Run interaction scripts in the simulation session
 - [x] Content packs: manifests, dependencies, namespaced IDs, overrides,
   and unpacked folders, for base content, expansions, and mods alike
-	- [ ] Script health: cooldowns and disabling broken content
+	- [x] Script health: cooldowns and disabling broken content
 	- [ ] Packed pack format
 - [x] Wants and fears (SWAF), as an optional product
 	- [x] The Sims 2-style wants and fears
@@ -73,7 +73,7 @@ does not simulate yet, such as `relationship`, are ignored.
 Start at [`docs/`](./docs/README.md) for the public documentation index and
 the proposed engine architecture. See the [contributor guide](./docs/contributing.md)
 for development workflow and the [engineering scorecard](./docs/scorecard.md)
-for performance budgets and regression coverage floors.
+for performance budgets and the verified status of each area.
 
 ## ✅ Supported Versions
 

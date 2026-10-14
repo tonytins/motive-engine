@@ -14,9 +14,9 @@ clear about what works today and what remains planned.
 | [README.md](./README.md) | Package purpose, installation, and supported Swift version. |
 | [docs/README.md](./docs/README.md) | Public documentation index and documentation scope. |
 | [docs/architecture.md](./docs/architecture.md) | Current foundations and proposed system boundaries. |
-| [docs/ROADMAP.md](./docs/ROADMAP.md) | Milestones and the distinction between completed and planned work. |
+| [docs/ROADMAP.md](./docs/ROADMAP.md) | The alpha gate, milestones with estimates, ranked upcoming work, and revision history. |
 | [docs/contributing.md](./docs/contributing.md) | Local workflow and expectations for changes. |
-| [docs/scorecard.md](./docs/scorecard.md) | Performance budgets, measurement status, and regression-corpus floors. |
+| [docs/scorecard.md](./docs/scorecard.md) | Performance budgets and verified per-area status, each row citing its evidence. |
 | [Sources/MotiveEngine/VM/README.md](./Sources/MotiveEngine/VM/README.md) | Robusta language and runtime notes. |
 
 ## 2. Workspace map
@@ -51,10 +51,11 @@ library can decide how to respond.
 
 ## 4. Picking work
 
-Check [docs/ROADMAP.md](./docs/ROADMAP.md) before starting. Prefer the next
-unblocked milestone item, and treat unchecked items as plans rather than
-available behavior. Use [docs/scorecard.md](./docs/scorecard.md) when a
-change affects performance or regression coverage. Measure before optimizing;
+Check [docs/ROADMAP.md](./docs/ROADMAP.md) before starting. Follow its
+current focus and ranked work, and treat unchecked items as plans rather
+than available behavior. When a change lands, update its milestone row,
+checklist, and revision history. Update the matching
+[docs/scorecard.md](./docs/scorecard.md) rows with status and evidence. Measure before optimizing;
 record actual results separately from target budgets.
 
 For each change, define the behavior and its boundary cases, add focused tests,
@@ -65,7 +66,7 @@ extensions to core simulation behavior.
 ## 5. Where things are tracked
 
 - Milestone status and sequencing: [docs/ROADMAP.md](./docs/ROADMAP.md).
-- Performance targets and corpus floors: [docs/scorecard.md](./docs/scorecard.md).
+- Performance budgets and per-area status: [docs/scorecard.md](./docs/scorecard.md).
 - Executable behavior: `Sources/` and regression tests in `Tests/`.
 - Public concepts and intended boundaries: [docs/architecture.md](./docs/architecture.md).
 - Contribution workflow: [docs/contributing.md](./docs/contributing.md).
