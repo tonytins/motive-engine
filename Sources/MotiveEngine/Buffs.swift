@@ -71,6 +71,40 @@ public enum BuffError: Error, Equatable, Sendable {
 
     /// An ambient radius is negative.
     case invalidRadius
+
+    /// A timed buff's remaining time is not positive and finite.
+    case invalidDuration(BuffID)
+}
+
+/// A buff that applies fixed signals to one Sim for a limited time.
+///
+/// Timed buffs are instance state stored on `SimStateData`, unlike rules,
+/// which hold no state. Start one with `SimulationCommand.applyBuff`.
+public struct TimedBuff: Equatable, Sendable {
+    /// The stable identity. A Sim has at most one timed buff per ID.
+    public let id: BuffID
+
+    /// The per-second motive signals applied while the buff lasts.
+    public let signals: [MotiveSignal]
+
+    /// The simulated seconds left before the buff expires.
+    public let remainingSeconds: Double
+
+    /// Creates a timed buff lasting `durationSeconds`.
+    ///
+    /// - Throws: `BuffError.invalidDuration` if the duration is not positive
+    ///   and finite, or `BuffError.nonFiniteSignal` for a non-finite signal.
+    public init(id: BuffID, signals: [MotiveSignal], durationSeconds: Double) throws {
+        guard durationSeconds.isFinite, durationSeconds > 0 else {
+            throw BuffError.invalidDuration(id)
+        }
+        for signal in signals where !signal.strengthPerSecond.isFinite {
+            throw BuffError.nonFiniteSignal(buffID: id, motiveType: signal.motiveType)
+        }
+        self.id = id
+        self.signals = signals
+        remainingSeconds = durationSeconds
+    }
 }
 
 /// Buff rules ordered by stable identity.
@@ -119,21 +153,30 @@ public struct BuffEffect: Equatable, Sendable {
 
 /// The result of applying buffs to one Sim over elapsed time.
 public struct BuffEvaluation: Equatable, Sendable {
-    /// Effects from rules that applied, ordered by buff ID.
+    /// Effects from rules that applied, ordered by buff ID, followed by
+    /// effects from the Sim's timed buffs, ordered by buff ID.
     public let effects: [BuffEffect]
 
     /// Motive values after applying every effect.
     public let motives: MotiveLevels
+
+    /// The Sim's timed buffs with time remaining, ordered by buff ID.
+    public let timedBuffs: [TimedBuff]
+
+    /// Timed buffs that ran out during this evaluation, ordered by buff ID.
+    public let expiredBuffIDs: [BuffID]
 }
 
 /// Pure buff evaluation and application.
 public enum BuffSystem {
-    /// Evaluates every rule for one Sim and applies their signals.
+    /// Evaluates every rule and timed buff for one Sim and applies their signals.
     ///
     /// Rules run in `BuffID` order. Rules that return no signals are omitted
-    /// from the effects. All signals are summed before the result is clamped,
-    /// so the motive result does not depend on rule order. Zero elapsed time
-    /// reports effects but leaves motives unchanged.
+    /// from the effects. Each of the Sim's timed buffs applies only for its
+    /// remaining time, then expires. All changes are summed before the
+    /// result is clamped, so the motive result does not depend on order.
+    /// Zero elapsed time reports effects but leaves motives and timed buffs
+    /// unchanged.
     ///
     /// - Throws: `BuffError.nonFiniteSignal` for an invalid rule result,
     ///   `MotiveLevelsError.invalidElapsedSeconds` for invalid time, or any
@@ -148,6 +191,8 @@ public enum BuffSystem {
         }
 
         var effects: [BuffEffect] = []
+        // Each change is a rate multiplied by that effect's own active time.
+        var changes: [MotiveSignal] = []
         for rule in ruleSet.rules {
             let signals = try rule.signals(in: context)
             guard !signals.isEmpty else {
@@ -157,14 +202,38 @@ public enum BuffSystem {
                 throw BuffError.nonFiniteSignal(buffID: rule.id, motiveType: signal.motiveType)
             }
             effects.append(BuffEffect(buffID: rule.id, signals: signals))
+            changes += signals.map { scaled($0, by: elapsedSeconds) }
         }
 
-        let motives = try MotiveSystem.fulfill(
-            context.sim.motives,
-            with: effects.flatMap(\.signals),
-            overSeconds: elapsedSeconds
+        var remainingBuffs: [TimedBuff] = []
+        var expiredBuffIDs: [BuffID] = []
+        for buff in context.sim.timedBuffs.sorted(by: { $0.id.rawValue < $1.id.rawValue }) {
+            let activeSeconds = min(elapsedSeconds, buff.remainingSeconds)
+            effects.append(BuffEffect(buffID: buff.id, signals: buff.signals))
+            changes += buff.signals.map { scaled($0, by: activeSeconds) }
+            let remainingSeconds = buff.remainingSeconds - activeSeconds
+            if remainingSeconds > 0 {
+                remainingBuffs.append(try TimedBuff(
+                    id: buff.id,
+                    signals: buff.signals,
+                    durationSeconds: remainingSeconds
+                ))
+            } else {
+                expiredBuffIDs.append(buff.id)
+            }
+        }
+
+        let motives = try MotiveSystem.fulfill(context.sim.motives, with: changes, overSeconds: 1)
+        return BuffEvaluation(
+            effects: effects,
+            motives: motives,
+            timedBuffs: remainingBuffs,
+            expiredBuffIDs: expiredBuffIDs
         )
-        return BuffEvaluation(effects: effects, motives: motives)
+    }
+
+    private static func scaled(_ signal: MotiveSignal, by seconds: Double) -> MotiveSignal {
+        MotiveSignal(motiveType: signal.motiveType, strengthPerSecond: signal.strengthPerSecond * seconds)
     }
 }
 

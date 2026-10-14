@@ -107,6 +107,9 @@ public struct SimStateData: Equatable, Sendable {
     /// The interaction the Sim is currently executing, if any.
     public let activeAction: InteractionActionState?
 
+    /// Timed buffs currently affecting the Sim.
+    public let timedBuffs: [TimedBuff]
+
     /// Creates state for one Sim.
     public init(
         id: SimID,
@@ -114,7 +117,8 @@ public struct SimStateData: Equatable, Sendable {
         posture: SimPosture,
         currentLotID: LotID? = nil,
         position: GridPosition? = nil,
-        activeAction: InteractionActionState? = nil
+        activeAction: InteractionActionState? = nil,
+        timedBuffs: [TimedBuff] = []
     ) {
         self.id = id
         self.motives = motives
@@ -122,6 +126,7 @@ public struct SimStateData: Equatable, Sendable {
         self.currentLotID = currentLotID
         self.position = position
         self.activeAction = activeAction
+        self.timedBuffs = timedBuffs
     }
 }
 
@@ -238,6 +243,9 @@ public enum SimulationStateError: Error, Equatable, Sendable {
 
     /// Placed item IDs must be unique across all lots.
     case duplicatePlacedItemID(ItemInstanceID)
+
+    /// A Sim has more than one timed buff with the same ID.
+    case duplicateTimedBuff(simID: SimID, buffID: BuffID)
 }
 
 /// The validated, ID-keyed entities in one simulation.
@@ -268,6 +276,12 @@ public struct SimulationState: Equatable, Sendable {
         for sim in sims {
             guard simsByID.updateValue(sim, forKey: sim.id) == nil else {
                 throw SimulationStateError.duplicateSimID(sim.id)
+            }
+            var buffIDs: Set<BuffID> = []
+            for buff in sim.timedBuffs {
+                guard buffIDs.insert(buff.id).inserted else {
+                    throw SimulationStateError.duplicateTimedBuff(simID: sim.id, buffID: buff.id)
+                }
             }
         }
 

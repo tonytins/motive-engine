@@ -2,10 +2,11 @@
 
 I am designing the Motive Engine as an *extremely* modular framework around the idea of being easily unit testable and render-agnostic as possible. All the engine ever does is pass information back downstream to the frontend.
 
-The engine is made up of two independent subsystems: Needs and Buffs. Only the Sim is aware of any of these. If freewill turned on, they will always search for something to do. 
+The core is needs-driven: Sims have motives that decay, and with free will they choose interactions that best satisfy their most urgent needs. Around that core sit independent pieces, each usable or skippable on its own:
 
-- Buffs is a plugin system for a classic aspiration system to build upon. 
-- An LSL-inspired scripting engine and language is included but not yet tied in.
+- **Buffs** are passive effects on motives, such as ambient items or a temporary mood. They live in the core but do nothing unless a game adds rules or timed buffs.
+- **Robusta** is an LSL-inspired scripting language. Item interaction scripts can read a Sim's state and report motive effects through a typed boundary; the simulation session does not run them yet.
+- **Wants and fears (SWAF)** ship as a separate, optional `MotiveEngineSWAF` product. It supports The Sims 2-style wants and fears and The Sims 3-style wishes, and only observes the simulation, so a Sims 1-style game can leave it out entirely.
 
 In theory, it should be possible run this from the terminal using nothing but an ASCII interface and emojis.
 

@@ -99,8 +99,14 @@ unchecked item is planned work, not an implemented feature.
   idempotency.
 - [x] Implement aspirations as an optional, independently testable extension
   that can express wants and fears.
+- [x] Ship SWAF as a separate `MotiveEngineSWAF` library product that uses
+  only the core's public API.
+- [x] Support Sims 3-style wishes through profile options: promises, offer
+  expiry that leaves slots empty, and cancellation.
 - [ ] Add wants and fears that target a specific Sim or item, and lifetime
-  wants.
+  wants, including bonus points for wishes related to a lifetime wish.
+- [x] Add timed buffs so fulfilling a wish can grant a temporary
+  "Fulfilled" mood effect.
 - [x] Define the typed data boundary between the Robusta VM and item
   interactions.
 - [x] Verify simulations remain usable when optional extensions are absent.

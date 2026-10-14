@@ -1,7 +1,15 @@
+import MotiveEngine
+
 /// Game-controlled settings for one Sim's wants and fears.
 ///
 /// Replace a state's profile whenever the game changes these, for example
 /// when a Sim gains a want slot or a new tag.
+///
+/// The defaults follow The Sims 2. For Sims 3-style wishes, use no fear
+/// slots, turn off aspiration tracking, require promises, and set an offer
+/// lifetime. Locking an entry then promises it, and the lock limit is the
+/// number of wishes that can be promised at once. A fulfillment buff gives
+/// the Sim a temporary "Fulfilled" effect.
 public struct AspirationProfile: Equatable, Sendable {
     /// Tags that shape which entries are rolled.
     public let tags: Set<SWAFTag>
@@ -21,24 +29,52 @@ public struct AspirationProfile: Equatable, Sendable {
     /// townies, whose bar should not move.
     public let tracksAspiration: Bool
 
-    /// Creates a profile. The defaults are four wants, three fears, and one lock.
+    /// Whether only locked (promised) entries can be fulfilled.
+    public let requiresPromise: Bool
+
+    /// How long an unlocked entry stays on the board, in simulated seconds.
     ///
-    /// - Throws: `AspirationError.invalidProfile` for a negative count.
+    /// When set, `AspirationSystem.advance` removes unlocked entries that
+    /// reach this age and leaves their slots empty until the next reroll.
+    /// `nil` keeps entries until they are rerolled.
+    public let offerLifetimeSeconds: Double?
+
+    /// A timed buff granted each time a want is fulfilled, if any.
+    ///
+    /// Fulfilling another want while it is active restarts it.
+    public let fulfillmentBuff: TimedBuff?
+
+    /// Creates a profile. The defaults are four wants, three fears, and one
+    /// lock, without promises or expiry.
+    ///
+    /// - Throws: `AspirationError.invalidProfile` for a negative count or an
+    ///   offer lifetime that is not positive and finite.
     public init(
         tags: Set<SWAFTag> = [],
         wantSlots: Int = 4,
         fearSlots: Int = 3,
         lockLimit: Int = 1,
-        tracksAspiration: Bool = true
+        tracksAspiration: Bool = true,
+        requiresPromise: Bool = false,
+        offerLifetimeSeconds: Double? = nil,
+        fulfillmentBuff: TimedBuff? = nil
     ) throws {
         guard wantSlots >= 0, fearSlots >= 0, lockLimit >= 0 else {
             throw AspirationError.invalidProfile
+        }
+        if let offerLifetimeSeconds {
+            guard offerLifetimeSeconds.isFinite, offerLifetimeSeconds > 0 else {
+                throw AspirationError.invalidProfile
+            }
         }
         self.tags = tags
         self.wantSlots = wantSlots
         self.fearSlots = fearSlots
         self.lockLimit = lockLimit
         self.tracksAspiration = tracksAspiration
+        self.requiresPromise = requiresPromise
+        self.offerLifetimeSeconds = offerLifetimeSeconds
+        self.fulfillmentBuff = fulfillmentBuff
     }
 }
 
@@ -47,13 +83,19 @@ public struct WantFearSlot: Equatable, Sendable {
     /// The rolled definition.
     public let definitionID: WantFearID
 
-    /// Whether the entry is exempt from rerolls until fulfilled.
+    /// Whether the entry is exempt from rerolls and expiry until fulfilled.
+    ///
+    /// When the profile requires promises, a locked entry is promised.
     public let isLocked: Bool
 
+    /// Simulated seconds since the entry was rolled.
+    public let ageSeconds: Double
+
     /// Creates a board entry.
-    public init(definitionID: WantFearID, isLocked: Bool = false) {
+    public init(definitionID: WantFearID, isLocked: Bool = false, ageSeconds: Double = 0) {
         self.definitionID = definitionID
         self.isLocked = isLocked
+        self.ageSeconds = ageSeconds
     }
 }
 
@@ -94,7 +136,8 @@ public struct AspirationState: Equatable, Sendable {
     /// against the catalog when an operation uses them.
     ///
     /// - Throws: `AspirationError` if aspiration is non-finite or outside
-    ///   `0...100`, reward points are negative, or an entry appears twice.
+    ///   `0...100`, reward points are negative, an entry appears twice, or
+    ///   an entry's age is negative or non-finite.
     public init(
         simID: SimID,
         profile: AspirationProfile,
@@ -108,6 +151,9 @@ public struct AspirationState: Equatable, Sendable {
         for slot in wants + fears {
             guard seenIDs.insert(slot.definitionID).inserted else {
                 throw AspirationError.duplicateBoardEntry(slot.definitionID)
+            }
+            guard slot.ageSeconds.isFinite, slot.ageSeconds >= 0 else {
+                throw AspirationError.invalidSlotAge(slot.definitionID)
             }
         }
         guard aspiration.isFinite,
@@ -153,8 +199,12 @@ public struct AspirationState: Equatable, Sendable {
 
 /// An invalid aspiration state or operation.
 public enum AspirationError: Error, Equatable, Sendable {
-    /// A slot count or lock limit is negative.
+    /// A slot count or lock limit is negative, or the offer lifetime is not
+    /// positive and finite.
     case invalidProfile
+
+    /// A restored entry's age is negative or non-finite.
+    case invalidSlotAge(WantFearID)
 
     /// Aspiration is non-finite or outside `0...100`.
     case invalidAspiration
@@ -179,4 +229,7 @@ public enum AspirationError: Error, Equatable, Sendable {
 
     /// A decay rate or elapsed time is negative or non-finite.
     case invalidDecay
+
+    /// Elapsed time is negative or non-finite.
+    case invalidElapsedTime
 }

@@ -9,6 +9,9 @@ public enum SimulationCommand: Equatable, Sendable {
 
     /// Cancels the Sim's current interaction.
     case cancelInteraction(simID: SimID)
+
+    /// Starts a timed buff on a Sim, replacing one with the same ID.
+    case applyBuff(simID: SimID, buff: TimedBuff)
 }
 
 /// An invalid simulation session input or transition.
@@ -307,6 +310,14 @@ public struct SimulationSession: Sendable {
             sims[simID] = replacingAction(sim, with: nil)
             suppressingAutonomy.insert(simID)
             events.append(.actionChanged(simID: simID, action: interrupted))
+
+        case let .applyBuff(simID, buff):
+            guard let sim = sims[simID] else {
+                throw SimulationSessionError.missingSim(simID)
+            }
+            let timedBuffs = sim.timedBuffs.filter { $0.id != buff.id } + [buff]
+            sims[simID] = replacing(sim, timedBuffs: timedBuffs)
+            events.append(.timedBuffApplied(simID: simID, buff: buff))
         }
     }
 
@@ -315,11 +326,10 @@ public struct SimulationSession: Sendable {
         bySeconds elapsedSeconds: Double,
         recording events: inout [SimulationEvent]
     ) throws {
-        guard !buffRules.isEmpty else {
-            return
-        }
         for simID in sortedSimIDs(in: sims) {
-            guard let sim = sims[simID] else {
+            guard let sim = sims[simID],
+                  !buffRules.isEmpty || !sim.timedBuffs.isEmpty
+            else {
                 continue
             }
             let context = BuffContext(
@@ -336,11 +346,13 @@ public struct SimulationSession: Sendable {
                 continue
             }
             events.append(.buffsApplied(simID: simID, effects: evaluation.effects))
-            guard evaluation.motives != sim.motives else {
-                continue
+            sims[simID] = replacing(sim, motives: evaluation.motives, timedBuffs: evaluation.timedBuffs)
+            if evaluation.motives != sim.motives {
+                events.append(.motivesChanged(simID: simID, motives: evaluation.motives))
             }
-            sims[simID] = replacing(sim, motives: evaluation.motives)
-            events.append(.motivesChanged(simID: simID, motives: evaluation.motives))
+            for buffID in evaluation.expiredBuffIDs {
+                events.append(.timedBuffExpired(simID: simID, buffID: buffID))
+            }
         }
     }
 
@@ -558,7 +570,8 @@ public struct SimulationSession: Sendable {
     private func replacing(
         _ sim: SimStateData,
         motives: MotiveLevels? = nil,
-        position: GridPosition? = nil
+        position: GridPosition? = nil,
+        timedBuffs: [TimedBuff]? = nil
     ) -> SimStateData {
         SimStateData(
             id: sim.id,
@@ -566,7 +579,8 @@ public struct SimulationSession: Sendable {
             posture: sim.posture,
             currentLotID: sim.currentLotID,
             position: position ?? sim.position,
-            activeAction: sim.activeAction
+            activeAction: sim.activeAction,
+            timedBuffs: timedBuffs ?? sim.timedBuffs
         )
     }
 
@@ -580,7 +594,8 @@ public struct SimulationSession: Sendable {
             posture: sim.posture,
             currentLotID: sim.currentLotID,
             position: sim.position,
-            activeAction: activeAction
+            activeAction: activeAction,
+            timedBuffs: sim.timedBuffs
         )
     }
 }

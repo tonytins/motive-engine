@@ -97,16 +97,6 @@ struct HouseholdRosterTests {
             among: ["Alex", "Blair", "Casey"]
         ) == ["Casey"])
     }
-
-    @Test func aspirationEventsAreRecordedWithoutChangingSleepState() throws {
-        var roster = HouseholdRoster()
-        let want = try #require(WantFearID("write-a-novel"))
-
-        roster.receive(.fullfilledWant(want), from: "Alex")
-
-        #expect(roster.lastBroadcast["Alex"] == .fullfilledWant(want))
-        #expect(!roster.isSleeping(simNamed: "Alex"))
-    }
 }
 
 @Suite("Item Coding")

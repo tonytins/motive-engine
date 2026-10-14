@@ -24,8 +24,14 @@ public enum SimulationEvent: Equatable, Sendable {
     /// A Sim's motive values changed.
     case motivesChanged(simID: SimID, motives: MotiveLevels)
 
-    /// Buff rules contributed effects to a Sim, ordered by buff ID.
+    /// Buff rules and timed buffs contributed effects to a Sim.
     case buffsApplied(simID: SimID, effects: [BuffEffect])
+
+    /// A timed buff started or restarted on a Sim.
+    case timedBuffApplied(simID: SimID, buff: TimedBuff)
+
+    /// A timed buff ran out.
+    case timedBuffExpired(simID: SimID, buffID: BuffID)
 
     /// A Sim's interaction action state changed.
     case actionChanged(simID: SimID, action: InteractionActionState)

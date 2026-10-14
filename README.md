@@ -4,17 +4,25 @@ The Motives Engine provides the framework for creating characters with needs, as
 
 ## 📝 Goals
 
+- [x] Motives: decay, fulfillment, and urgency
+- [x] Items: reusable definitions, interaction offers, eligibility, and capacity
+- [x] Autonomy and actions: scoring, player commands, and action execution
+- [x] Sims, households, and lots: validated world state, routing, and a
+  deterministic simulation session
+- [x] Buffs: rules, ambient items, and timed buffs
 - [x] [Scripting](./Sources/MotiveEngine/VM/README.md)
 	- [x] AST
 	- [x] Lexer
 	- [x] IR
 	- [x] Bindings
-- [ ] Items
-- [ ] Motives
-- [ ] Aspirations (SWAF)
-- [x] Buffs
-- [ ] Sim
-- [ ] Lot
+	- [x] Item interaction boundary
+	- [ ] Run interaction scripts in the simulation session
+- [x] Wants and fears (SWAF), as an optional product
+	- [x] The Sims 2-style wants and fears
+	- [x] The Sims 3-style wishes
+	- [ ] Targeted and lifetime wants
+
+See the [roadmap](./docs/ROADMAP.md) for details.
 
 
 ## 📦 Installation
@@ -24,7 +32,7 @@ let package = Package(
     // name, platforms, products, etc.
     dependencies: [
         // other dependencies
-        .package(url: "https://github.com/tonytins/motive-engine.git", branche: "main"),
+        .package(url: "https://github.com/tonytins/motive-engine.git", branch: "main"),
     ],
     targets: [
         .executableTarget(name: "<your-game>", dependencies: [
@@ -37,6 +45,10 @@ let package = Package(
 ```
 
 Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
+
+Wants and fears are optional. To use them, also add
+`.product(name: "MotiveEngineSWAF", package: "motive-engine")` and
+`import MotiveEngineSWAF`.
 
 ## 🏠 Example
 

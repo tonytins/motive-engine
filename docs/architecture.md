@@ -104,7 +104,8 @@ Movement remains separate from autonomy scoring.
 `SimulationSnapshot` exposes the state as read-only entity arrays ordered by
 stable ID for deterministic client iteration. `SimulationStepResult` pairs a
 resulting snapshot with ordered `SimulationEvent` values for motive changes,
-action changes, current-lot changes, and position changes.
+buff effects, timed buffs starting and expiring, action changes, current-lot
+changes, and position changes.
 
 `SimulationPhasePlan.standardOrder` records the intended order:
 commands, motive decay, buffs, offer generation, eligibility, autonomous
@@ -257,6 +258,16 @@ the needs system depend on a particular extension. The contract is:
   context returns the same result, each rule applies once per step, and
   zero elapsed time reports effects without changing motives.
 
+Timed buffs cover effects that last a limited time, such as a "Fulfilled"
+mood after a wish. A `TimedBuff` has a `BuffID`, per-second signals, and the
+seconds remaining; it is instance state stored in `SimStateData.timedBuffs`,
+at most one per ID. The `applyBuff` command starts one and emits
+`timedBuffApplied`; applying an ID that is already active restarts it rather
+than stacking. In the `buffs` phase each timed buff applies only for its
+remaining time, after rule effects, and is removed with a
+`timedBuffExpired` event when it runs out. Timed buffs work without any
+buff rules.
+
 Buffs are optional: a session created without a rule set applies none and
 emits no buff events. `AmbientBuffRule` applies the signals of every
 `.ambient` item on the Sim's lot within a Manhattan radius, visiting items
@@ -265,10 +276,12 @@ offers interactions, qualify.
 
 ### Wants and fears
 
-Wants and fears (SWAF, in `Sources/MotiveEngine/SWAF/`) give the player
-goals and let a Sim communicate what it cares about. They are an optional
-extension that observes the simulation: the system reads motives and step
-events but never changes motives, actions, or free will.
+Wants and fears (SWAF) give the player goals and let a Sim communicate what
+it cares about. They ship as a separate library product, `MotiveEngineSWAF`
+(`Sources/MotiveEngineSWAF/`), built only on the core's public API. A game
+that does not want them depends on `MotiveEngine` alone. SWAF observes the
+simulation: it reads motives and step events but never changes motives,
+actions, or free will.
 
 - **Content.** A `WantFearCatalog` holds `WantFearDefinition` values, decoded
   from JSON matching `schema/swaf.json`. Each has a stable ID, a want or
@@ -297,6 +310,16 @@ events but never changes motives, actions, or free will.
   below zero. `decay` lowers the bar over time. A profile can stop tracking
   the bar, as for townies, while reward points still change. What happens at
   a low bar, and what reward points buy, is game policy.
+
+- **Wish mode.** Profile options give Sims 3-style wishes: no fear slots,
+  no aspiration tracking, `requiresPromise` so only locked (promised)
+  entries can be fulfilled, and `offerLifetimeSeconds` so `advance` removes
+  unpromised entries that reach that age. An expired slot stays empty until
+  the next reroll. `cancel` removes any entry. The lock limit is the number
+  of wishes that can be promised at once. A profile's `fulfillmentBuff` is
+  a `TimedBuff` granted whenever a want is fulfilled. SWAF does not apply it:
+  the update's `commands` carry `applyBuff` commands for the game to pass to
+  the next session step.
 
 Operations are pure: each returns a new state and ordered
 `AspirationEvent` values, and leaves the state unchanged on error. Wants and

@@ -107,6 +107,10 @@ private enum NewbieHouse {
         case let .buffsApplied(simID, effects):
             let motives = Set(effects.flatMap(\.signals).map(\.motiveType.rawValue)).sorted()
             return "\(world.displayName(for: simID)) feels nearby ambience (\(motives.joined(separator: ", ")))"
+        case let .timedBuffApplied(simID, buff):
+            return "\(world.displayName(for: simID)) gains \(buff.id.rawValue)"
+        case let .timedBuffExpired(simID, buffID):
+            return "\(world.displayName(for: simID)) loses \(buffID.rawValue)"
         case let .actionChanged(simID, action):
             let who = world.displayName(for: simID)
             let item = world.itemName(for: action.offer.itemInstanceID)

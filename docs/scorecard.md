@@ -35,6 +35,14 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 134 tests after adding timed buffs and the
+  SWAF fulfillment buff.
+
+- 2026-10-14: `swift test` passed 128 tests after adding SWAF wish mode.
+
+- 2026-10-14: `swift test` passed 123 tests across 14 suites after moving
+  SWAF into the `MotiveEngineSWAF` target with its own test target.
+
 - 2026-10-14: `swift test` passed 124 tests across 14 suites after replacing
   the sample wants and fears utilities with the SWAF extension.
 
@@ -63,13 +71,13 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Eligibility | Cover every declared eligibility failure reason, missing snapshots, a passing case, occupancy exactly at capacity, and occupancy above capacity. |
 | Autonomy | Cover all 6 motives, positive/zero/negative scores, no useful offer, non-finite scoring input, and ties resolved by each documented identifier key. |
 | Actions | Cover start, progress, completion, duration overrun, interruption, failure, and attempts to advance or terminate a terminal action. |
-| Buffs | Cover rule-set ID validation and ordering, effect attribution, summing before clamping, repeatable and zero-time evaluation, invalid time and non-finite signals, ambient radius and lot boundaries, hybrid ambient items, and a session with and without buffs. |
+| Buffs | Cover rule-set ID validation and ordering, effect attribution, summing before clamping, repeatable and zero-time evaluation, invalid time and non-finite signals, ambient radius and lot boundaries, hybrid ambient items, a session with and without buffs, and timed buffs: invalid durations and signals, partial and overrun time, zero time, start, restart without stacking, expiry, missing Sims, and duplicate IDs. |
 | Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, routes around blocked and occupied cells, ambient classifications, and sleep/wake roster changes including repeated events. |
 | World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, Sim position and occupancy, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, session phase behavior, and the declared phase order. |
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
 | Interaction scripts | Read every declared input, report effects in call order, reject the reserved `effect` module and input assignment, report each invalid-effect error, propagate runtime failures and the instruction limit without partial effects, and evaluate repeatably. |
 | Optional extensions | Run a session through autonomous selection, movement, and completion with no extensions; show default, empty, and inert buff rule sets produce identical step results; and execute authored effects without a script. |
-| Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, and invalid restored boards. |
+| Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, invalid restored boards, and wish mode: promise-only fulfillment, offer expiry leaving empty slots, aging without a lifetime, cancellation, invalid lifetimes and ages, and fulfillment buffs granted once per update and applied through session commands. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
 
 ## Per-area checklists

@@ -1,4 +1,5 @@
 import Foundation
+import MotiveEngine
 
 /// A game-defined label that shapes which wants and fears a Sim rolls.
 ///
