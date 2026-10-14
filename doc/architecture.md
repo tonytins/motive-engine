@@ -108,6 +108,22 @@ negative capacity or occupancy; zero capacity and over-capacity
 occupancy are represented and report as full. Eligibility does not
 check location, routing, motives, or autonomy policy.
 
+`AutonomyScoringSystem.rank` accepts offers the caller has already found
+eligible and scores them against a complete `MotiveLevels` snapshot.
+For each motive, urgency is `(100 - level) / 100`. Advertised benefit rates
+are summed per motive and multiplied by that motive's urgency; negative
+benefits lower the score. The explainable result includes each motive's
+level, urgency, combined advertised rate, and weighted contribution.
+
+Ranked candidates sort by descending score, then item-instance ID,
+item-definition ID, and interaction ID. An offer is useful only when its
+total score is greater than zero, so the ranking has no selected offer
+when all scores are zero or negative. Non-finite scores are reported as
+errors. Scoring neither
+changes motive state nor applies the separate execution effects. Eligibility
+must be evaluated by the caller first; player-command priority and free-will
+policy are not part of this scoring system.
+
 ```swift
 if let chairDefinitionID = ItemDefinitionID("basic-chair"),
    let chairInstanceID = ItemInstanceID("living-room-chair"),
@@ -145,7 +161,8 @@ if let chairDefinitionID = ItemDefinitionID("basic-chair"),
 Motives represent immediate needs whose values change over simulated
 time. Item definitions now provide interaction offers and distinguish
 their advertised motive benefits from their actual motive effects.
-Eligibility checks, execution, and autonomy scoring remain future work.
+Eligibility checks and pure autonomy ranking are implemented as separate
+systems. Execution remains future work.
 
 An autonomy policy should inspect a snapshot of relevant Sim state and
 viable interaction offers, then return a decision or ranked candidates.
@@ -154,8 +171,10 @@ as a side effect of scoring. Player commands and autonomous choices
 should ultimately use the same action execution model, while selection
 policy determines which action is chosen.
 
-The exact motive scale, decay rules, urgency thresholds, scoring, and
-command precedence still require design and tested examples.
+The motive value scale is 0–100, with lower values representing greater
+need. The first-pass continuous urgency formula and positive-score
+usefulness cutoff are documented above. Decay rules and command precedence
+remain game-specific policy.
 
 ## Pluggable extensions
 
@@ -176,7 +195,7 @@ rules and authoritative state remain owned by engine systems.
 1. Complete and test the current value-level motive and item primitives.
 2. Add eligibility requirements and contextual offer generation without
    coupling definitions to lot state.
-3. Implement pure motive-urgency and opportunity-scoring systems over
+3. [x] Implement pure motive-urgency and opportunity-scoring systems over
    the advertised benefit data.
 4. Define interaction execution and apply effects separately from offer
    scoring.

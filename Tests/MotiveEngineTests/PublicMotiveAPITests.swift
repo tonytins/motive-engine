@@ -296,14 +296,121 @@ struct PublicMotiveAPITests {
         ])
     }
 
-    private func makeOffer(requiredPosture: SimPosture?) throws -> InteractionOffer {
+    @Test func autonomyScoresAdvertisedBenefitsByCurrentMotiveUrgency() throws {
+        let offer = try makeOffer(
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .hunger, expectedStrengthPerSecond: 2),
+                MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: 4),
+                MotiveBenefit(motiveType: .energy, expectedStrengthPerSecond: -6),
+            ]
+        )
+        let motives = try makeMotiveLevels([
+            .hunger: 0,
+            .fun: 50,
+            .energy: 100,
+        ])
+
+        let ranking = try AutonomyScoringSystem.rank([offer], for: motives)
+        let scoredOffer = try #require(ranking.rankedOffers.first)
+
+        #expect(scoredOffer.score == 4)
+        #expect(scoredOffer.contributions.map(\.motiveType) == [.hunger, .energy, .fun])
+        #expect(scoredOffer.contributions.map(\.motiveLevel) == [0, 100, 50])
+        #expect(scoredOffer.contributions.map(\.urgency) == [1, 0, 0.5])
+        #expect(scoredOffer.contributions.map(\.advertisedStrengthPerSecond) == [2, -6, 4])
+        #expect(scoredOffer.contributions.map(\.score) == [2, 0, 2])
+        #expect(ranking.selectedOffer == scoredOffer)
+    }
+
+    @Test func autonomyRankingUsesStableIDsForTiesAndRejectsNonPositiveChoices() throws {
+        let laterID = try makeOffer(
+            interactionID: "z-interaction",
+            itemInstanceID: "a-item",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: 2)
+            ]
+        )
+        let earlierID = try makeOffer(
+            interactionID: "a-interaction",
+            itemInstanceID: "a-item",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .hunger, expectedStrengthPerSecond: 2)
+            ]
+        )
+        let higherItemID = try makeOffer(
+            interactionID: "a-interaction",
+            itemInstanceID: "z-item",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: 2)
+            ]
+        )
+        let zeroScore = try makeOffer(
+            interactionID: "zero-score",
+            advertisedBenefits: []
+        )
+        let negativeScore = try makeOffer(
+            interactionID: "negative-score",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: -2)
+            ]
+        )
+        let motives = try makeMotiveLevels([.fun: 50, .hunger: 50])
+
+        let ranking = try AutonomyScoringSystem.rank(
+            [laterID, higherItemID, negativeScore, zeroScore, earlierID],
+            for: motives
+        )
+
+        #expect(ranking.rankedOffers.map(\.offer) == [
+            earlierID,
+            laterID,
+            higherItemID,
+            zeroScore,
+            negativeScore,
+        ])
+        #expect(ranking.selectedOffer?.offer == earlierID)
+
+        let noUsefulOffers = try AutonomyScoringSystem.rank(
+            [zeroScore, negativeScore],
+            for: motives
+        )
+        #expect(noUsefulOffers.selectedOffer == nil)
+        #expect(try AutonomyScoringSystem.rank([], for: motives).selectedOffer == nil)
+    }
+
+    @Test func autonomyScoringReportsOverflowInsteadOfReturningInvalidScores() throws {
+        let offer = try makeOffer(
+            advertisedBenefits: [
+                MotiveBenefit(
+                    motiveType: .hunger,
+                    expectedStrengthPerSecond: .greatestFiniteMagnitude
+                ),
+                MotiveBenefit(
+                    motiveType: .hunger,
+                    expectedStrengthPerSecond: .greatestFiniteMagnitude
+                ),
+            ]
+        )
+        let motives = try makeMotiveLevels([.hunger: 0])
+
+        #expect(throws: AutonomyScoringError.self) {
+            try AutonomyScoringSystem.rank([offer], for: motives)
+        }
+    }
+
+    private func makeOffer(
+        interactionID: String = "eligibility-test",
+        itemInstanceID: String = "eligibility-instance",
+        advertisedBenefits: [MotiveBenefit] = [],
+        requiredPosture: SimPosture? = nil
+    ) throws -> InteractionOffer {
         let itemDefinitionID = try #require(ItemDefinitionID("eligibility-item"))
-        let itemInstanceID = try #require(ItemInstanceID("eligibility-instance"))
-        let interactionID = try #require(InteractionDefinitionID("eligibility-test"))
+        let itemInstanceID = try #require(ItemInstanceID(itemInstanceID))
+        let interactionID = try #require(InteractionDefinitionID(interactionID))
         let interaction = try InteractionDefinition(
             id: interactionID,
             name: "Use item",
-            advertisedBenefits: [],
+            advertisedBenefits: advertisedBenefits,
             motiveEffects: [],
             requirements: InteractionRequirements(requiredPosture: requiredPosture)
         )
@@ -321,6 +428,16 @@ struct PublicMotiveAPITests {
         )
 
         return try #require(catalog.interactionOffers(for: placedItem).first)
+    }
+
+    private func makeMotiveLevels(
+        _ overrides: [MotiveType: Double] = [:]
+    ) throws -> MotiveLevels {
+        var levels = Dictionary(
+            uniqueKeysWithValues: MotiveType.allCases.map { ($0, 50.0) }
+        )
+        levels.merge(overrides) { _, override in override }
+        return try MotiveLevels(levels: levels)
     }
 
     private func makeItemSnapshot(

@@ -58,12 +58,13 @@ unchecked item is planned work, not an implemented feature.
 
 ## Joetsu: Rank autonomous opportunities
 
-- [ ] Define motive urgency policy and named thresholds with test examples.
-- [ ] Score eligible offers from motive state and advertised benefits.
-- [ ] Specify deterministic tie-breaking and behavior when no offer is useful.
-- [ ] Return explainable ranked candidates or a choice without mutating
+- [x] Define continuous motive urgency and the positive-score usefulness
+  cutoff with test examples.
+- [x] Score eligible offers from motive state and advertised benefits.
+- [x] Specify deterministic tie-breaking and behavior when no offer is useful.
+- [x] Return explainable ranked candidates or a choice without mutating
   simulation state.
-- [ ] Keep player-command priority and free-will policy separate from action
+- [x] Keep player-command priority and free-will policy separate from action
   execution.
 
 ## Kyushu: Model action execution
@@ -106,6 +107,6 @@ unchecked item is planned work, not an implemented feature.
 
 ## Next milestone
 
-Continue with **Joetsu**: design motive urgency and opportunity scoring
-over eligible offers. Broader Hokuriku requirements can be added when
-concrete interactions need more actor or item state.
+Continue with **Kyushu**: model interaction action state and execution
+separately from eligibility and autonomous scoring. Broader contextual
+requirements and catalog loading remain deferred until concrete needs arise.
