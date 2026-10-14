@@ -16,7 +16,7 @@ The Motives Engine provides the framework for creating characters with needs, as
 	- [x] IR
 	- [x] Bindings
 	- [x] Item interaction boundary
-	- [ ] Run interaction scripts in the simulation session
+	- [x] Run interaction scripts in the simulation session
 - [x] Wants and fears (SWAF), as an optional product
 	- [x] The Sims 2-style wants and fears
 	- [x] The Sims 3-style wishes

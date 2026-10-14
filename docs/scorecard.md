@@ -35,6 +35,9 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 141 tests after running interaction scripts
+  in the simulation session.
+
 - 2026-10-14: `swift test` passed 136 tests after aligning the code with the
   Swift style guide: shared `StringIdentifier` conformance, removed dead
   code, documented public API, and parameterized tests.
@@ -80,6 +83,7 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, Sim position and occupancy, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, session phase behavior, and the declared phase order. |
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
 | Interaction scripts | Read every declared input, report effects in call order, reject the reserved `effect` module and input assignment, report each invalid-effect error, propagate runtime failures and the instruction limit without partial effects, and evaluate repeatably. |
+| Scripted interactions in a session | Cover script effects replacing written effects, effects fixed for the action's duration, a failed command script that fails only that action without same-step autonomy, autonomy falling back to the next useful offer, unscripted actions, and offers carrying scripts. |
 | Optional extensions | Run a session through autonomous selection, movement, and completion with no extensions; show default, empty, and inert buff rule sets produce identical step results; and execute authored effects without a script. |
 | Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, invalid restored boards, and wish mode: promise-only fulfillment, offer expiry leaving empty slots, aging without a lifetime, cancellation, invalid lifetimes and ages, and fulfillment buffs granted once per update and applied through session commands. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |

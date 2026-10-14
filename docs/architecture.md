@@ -124,7 +124,16 @@ decays motives, applies optional buffs, chooses reachable eligible interactions 
 moves actors one grid tile per step, and advances an action only after the
 Sim reaches an available adjacent tile. Sims and events are processed in
 stable-ID and phase order. A cancellation suppresses autonomous reselection
-for that Sim during the same step. An action waits if other Sims temporarily
+for that Sim during the same step. Scripted interactions run when their action starts.
+If an offer has a script, the session evaluates it with the Sim's current
+state, and the action applies the script's effects instead of the written
+`motiveEffects` for its whole duration. The effects are stored in the
+action's `motiveEffects`. A script that throws, exceeds the instruction
+limit, or reports an invalid effect does not stop the step: the action ends
+as `.failed(.scriptFailed(message))` and an `actionChanged` event reports it.
+A failed player command then keeps autonomy idle for that Sim for the rest of
+the step, while autonomy reports the failure and tries the next useful offer.
+Advertised benefits are unaffected, so scripts do not change ranking. An action waits if other Sims temporarily
 occupy every approach tile and fails only when the static lot layout has no
 route. A rejected command leaves the session unchanged. The session does not
 transfer Sims between lots or own concurrency; callers can isolate it at their
@@ -336,7 +345,7 @@ immutable inputs such as `sim.hunger` and `interaction.duration`, and
 report effects only by calling `effect.fulfill(motive, strengthPerSecond)`.
 The engine validates those calls into `MotiveSignal` values; scripts never
 read or write authoritative state. Evaluation is pure and deterministic.
-The session does not run interaction scripts yet. See the
+The session runs an interaction's script once when its action starts. See the
 [Robusta README](../Sources/MotiveEngine/VM/README.md#host-boundary) for
 the full input table and error behavior.
 
@@ -354,7 +363,7 @@ the full input table and error behavior.
 6. [x] Define event and extension contracts for buffs and aspirations.
 7. Coordinate systems through explicit simulation phases and snapshots.
 8. Integrate movement, lot/household state, and the scripting boundary
-   (boundary defined; session integration planned).
+   (scripts run when actions start).
 
 Each step should preserve working behavior, add focused tests, and
 document user-facing APIs once they are supported.

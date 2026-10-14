@@ -72,7 +72,11 @@ reported as `InteractionScriptError` values. Script failures, including the
 instruction limit, are thrown as `RuntimeError`, and no partial effects are
 returned. Evaluation is deterministic and never changes simulation state;
 applying the returned effects is the caller's responsibility.
-`SimulationSession` does not run interaction scripts yet.
+Attach a script to an `InteractionDefinition` with its `script` parameter.
+`SimulationSession` then runs it once when an action for that interaction
+starts, and the action applies the script's effects instead of the written
+ones. A failing script fails only that action, with
+`.failed(.scriptFailed(message))`, and the step continues.
 
 ## Pipeline and API
 

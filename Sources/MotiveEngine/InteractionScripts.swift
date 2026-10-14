@@ -3,7 +3,7 @@
 /// The script is parsed and validated once when created. It reads declared
 /// inputs and reports effects by calling `effect.fulfill(motive, strength)`.
 /// It cannot read or change simulation state directly.
-public struct InteractionScript: Sendable {
+public struct InteractionScript: Equatable, Sendable {
     /// The module name reserved for host-provided effect functions.
     static let effectModuleName = "effect"
     static let fulfillFunctionName = "effect.fulfill"

@@ -170,6 +170,11 @@ public struct InteractionDefinition: Equatable, Sendable {
     /// Preconditions declared by the interaction.
     public let requirements: InteractionRequirements
 
+    /// A script that computes the applied effects when an action starts.
+    ///
+    /// When present, its effects replace `motiveEffects`.
+    public let script: InteractionScript?
+
     /// Creates interaction content with explicit advertised and applied values.
     ///
     /// - Throws: `InteractionDefinitionError` when the name is empty, the
@@ -180,7 +185,8 @@ public struct InteractionDefinition: Equatable, Sendable {
         advertisedBenefits: [MotiveBenefit],
         motiveEffects: [MotiveSignal],
         durationSeconds: Double,
-        requirements: InteractionRequirements = InteractionRequirements()
+        requirements: InteractionRequirements = InteractionRequirements(),
+        script: InteractionScript? = nil
     ) throws {
         guard !name.isEmpty else {
             throw InteractionDefinitionError.emptyName
@@ -201,6 +207,7 @@ public struct InteractionDefinition: Equatable, Sendable {
         self.motiveEffects = motiveEffects
         self.durationSeconds = durationSeconds
         self.requirements = requirements
+        self.script = script
     }
 }
 
@@ -236,7 +243,7 @@ public struct InteractionOffer: Equatable, Sendable {
     /// Expected motive changes. These are not applied by the offer.
     public let advertisedBenefits: [MotiveBenefit]
 
-    /// Motive changes applied while the action is active.
+    /// Motive changes applied while the action is active, unless `script` replaces them.
     public let motiveEffects: [MotiveSignal]
 
     /// The interaction's active duration in simulated seconds.
@@ -244,6 +251,9 @@ public struct InteractionOffer: Equatable, Sendable {
 
     /// Preconditions declared by the interaction.
     public let requirements: InteractionRequirements
+
+    /// A script that computes the applied effects when an action starts.
+    public let script: InteractionScript?
 
     fileprivate init(
         itemInstanceID: ItemInstanceID,
@@ -258,6 +268,7 @@ public struct InteractionOffer: Equatable, Sendable {
         motiveEffects = interaction.motiveEffects
         durationSeconds = interaction.durationSeconds
         requirements = interaction.requirements
+        script = interaction.script
     }
 }
 

@@ -109,6 +109,8 @@ unchecked item is planned work, not an implemented feature.
   "Fulfilled" mood effect.
 - [x] Define the typed data boundary between the Robusta VM and item
   interactions.
+- [x] Run interaction scripts in the simulation session when actions start,
+  failing only the affected action when a script fails.
 - [x] Verify simulations remain usable when optional extensions are absent.
   Covers buffs and interaction scripts. Aspirations only observe simulation
   events, so the session never depends on them.

@@ -292,8 +292,13 @@ public struct SimulationSession: Sendable {
                 )
             }
 
-            let action = InteractionActionSystem.start(offer, initiatedBy: .playerCommand)
-            sims[simID] = replacingAction(sim, with: action)
+            let action = try startAction(offer, initiatedBy: .playerCommand, for: sim)
+            if action.status == .running {
+                sims[simID] = replacingAction(sim, with: action)
+            } else {
+                // The command still decides this step, so autonomy waits.
+                suppressingAutonomy.insert(simID)
+            }
             events.append(.actionChanged(simID: simID, action: action))
 
         case let .cancelInteraction(simID):
@@ -389,13 +394,47 @@ public struct SimulationSession: Sendable {
                 }
             }
 
+            // A useful offer whose script fails is reported, then the next
+            // useful offer is tried, so one faulty script cannot idle a Sim.
             let ranking = try AutonomyScoringSystem.rank(eligibleOffers, for: sim.motives)
-            guard let offer = ranking.selectedOffer?.offer else {
-                continue
+            for scored in ranking.rankedOffers where scored.score > 0 {
+                let action = try startAction(scored.offer, initiatedBy: .autonomy, for: sim)
+                events.append(.actionChanged(simID: simID, action: action))
+                if action.status == .running {
+                    sims[simID] = replacingAction(sim, with: action)
+                    break
+                }
             }
-            let action = InteractionActionSystem.start(offer, initiatedBy: .autonomy)
-            sims[simID] = replacingAction(sim, with: action)
-            events.append(.actionChanged(simID: simID, action: action))
+        }
+    }
+
+    /// Starts an action, first running the offer's script if it has one.
+    ///
+    /// A script failure returns an action that already failed with
+    /// `.scriptFailed`, so one faulty script cannot stop the step.
+    private func startAction(
+        _ offer: InteractionOffer,
+        initiatedBy initiator: InteractionActionInitiator,
+        for sim: SimStateData
+    ) throws -> InteractionActionState {
+        guard let script = offer.script else {
+            return InteractionActionSystem.start(offer, initiatedBy: initiator)
+        }
+        do {
+            let result = try InteractionScriptSystem.evaluate(
+                script,
+                input: InteractionScriptInput(sim: sim, offer: offer)
+            )
+            return InteractionActionSystem.start(
+                offer,
+                initiatedBy: initiator,
+                motiveEffects: result.motiveEffects
+            )
+        } catch {
+            return try InteractionActionSystem.fail(
+                InteractionActionSystem.start(offer, initiatedBy: initiator),
+                because: .scriptFailed(String(describing: error))
+            )
         }
     }
 

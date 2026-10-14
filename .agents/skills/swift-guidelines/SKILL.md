@@ -1,5 +1,5 @@
 ---
-name: swift-programming
+name: swift-guidelines
 description: These are conventions for writing Swift, not rigid rules. Treat every section here as a tool to reach for, not a rule to enforce. Treat every code snippet below as an example of the pattern, not a template to copy verbatim. When a guideline and the user's existing codebase conventions disagree, match the codebase and mention the tension briefly.
 ---
 

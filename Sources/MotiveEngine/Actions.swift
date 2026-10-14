@@ -29,6 +29,9 @@ public enum InteractionActionFailureReason: Equatable, Sendable {
 
     /// An external execution step failed.
     case executionFailed
+
+    /// The interaction's script failed or reported an invalid effect.
+    case scriptFailed(String)
 }
 
 /// The lifecycle state of an interaction action.
@@ -54,6 +57,12 @@ public struct InteractionActionState: Equatable, Sendable {
     /// The policy that selected the offer.
     public let initiator: InteractionActionInitiator
 
+    /// The per-second effects this action applies.
+    ///
+    /// These are the offer's written effects, or the effects its script
+    /// computed when the action started.
+    public let motiveEffects: [MotiveSignal]
+
     /// Active time accumulated by the action.
     public let elapsedSeconds: Double
 
@@ -63,11 +72,13 @@ public struct InteractionActionState: Equatable, Sendable {
     fileprivate init(
         offer: InteractionOffer,
         initiator: InteractionActionInitiator,
+        motiveEffects: [MotiveSignal],
         elapsedSeconds: Double,
         status: InteractionActionStatus
     ) {
         self.offer = offer
         self.initiator = initiator
+        self.motiveEffects = motiveEffects
         self.elapsedSeconds = elapsedSeconds
         self.status = status
     }
@@ -94,13 +105,18 @@ public enum InteractionActionSystem {
     ///
     /// The caller must check interaction eligibility before starting the
     /// action. Both player and autonomy choices use the same action state.
+    /// The action applies `motiveEffects` when supplied, such as effects
+    /// computed by the offer's script, and the offer's written effects
+    /// otherwise.
     public static func start(
         _ offer: InteractionOffer,
-        initiatedBy initiator: InteractionActionInitiator
+        initiatedBy initiator: InteractionActionInitiator,
+        motiveEffects: [MotiveSignal]? = nil
     ) -> InteractionActionState {
         InteractionActionState(
             offer: offer,
             initiator: initiator,
+            motiveEffects: motiveEffects ?? offer.motiveEffects,
             elapsedSeconds: 0,
             status: .running
         )
@@ -133,7 +149,7 @@ public enum InteractionActionSystem {
             nextElapsedSeconds >= action.offer.durationSeconds ? .completed : .running
         let nextMotives = try MotiveSystem.fulfill(
             motives,
-            with: action.offer.motiveEffects,
+            with: action.motiveEffects,
             overSeconds: activeSeconds
         )
 
@@ -141,6 +157,7 @@ public enum InteractionActionSystem {
             action: InteractionActionState(
                 offer: action.offer,
                 initiator: action.initiator,
+                motiveEffects: action.motiveEffects,
                 elapsedSeconds: nextElapsedSeconds,
                 status: nextStatus
             ),
@@ -174,6 +191,7 @@ public enum InteractionActionSystem {
         return InteractionActionState(
             offer: action.offer,
             initiator: action.initiator,
+            motiveEffects: action.motiveEffects,
             elapsedSeconds: action.elapsedSeconds,
             status: status
         )
