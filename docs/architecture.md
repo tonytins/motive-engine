@@ -21,12 +21,12 @@ simulation loop:
 - a partial household sleep-event roster;
 - the independent Robusta scripting implementation.
 
-The Sim scheduler, motive decay and fulfillment loop, concrete
-interaction model, Lot simulation actor, and aspiration lifecycle are
-not yet implemented as complete systems. The APIs and examples in this
-overview describe direction, not guarantees about available runtime
-features. Motive decay and fulfillment arithmetic exists as pure value
-operations, but it is not yet connected to a running simulation tick.
+The Sim scheduler, running simulation tick, Lot coordinator, and aspiration
+lifecycle are not yet implemented as complete systems. Motive transformations,
+interaction offers and eligibility, autonomy scoring, and action transitions
+exist as independently testable value-level systems, but are not yet connected
+by a complete simulation loop. The APIs and examples in this overview describe
+direction where features remain planned; consult the roadmap for current status.
 
 Motive state requires a value for every `MotiveType`; missing values or
 decay rates are rejected during construction. Finite motive levels are
@@ -76,8 +76,23 @@ definition ID, while `PlacedItem` stores an instance ID, a definition
 reference, and a position. Multiple placed instances can therefore
 share one item definition without duplicating its content. Empty IDs and
 duplicate definition IDs are rejected. The catalog does not yet manage
-lot placement or instance uniqueness; those belong to future world
-state.
+lot placement or instance uniqueness. `LotState` validates placement
+bounds and local uniqueness, while `SimulationState` validates that item
+instance IDs are unique across lots.
+
+`SimStateData`, `HouseholdState`, and `LotState` hold world state keyed by
+the stable `SimID`, `HouseholdID`, and `LotID` values. `SimulationState`
+indexes these values and validates household membership, current-lot
+references, and global item-instance uniqueness when it is created.
+Households and lots are independent: household members can be on different
+lots, and a Sim can have no current lot. A Sim state holds motive values,
+posture, and an optional active interaction action. `GridSize` exposes
+lot bounds through `LotState`, which requires positive dimensions.
+
+This is a validated state container, not yet a simulation coordinator.
+It does not define command or event queues, phase ordering, movement,
+occupant positions, or multi-step snapshots and reports. Those remain
+separate Hokkaido work.
 
 An `ItemDefinition` can also contain reusable `InteractionDefinition`
 values. Each interaction has its own stable ID, a name, advertised
@@ -86,17 +101,14 @@ values. Each interaction has its own stable ID, a name, advertised
 actor posture.
 `ItemDefinitionCatalog.interactionOffers(for:)` combines those
 definitions with a `PlacedItem` to produce instance-specific
-`InteractionOffer` values. Offers contain advertised benefits only;
-they are candidates for eligibility checks, not proof that an
-interaction is reachable or currently usable. The catalog resolves an
-unknown item definition as an error, and rejects duplicate interaction
-IDs within one item definition.
-
-For this first slice, execution effects model motive changes as
-per-second signals. The engine does not yet execute interactions or
-apply their effects. Advertised benefits and actual effects are both
-required to have finite strengths, but they are deliberately allowed to
-differ.
+`InteractionOffer` values. Offers contain advertised benefits and the
+separate execution effects and duration from their definition. They are
+candidates for eligibility checks, not proof that an interaction is
+reachable or currently usable. The catalog resolves an unknown item
+definition as an error, and rejects duplicate interaction IDs within
+one item definition. Durations must be positive and finite. Advertised
+benefits and actual effects must have finite strengths, but they are
+deliberately allowed to differ.
 
 `InteractionEligibilitySystem.evaluate` checks an offer against optional
 actor and item snapshots. Actor snapshots provide posture and whether
@@ -124,6 +136,17 @@ changes motive state nor applies the separate execution effects. Eligibility
 must be evaluated by the caller first; player-command priority and free-will
 policy are not part of this scoring system.
 
+`InteractionActionSystem.start` creates an action state from an offer
+selected by either `.playerCommand` or `.autonomy`. The caller checks
+eligibility before starting. `advance` applies motive effects only over
+the active time in that step, bounded by the configured duration. When
+the duration is reached, the action completes; excess requested time is
+ignored. Interruption and failure stop a running action without undoing
+effects already applied. Failure reasons are explicit values supplied by
+the caller. Terminal actions cannot be advanced or terminated again.
+These transitions return new values and do not own or mutate authoritative
+simulation state.
+
 ```swift
 if let chairDefinitionID = ItemDefinitionID("basic-chair"),
    let chairInstanceID = ItemInstanceID("living-room-chair"),
@@ -142,7 +165,8 @@ if let chairDefinitionID = ItemDefinitionID("basic-chair"),
                 ],
                 motiveEffects: [
                     MotiveSignal(motiveType: .fun, strengthPerSecond: 0.25)
-                ]
+                ],
+                durationSeconds: 60
             )
         ]
     )
@@ -162,7 +186,8 @@ Motives represent immediate needs whose values change over simulated
 time. Item definitions now provide interaction offers and distinguish
 their advertised motive benefits from their actual motive effects.
 Eligibility checks and pure autonomy ranking are implemented as separate
-systems. Execution remains future work.
+systems. Actions progress as explicit values, and per-second motive
+effects are applied by pure action transitions.
 
 An autonomy policy should inspect a snapshot of relevant Sim state and
 viable interaction offers, then return a decision or ranked candidates.
@@ -192,14 +217,14 @@ rules and authoritative state remain owned by engine systems.
 
 ## A gradual implementation path
 
-1. Complete and test the current value-level motive and item primitives.
-2. Add eligibility requirements and contextual offer generation without
+1. [x] Complete and test the current value-level motive and item primitives.
+2. [x] Add eligibility requirements and contextual offer generation without
    coupling definitions to lot state.
 3. [x] Implement pure motive-urgency and opportunity-scoring systems over
    the advertised benefit data.
-4. Define interaction execution and apply effects separately from offer
+4. [x] Define interaction execution and apply effects separately from offer
    scoring.
-5. Represent Sim activity, commands, and transitions as explicit state
+5. [x] Represent action source, activity, and transitions as explicit state
    and testable transformations.
 6. Define event and extension contracts for buffs and aspirations.
 7. Coordinate systems through explicit simulation phases and snapshots.

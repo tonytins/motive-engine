@@ -30,11 +30,22 @@ public struct GridPosition: Hashable, Sendable {
     }
 }
 
-struct GridSize {
-    let width: Int
-    let height: Int
+/// The width and height of a rectangular grid.
+public struct GridSize: Equatable, Sendable {
+    /// The number of columns.
+    public let width: Int
 
-    func contains(_ position: GridPosition) -> Bool {
+    /// The number of rows.
+    public let height: Int
+
+    /// Creates grid bounds using integer dimensions.
+    public init(width: Int, height: Int) {
+        self.width = width
+        self.height = height
+    }
+
+    /// Whether a position is inside these bounds.
+    public func contains(_ position: GridPosition) -> Bool {
         position.x >= 0 && position.x < width
             && position.y >= 0 && position.y < height
     }

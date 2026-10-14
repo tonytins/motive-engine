@@ -40,8 +40,10 @@ Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
 
 ## 📚 Documentation
 
-Start at [`doc/`](./doc/README.md) for the public documentation index and
-the proposed engine architecture.
+Start at [`docs/`](./docs/README.md) for the public documentation index and
+the proposed engine architecture. See the [contributor guide](./docs/contributing.md)
+for development workflow and the [engineering scorecard](./docs/scorecard.md)
+for performance budgets and regression coverage floors.
 
 ## ✅ Supported Versions
 

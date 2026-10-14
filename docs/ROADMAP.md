@@ -10,7 +10,7 @@ unchecked item is planned work, not an implemented feature.
 ## Tokaido: Establish tested foundations
 
 - [x] Keep the core render-agnostic and document the proposed architecture.
-- [x] Add a public `/doc` entry point and architecture overview.
+- [x] Add a public `/docs` entry point and architecture overview.
 - [x] Expose complete, validated motive snapshots and decay-rate tables.
 - [x] Apply motive decay and fulfillment as pure transformations.
 - [x] Add focused tests for bounds, invalid input, clamping, and deterministic
@@ -69,17 +69,18 @@ unchecked item is planned work, not an implemented feature.
 
 ## Kyushu: Model action execution
 
-- [ ] Define action state, start/progress/completion, interruption, and
+- [x] Define action state, start/progress/completion, interruption, and
   failure as value data.
-- [ ] Apply interaction effects through systems, separately from offer
+- [x] Apply interaction effects through systems, separately from offer
   scoring.
-- [ ] Represent player commands as explicit inputs to the same action model
+- [x] Represent player commands as explicit inputs to the same action model
   used by autonomy.
-- [ ] Test transitions and effects with pure inputs and outputs.
+- [x] Test transitions and effects with pure inputs and outputs.
 
 ## Hokkaido: Coordinate simulation phases
 
-- [ ] Define typed Sim, lot, and household state keyed by stable IDs.
+- [x] Define typed Sim, lot, and household state keyed by stable IDs, with
+  validated membership, lot references, and item instance identities.
 - [ ] Specify command, motive, offer, decision, movement, execution, and event
   phases, including data ownership and write order.
 - [ ] Add read-only snapshots and structured results/events for clients.
@@ -107,6 +108,6 @@ unchecked item is planned work, not an implemented feature.
 
 ## Next milestone
 
-Continue with **Kyushu**: model interaction action state and execution
-separately from eligibility and autonomous scoring. Broader contextual
-requirements and catalog loading remain deferred until concrete needs arise.
+Continue with **Hokkaido**: coordinate typed Sim, lot, and household state
+through explicit simulation phases. Broader contextual requirements and
+catalog loading remain deferred until concrete needs arise.

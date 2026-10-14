@@ -14,6 +14,10 @@ In theory, it should be possible run this from the terminal using nothing but an
 - [Roadmap](./ROADMAP.md) — completed foundations and planned milestones.
 - [Architecture overview](./architecture.md) — current foundations and
   the proposed data-oriented direction.
+- [Contributor guide](./contributing.md) — build, test, and contribution
+  expectations.
+- [Engineering scorecard](./scorecard.md) — advisory performance budgets
+  and regression-corpus floors.
 
 ## Documentation roadmap
 
