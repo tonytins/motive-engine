@@ -38,6 +38,10 @@ let package = Package(
 
 Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
 
+Wants and fears are optional. To use them, also add
+`.product(name: "MotiveEngineSWAF", package: "motive-engine")` and
+`import MotiveEngineSWAF`.
+
 ## 🏠 Example
 
 `Examples/NewbieHouse` runs Bob and Betty Newbie through a short simulation on

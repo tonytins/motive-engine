@@ -1,3 +1,5 @@
+import MotiveEngine
+
 /// A fact reported by the aspiration system.
 public enum AspirationEvent: Equatable, Sendable {
     /// Every unlocked slot was rerolled.
@@ -322,6 +324,6 @@ public enum AspirationSystem {
     }
 
     private static func clampedAspiration(_ value: Double) -> Double {
-        value.clamped(to: AspirationState.minimumAspiration ... AspirationState.maximumAspiration)
+        min(max(value, AspirationState.minimumAspiration), AspirationState.maximumAspiration)
     }
 }

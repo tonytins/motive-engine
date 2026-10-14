@@ -1,3 +1,5 @@
+import MotiveEngine
+
 /// Game-controlled settings for one Sim's wants and fears.
 ///
 /// Replace a state's profile whenever the game changes these, for example

@@ -12,6 +12,10 @@ let package = Package(
             name: "MotiveEngine",
             targets: ["MotiveEngine"],
         ),
+        .library(
+            name: "MotiveEngineSWAF",
+            targets: ["MotiveEngineSWAF"],
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -22,9 +26,17 @@ let package = Package(
                 "VM/README.md",
             ],
         ),
+        .target(
+            name: "MotiveEngineSWAF",
+            dependencies: ["MotiveEngine"],
+        ),
         .testTarget(
             name: "MotiveEngineTests",
             dependencies: ["MotiveEngine"],
+        ),
+        .testTarget(
+            name: "MotiveEngineSWAFTests",
+            dependencies: ["MotiveEngine", "MotiveEngineSWAF"],
         ),
         .executableTarget(
             name: "MotiveEngineBenchmarks",

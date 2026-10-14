@@ -1,5 +1,6 @@
 import Foundation
 import MotiveEngine
+import MotiveEngineSWAF
 import Testing
 
 @Suite("Wants and fears")

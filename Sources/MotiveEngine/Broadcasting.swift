@@ -41,6 +41,4 @@ extension Broadcasting {
 enum BroadcastEvent: Equatable {
     case fallAsleep
     case wokeUp
-    case fullfilledWant(WantFearID)
-    case fullfilledFear(WantFearID)
 }

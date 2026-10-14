@@ -35,6 +35,9 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 123 tests across 14 suites after moving
+  SWAF into the `MotiveEngineSWAF` target with its own test target.
+
 - 2026-10-14: `swift test` passed 124 tests across 14 suites after replacing
   the sample wants and fears utilities with the SWAF extension.
 

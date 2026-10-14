@@ -11,8 +11,6 @@ struct HouseholdRoster {
             sleepingSimNames.insert(senderName)
         case .wokeUp:
             sleepingSimNames.remove(senderName)
-        case .fullfilledWant, .fullfilledFear:
-            break
         }
     }
 

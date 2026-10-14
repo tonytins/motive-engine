@@ -265,10 +265,12 @@ offers interactions, qualify.
 
 ### Wants and fears
 
-Wants and fears (SWAF, in `Sources/MotiveEngine/SWAF/`) give the player
-goals and let a Sim communicate what it cares about. They are an optional
-extension that observes the simulation: the system reads motives and step
-events but never changes motives, actions, or free will.
+Wants and fears (SWAF) give the player goals and let a Sim communicate what
+it cares about. They ship as a separate library product, `MotiveEngineSWAF`
+(`Sources/MotiveEngineSWAF/`), built only on the core's public API. A game
+that does not want them depends on `MotiveEngine` alone. SWAF observes the
+simulation: it reads motives and step events but never changes motives,
+actions, or free will.
 
 - **Content.** A `WantFearCatalog` holds `WantFearDefinition` values, decoded
   from JSON matching `schema/swaf.json`. Each has a stable ID, a want or
