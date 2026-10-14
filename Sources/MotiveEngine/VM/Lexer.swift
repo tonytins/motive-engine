@@ -1,107 +1,195 @@
 import Foundation
 
-let unterminatedStringMessage = "unterminated string"
-
-enum LexingError: Error, CustomStringConvertible {
-    case unexpectedCharacter(Character, at: Int)
-    case malformedNumber(String)
-
-    var description: String {
-        switch self {
-        case let .unexpectedCharacter(character, index):
-            "Unexpected character \(character) at position \(index)"
-        case let .malformedNumber(text):
-            "Malformed number literal \(text)"
-        }
+/// Turns Robusta source text into a flat stream of tokens.
+public enum Lexer {
+    public static func tokenize(_ source: String) throws -> [Token] {
+        var scanner = Scanner(source: source)
+        return try scanner.tokenize()
     }
 }
 
-struct Lexer {
-    let characters: [Character]
-    var position = 0
-    var line = 1
+/// The stateful cursor that walks source text one character at a time.
+///
+/// Comments are stripped here rather than surfaced as tokens. `//` and `#`
+/// both start a line comment, and `REM` does too, case-insensitively, as a
+/// nod back to BASIC.
+private struct Scanner {
+    private let characters: [Character]
+    private var index = 0
+    private var line = 1
 
-    init(_ source: String) {
+    init(source: String) {
         characters = Array(source)
     }
 
-    mutating func tokenize(from _: String) throws -> [Token] {
+    mutating func tokenize() throws -> [Token] {
         var tokens: [Token] = []
+
         while true {
-            let token = try nextToken()
-            tokens.append(token)
-            if token.kind == .endOfInput { break }
+            skipWhitespaceAndComments()
+            guard !isAtEnd else { break }
+
+            if current == "\"" {
+                tokens.append(try scanString())
+                continue
+            }
+
+            if current.isNumber {
+                tokens.append(try scanNumber())
+                continue
+            }
+
+            if current.isLetter || current == "_" {
+                let word = scanWord()
+                guard word.uppercased() != "REM" else {
+                    skipToEndOfLine()
+                    continue
+                }
+                tokens.append(Token(kind: classify(word), line: line))
+                continue
+            }
+
+            tokens.append(try scanSymbol())
         }
+
+        tokens.append(Token(kind: .endOfInput, line: line))
         return tokens
     }
 
-    func peek(next: Bool = false) -> Character? {
-        if next {
-            return position < characters.count ? characters[position + 1] : nil
-        }
+    private var isAtEnd: Bool { index >= characters.count }
+    private var current: Character { characters[index] }
 
-        return position < characters.count ? characters[position] : nil
+    private func peek(offset: Int = 1) -> Character? {
+        let peekIndex = index + offset
+        guard peekIndex < characters.count else { return nil }
+        return characters[peekIndex]
     }
 
-    mutating func advance() {
-        position += 1
+    private mutating func advance() {
+        index += 1
     }
 
-    mutating func nextToken() throws -> Token {
-        guard let character = peek() else {
-            return Token(kind: .endOfInput, line: line)
-        }
-        if character == "\n" {
-            advance()
-            let token = Token(kind: .newline, line: line)
-            line += 1
-            return token
-        }
-
-        return try lexSymbol()
-    }
-
-    mutating func skipSpacesAndComments() {
-        while let character = peek() {
-            if character == " " || character == "\t" || character == "\r" {
+    private mutating func skipWhitespaceAndComments() {
+        while !isAtEnd {
+            if current == "\n" {
+                line += 1
                 advance()
-            } else if character == "#" {
-                while let inner = peek(), inner != "\n" {
-                    advance()
-                }
-            } else if character == "/", peek(next: true) == "/" {
-                while let inner = peek(), inner != "\n" {
-                    advance()
-                }
-            } else {
-                break
+                continue
+            }
+            if current.isWhitespace {
+                advance()
+                continue
+            }
+            if current == "#" {
+                skipToEndOfLine()
+                continue
+            }
+            if current == "/" && peek() == "/" {
+                skipToEndOfLine()
+                continue
+            }
+            break
+        }
+    }
+
+    private mutating func skipToEndOfLine() {
+        while !isAtEnd, current != "\n" {
+            advance()
+        }
+    }
+
+    private mutating func scanWord() -> String {
+        var word = ""
+        while !isAtEnd, current.isLetter || current.isNumber || current == "_" {
+            word.append(current)
+            advance()
+        }
+        return word
+    }
+
+    private func classify(_ word: String) -> TokenKind {
+        guard word != "_" else { return .symbol(.underscore) }
+        guard let keyword = Keyword(rawValue: word) else { return .identifier(word) }
+        return .keyword(keyword)
+    }
+
+    private mutating func scanNumber() throws -> Token {
+        let startLine = line
+        var text = ""
+
+        while !isAtEnd, current.isNumber {
+            text.append(current)
+            advance()
+        }
+
+        if !isAtEnd, current == ".", let next = peek(), next.isNumber {
+            text.append(current)
+            advance()
+            while !isAtEnd, current.isNumber {
+                text.append(current)
+                advance()
             }
         }
-    }
 
-    func endOfLine(_ characters: [Character],
-                   from start: Int) -> Int
-    {
-        var index = start
-        while index < characters.count, characters[index] != "\n" {
-            index += 1
+        guard let value = Double(text) else {
+            throw LexError(message: "Invalid number literal '\(text)'.", line: startLine)
         }
-        return index
+        return Token(kind: .numberLiteral(value), line: startLine)
     }
 
-    mutating func lexSymbol() throws -> Token {
+    private mutating func scanString() throws -> Token {
         let startLine = line
-        let twoCharacter = String([peek() ?? " ", peek(next: true) ?? " "])
-        for symbol in ["<=", ">=", "<>", "=>"] where twoCharacter == symbol {
+        advance() // consume the opening quote
+        var text = ""
+
+        while !isAtEnd, current != "\"" {
+            if current == "\\", let escaped = peek() {
+                text.append(unescape(escaped))
+                advance()
+                advance()
+                continue
+            }
+            if current == "\n" {
+                line += 1
+            }
+            text.append(current)
             advance()
-            advance()
-            return Token(kind: .symbol(symbol), line: startLine)
         }
 
-        guard let character = peek(), "+-*/=<>(),".contains(character) else {
-            throw ItemScriptError(message: "unexpected character \(peek().map(String.init) ?? "")", line: startLine)
+        guard !isAtEnd else {
+            throw LexError(message: "Unterminated string literal.", line: startLine)
+        }
+        advance() // consume the closing quote
+        return Token(kind: .stringLiteral(text), line: startLine)
+    }
+
+    private func unescape(_ character: Character) -> Character {
+        switch character {
+        case "n": "\n"
+        case "t": "\t"
+        case "\"": "\""
+        case "\\": "\\"
+        default: character
+        }
+    }
+
+    private mutating func scanSymbol() throws -> Token {
+        let startLine = line
+        let first = current
+
+        if let next = peek() {
+            let pair = String([first, next])
+            if let symbol = Symbol(rawValue: pair) {
+                advance()
+                advance()
+                return Token(kind: .symbol(symbol), line: startLine)
+            }
+        }
+
+        guard let symbol = Symbol(rawValue: String(first)) else {
+            throw LexError(message: "Unexpected character '\(first)'.", line: startLine)
         }
         advance()
-        return Token(kind: .symbol(String(character)), line: startLine)
+        return Token(kind: .symbol(symbol), line: startLine)
     }
 }
