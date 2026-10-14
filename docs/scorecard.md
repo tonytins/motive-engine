@@ -35,9 +35,9 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
-- 2026-10-14: `swift test` passed 86 tests across 12 suites after adding
-  the simulation phase plan. The optimized benchmark measurements above were
-  collected on the same date.
+- 2026-10-14: `swift test` passed 88 tests across 12 suites after adding
+  deterministic simulation snapshots and step result/event models. The
+  optimized benchmark measurements above were collected on the same date.
 
 ## Regression corpus floors
 
@@ -52,7 +52,7 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Autonomy | Cover all 6 motives, positive/zero/negative scores, no useful offer, non-finite scoring input, and ties resolved by each documented identifier key. |
 | Actions | Cover start, progress, completion, duration overrun, interruption, failure, and attempts to advance or terminate a terminal action. |
 | Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, ambient classifications, and sleep/wake roster changes including repeated events. |
-| World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, lot bounds and placement uniqueness, and the declared phase order. |
+| World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, and the declared phase order. |
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
 
@@ -95,6 +95,7 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 - [x] Lot bounds and placed-item uniqueness are validated locally and across
   lots.
 - [x] The standard simulation phase order is covered by a public API test.
+- [x] Snapshots sort entities by stable ID; step results preserve event order.
 
 ### Robusta
 

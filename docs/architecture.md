@@ -90,9 +90,14 @@ posture, and an optional active interaction action. `GridSize` exposes
 lot bounds through `LotState`, which requires positive dimensions.
 
 This is a validated state container, not yet a simulation coordinator.
-It does not process commands or events, move Sims, track occupant
-positions, or produce multi-step snapshots and reports. Those remain
-separate Hokkaido work.
+It does not process commands or events, move Sims, or track occupant
+positions.
+
+`SimulationSnapshot` exposes the state as read-only entity arrays ordered by
+stable ID for deterministic client iteration. `SimulationStepResult` pairs a
+resulting snapshot with ordered `SimulationEvent` values for motive changes,
+action changes, and current-lot changes. These are public data contracts;
+the simulation coordinator that produces them remains future Hokkaido work.
 
 `SimulationPhasePlan.standardOrder` records the intended order:
 commands, motive decay, offer generation, eligibility, autonomous

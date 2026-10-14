@@ -83,7 +83,8 @@ unchecked item is planned work, not an implemented feature.
   validated membership, lot references, and item instance identities.
 - [x] Specify command, motive, offer, decision, movement, execution, and event
   phase order, including intended data ownership and write order.
-- [ ] Add read-only snapshots and structured results/events for clients.
+- [x] Add deterministic read-only snapshots and structured step results/events
+  for clients.
 - [ ] Integrate routing and occupancy while keeping movement separate from
   decision scoring.
 - [ ] Add a session coordinator; use actors only at concurrency boundaries.
@@ -108,6 +109,7 @@ unchecked item is planned work, not an implemented feature.
 
 ## Next milestone
 
-Continue with **Hokkaido**: coordinate typed Sim, lot, and household state
-through explicit simulation phases. Broader contextual requirements and
-catalog loading remain deferred until concrete needs arise.
+Continue with **Hokkaido**: integrate routing and occupancy, then add the
+session coordinator that produces snapshots and step results. Broader
+contextual requirements and catalog loading remain deferred until concrete
+needs arise.

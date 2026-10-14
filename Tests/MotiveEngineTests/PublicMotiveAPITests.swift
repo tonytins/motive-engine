@@ -185,6 +185,80 @@ struct PublicMotiveAPITests {
         #expect(state.lots.count == 2)
     }
 
+    @Test func simulationSnapshotOrdersTopLevelEntitiesByStableID() throws {
+        let firstSim = SimStateData(
+            id: try #require(SimID("z-sim")),
+            motives: try makeMotiveLevels(),
+            posture: .standing
+        )
+        let secondSim = SimStateData(
+            id: try #require(SimID("a-sim")),
+            motives: try makeMotiveLevels(),
+            posture: .sitting
+        )
+        let firstHousehold = try HouseholdState(
+            id: #require(HouseholdID("z-household")),
+            memberIDs: []
+        )
+        let secondHousehold = try HouseholdState(
+            id: #require(HouseholdID("a-household")),
+            memberIDs: []
+        )
+        let firstLot = try LotState(
+            id: #require(LotID("z-lot")),
+            bounds: GridSize(width: 1, height: 1),
+            placedItems: []
+        )
+        let secondLot = try LotState(
+            id: #require(LotID("a-lot")),
+            bounds: GridSize(width: 1, height: 1),
+            placedItems: []
+        )
+        let state = try SimulationState(
+            sims: [firstSim, secondSim],
+            households: [firstHousehold, secondHousehold],
+            lots: [firstLot, secondLot]
+        )
+
+        let snapshot = SimulationSnapshot(state: state)
+
+        #expect(snapshot.sims.map(\.id.rawValue) == ["a-sim", "z-sim"])
+        #expect(snapshot.households.map(\.id.rawValue) == ["a-household", "z-household"])
+        #expect(snapshot.lots.map(\.id.rawValue) == ["a-lot", "z-lot"])
+    }
+
+    @Test func simulationStepResultPreservesStructuredEventsInEmissionOrder() throws {
+        let simID = try #require(SimID("sim"))
+        let firstLotID = try #require(LotID("home"))
+        let secondLotID = try #require(LotID("park"))
+        let lot = try LotState(
+            id: firstLotID,
+            bounds: GridSize(width: 1, height: 1),
+            placedItems: []
+        )
+        let sim = SimStateData(
+            id: simID,
+            motives: try makeMotiveLevels(),
+            posture: .standing,
+            currentLotID: firstLotID
+        )
+        let state = try SimulationState(sims: [sim], households: [], lots: [lot])
+        let snapshot = SimulationSnapshot(state: state)
+        let action = InteractionActionSystem.start(try makeOffer(), initiatedBy: .autonomy)
+        let events: [SimulationEvent] = [
+            .motivesChanged(simID: simID, motives: sim.motives),
+            .actionChanged(simID: simID, action: action),
+            .currentLotChanged(simID: simID, from: firstLotID, to: secondLotID),
+        ]
+
+        let result = SimulationStepResult(snapshot: snapshot, events: events)
+        let emptyResult = SimulationStepResult(snapshot: snapshot)
+
+        #expect(result.snapshot == snapshot)
+        #expect(result.events == events)
+        #expect(emptyResult.events.isEmpty)
+    }
+
     @Test func simulationStateRejectsMissingAndDuplicateReferences() throws {
         let simID = try #require(SimID("sim"))
         let householdID = try #require(HouseholdID("household"))
