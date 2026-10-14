@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - "rel/**"
+      - "release/**"
+
+env:
+  LIBRARY_NAME: Motive-Engine
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.3"
+
+      - name: Run tests
+        run: swift test
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          branch="${GITHUB_REF_NAME}"
+          case "$branch" in
+            rel/*|release/*)
+              version="${branch#*/}"
+              ;;
+            *)
+              echo "Branch must start with rel/ or release/." >&2
+              exit 1
+              ;;
+          esac
+
+          version="${version#v}"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Branch suffix must be a semantic version, optionally prefixed with v." >&2
+            exit 1
+          fi
+
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create release archive
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git archive \
+            --format=zip \
+            --prefix="${LIBRARY_NAME}-${RELEASE_TAG}/" \
+            --output="${LIBRARY_NAME}-${RELEASE_TAG}.zip" \
+            "$GITHUB_SHA"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            "${LIBRARY_NAME}-${RELEASE_TAG}.zip" \
+            --title "${LIBRARY_NAME} ${RELEASE_TAG}" \
+            --generate-notes \
+            --target "$GITHUB_SHA"

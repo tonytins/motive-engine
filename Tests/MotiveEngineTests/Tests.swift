@@ -183,7 +183,9 @@ struct ItemCodingTests {
 @Suite("Aspiration Utilities")
 struct AspirationUtilityTests {
     @Test func catalogUsesSchemaSingularKeysAndTraitRawValues() throws {
-        let json = #"{"want":{"Write a novel":["Bookworm","Creative"]},"fear":{"Public embarrassment":["Paranoid","Romantic"]}}"#
+        let json = """
+        {"want":{"Write a novel":["Bookworm","Creative"]},"fear":{"Public embarrassment":["Paranoid","Romantic"]}}
+        """
         let catalog = try WantFearCatalog(jsonData: Data(json.utf8))
 
         #expect(catalog.wants == [
@@ -195,7 +197,10 @@ struct AspirationUtilityTests {
     }
 
     @Test func matchScoreCountsMatchingTraits() {
-        let want = WantOrFear(name: "Write a novel", traits: [.bookworm, .creative, .ambitious])
+        let want = WantOrFear(
+            name: "Write a novel",
+            traits: [.bookworm, .creative, .ambitious]
+        )
 
         #expect(matchScore(of: want, against: [.bookworm, .creative]) == 2)
     }
@@ -260,6 +265,146 @@ struct TestRandomNumberGenerator: RandomNumberGenerator {
     mutating func next() -> UInt64 {
         state = state &* 6_364_136_223_846_793_005 &+ 1
         return state
+    }
+}
+
+@Suite("Motive State")
+struct MotiveStateTests {
+    @Test func requiresEveryMotiveAndClampsFiniteLevels() throws {
+        var levels = Dictionary(
+            uniqueKeysWithValues: MotiveType.allCases.map { ($0, 50.0) }
+        )
+        levels[.energy] = -20
+        levels[.fun] = 140
+
+        let motives = try MotiveLevels(levels: levels)
+
+        #expect(motives.level(for: .energy) == MotiveLevels.minimumValue)
+        #expect(motives.level(for: .fun) == MotiveLevels.maximumValue)
+        #expect(motives.level(for: .hunger) == 50)
+    }
+
+    @Test func rejectsMissingAndNonFiniteMotiveLevels() {
+        #expect(throws: MotiveLevelsError.self) {
+            try MotiveLevels(levels: [.hunger: 50])
+        }
+
+        var levels = Dictionary(
+            uniqueKeysWithValues: MotiveType.allCases.map { ($0, 50.0) }
+        )
+        levels[.hygiene] = .nan
+
+        #expect(throws: MotiveLevelsError.self) {
+            try MotiveLevels(levels: levels)
+        }
+    }
+
+    @Test func requiresFiniteNonnegativeDecayRateForEveryMotive() {
+        #expect(throws: MotiveLevelsError.self) {
+            try MotiveDecayRates(ratesPerSecond: [.hunger: 1])
+        }
+
+        var rates = Dictionary(
+            uniqueKeysWithValues: MotiveType.allCases.map { ($0, 0.0) }
+        )
+        rates[.bladder] = -1
+
+        #expect(throws: MotiveLevelsError.self) {
+            try MotiveDecayRates(ratesPerSecond: rates)
+        }
+    }
+
+    @Test func decayAndFulfillmentReturnClampedNewValues() throws {
+        let levels = try makeMotiveLevels(defaultingTo: 70, overrides: [
+            .hunger: 45,
+            .energy: 20,
+            .fun: 10,
+        ])
+        let rates = try makeDecayRates(defaultingTo: 0.25, overrides: [
+            .hunger: 0.5,
+            .energy: 2,
+        ])
+
+        let decayed = try MotiveSystem.decay(levels, using: rates, overSeconds: 10)
+        #expect(levels.level(for: .energy) == 20)
+        #expect(decayed.level(for: .energy) == 0)
+        #expect(decayed.level(for: .hunger) == 40)
+        #expect(decayed.level(for: .social) == 67.5)
+
+        let fulfilled = try MotiveSystem.fulfill(
+            decayed,
+            with: [
+                MotiveSignal(motiveType: .hunger, strengthPerSecond: 4),
+                MotiveSignal(motiveType: .fun, strengthPerSecond: -2),
+            ],
+            overSeconds: 10
+        )
+        #expect(fulfilled.level(for: .hunger) == 80)
+        #expect(fulfilled.level(for: .fun) == 0)
+        #expect(decayed.level(for: .hunger) == 40)
+    }
+
+    @Test func lowestMotiveUsesStableCaseOrderForTies() throws {
+        let levels = try makeMotiveLevels(defaultingTo: 30, overrides: [
+            .energy: 10,
+            .hygiene: 10,
+        ])
+
+        #expect(levels.lowest.motiveType == .energy)
+        #expect(levels.lowest.level == 10)
+    }
+
+    @Test func rejectsInvalidElapsedTimeAndNonFiniteSignals() throws {
+        let levels = try makeMotiveLevels(defaultingTo: 50)
+        let rates = try makeDecayRates(defaultingTo: 1)
+
+        #expect(throws: MotiveLevelsError.self) {
+            try MotiveSystem.decay(levels, using: rates, overSeconds: -.infinity)
+        }
+        #expect(throws: MotiveLevelsError.self) {
+            try MotiveSystem.fulfill(
+                levels,
+                with: [MotiveSignal(motiveType: .hunger, strengthPerSecond: .nan)],
+                overSeconds: 1
+            )
+        }
+    }
+
+    @Test func finiteExtremeRatesAndSignalsSaturateAtBounds() throws {
+        let levels = try makeMotiveLevels(defaultingTo: 50)
+        let rates = try makeDecayRates(defaultingTo: 1e308)
+
+        let decayed = try MotiveSystem.decay(levels, using: rates, overSeconds: 2)
+        let fulfilled = try MotiveSystem.fulfill(
+            levels,
+            with: [MotiveSignal(motiveType: .hunger, strengthPerSecond: 1e308)],
+            overSeconds: 2
+        )
+
+        #expect(decayed.level(for: .hunger) == MotiveLevels.minimumValue)
+        #expect(fulfilled.level(for: .hunger) == MotiveLevels.maximumValue)
+    }
+
+    private func makeMotiveLevels(
+        defaultingTo value: Double,
+        overrides: [MotiveType: Double] = [:]
+    ) throws -> MotiveLevels {
+        var levels = Dictionary(
+            uniqueKeysWithValues: MotiveType.allCases.map { ($0, value) }
+        )
+        levels.merge(overrides) { _, override in override }
+        return try MotiveLevels(levels: levels)
+    }
+
+    private func makeDecayRates(
+        defaultingTo value: Double,
+        overrides: [MotiveType: Double] = [:]
+    ) throws -> MotiveDecayRates {
+        var rates = Dictionary(
+            uniqueKeysWithValues: MotiveType.allCases.map { ($0, value) }
+        )
+        rates.merge(overrides) { _, override in override }
+        return try MotiveDecayRates(ratesPerSecond: rates)
     }
 }
 

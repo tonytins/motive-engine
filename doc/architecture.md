@@ -10,7 +10,10 @@ independent of a game's renderer, UI, and presentation.
 The current codebase contains early building blocks, not a complete
 simulation loop:
 
-- motive types and signals;
+- motive values and signals, including complete per-Sim motive snapshots
+  with clamped 0–100 values and pure `MotiveSystem.decay` and
+  `MotiveSystem.fulfill` transformations;
+- complete, finite, nonnegative per-second decay-rate tables;
 - item identities, modifiers, and JSON motive-signal decoding;
 - a basic ambient buff extension;
 - personality traits and wants/fears catalog utilities;
@@ -22,7 +25,29 @@ The Sim scheduler, motive decay and fulfillment loop, concrete
 interaction model, Lot simulation actor, and aspiration lifecycle are
 not yet implemented as complete systems. The APIs and examples in this
 overview describe direction, not guarantees about available runtime
-features.
+features. Motive decay and fulfillment arithmetic exists as pure value
+operations, but it is not yet connected to a running simulation tick.
+
+Motive state requires a value for every `MotiveType`; missing values or
+decay rates are rejected during construction. Finite motive levels are
+clamped to 0–100. Decay rates must be finite and nonnegative. Elapsed
+time must be finite and nonnegative. Fulfillment signals may be negative
+to support draining effects, but must be finite. Equal lowest motive
+values are resolved in `MotiveType` declaration order for repeatable
+results.
+
+The transformations are exposed as a system over immutable value
+snapshots:
+
+```swift
+let levels = try MotiveLevels(
+    levels: Dictionary(uniqueKeysWithValues: MotiveType.allCases.map { ($0, 50.0) })
+)
+let decayRates = try MotiveDecayRates(
+    ratesPerSecond: Dictionary(uniqueKeysWithValues: MotiveType.allCases.map { ($0, 0.01) })
+)
+let nextLevels = try MotiveSystem.decay(levels, using: decayRates, overSeconds: 1)
+```
 
 ## Data-oriented direction
 

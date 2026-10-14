@@ -1,9 +1,13 @@
 # Motive Engine Documentation
 
-Motive Engine is a Swift library for building render-agnostic, Sims-style
-life simulation AI. It is intended as a set of reusable simulation
-building blocks; the game using it owns presentation and player-facing
-gameplay.
+I am designing the Motive Engine as an *extremely* modular framework around the idea of being easily unit testable and render-agnostic as possible. All the engine ever does is pass information back downstream to the frontend.
+
+The engine is made up of two independent subsystems: Needs and Buffs. Only the Sim is aware of any of these. If freewill turned on, they will always search for something to do. 
+
+- Buffs is a plugin system for a classic aspiration system to build upon. 
+- An LSL-inspired scripting engine and language is included but not yet tied in.
+
+In theory, it should be possible run this from the terminal using nothing but an ASCII interface and emojis.
 
 ## Start here
 
