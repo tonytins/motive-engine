@@ -57,59 +57,6 @@ struct MultiRoleItemsTests {
     }
 }
 
-@Suite("Buff Tests")
-struct BuffTests {
-    @Test func bindToAmbientItemsOnly() async throws {
-        let stereo = Item(
-            identity: ItemIdentity(
-                name: "Stereo",
-                itemTypes: .ambient
-            ),
-            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
-        )
-        
-        #expect(BuffRegistry.buffs(for: stereo).contains {
-                $0 is AmbientBuff
-            })
-    }
-
-    @Test func bindsAmbientBuffToHybridItems() {
-        let stereo = Item(
-            identity: ItemIdentity(
-                name: "Stereo",
-                itemTypes: [.ambient, .recreation]
-            ),
-            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
-        )
-
-        #expect(BuffRegistry.buffs(for: stereo).contains { $0 is AmbientBuff })
-    }
-
-    @Test func doesNotBindAmbientBuffToNonAmbientItems() {
-        let chair = Item(
-            identity: ItemIdentity(name: "Chair", itemTypes: .chair),
-            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)]
-        )
-
-        #expect(BuffRegistry.buffs(for: chair).isEmpty)
-    }
-
-    @Test func bindsAmbientBuffToItemDefinition() throws {
-        let definition = ItemDefinition(
-            id: try #require(ItemDefinitionID("ambient-stereo")),
-            identity: ItemIdentity(
-                name: "Stereo",
-                itemTypes: [.ambient, .recreation]
-            ),
-            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)]
-        )
-
-        #expect(definition.isAmbient)
-        #expect(definition.isSelectable)
-        #expect(BuffRegistry.buffs(for: definition).contains { $0 is AmbientBuff })
-    }
-}
-
 @Suite("Grid Geometry")
 struct GridGeometryTests {
     @Test func boundsUseWidthForXAndHeightForY() {

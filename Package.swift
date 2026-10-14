@@ -31,6 +31,14 @@ let package = Package(
             dependencies: ["MotiveEngine"],
             path: "Benchmarks/MotiveEngineBenchmarks",
         ),
+        .executableTarget(
+            name: "NewbieHouse",
+            dependencies: ["MotiveEngine"],
+            path: "Examples/NewbieHouse",
+            resources: [
+                .copy("lot.json"),
+            ],
+        ),
     ],
     swiftLanguageModes: [.v6],
 )

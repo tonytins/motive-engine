@@ -324,18 +324,36 @@ public struct ItemDefinition: Broadcasting, Equatable, Sendable {
     /// The selectable interactions defined by this item content.
     public let interactions: [InteractionDefinition]
 
+    /// The number of Sims that can reserve interactions on this item at once.
+    public let interactionCapacity: Int
+
     /// Creates reusable item content with an explicit stable identifier.
+    ///
+    /// - Throws: `ItemDefinitionError.invalidInteractionCapacity` when the
+    ///   capacity is not positive.
     public init(
         id: ItemDefinitionID,
         identity: ItemIdentity,
         signals: [MotiveSignal],
-        interactions: [InteractionDefinition] = []
-    ) {
+        interactions: [InteractionDefinition] = [],
+        interactionCapacity: Int = 1
+    ) throws {
+        guard interactionCapacity > 0 else {
+            throw ItemDefinitionError.invalidInteractionCapacity
+        }
+
         self.id = id
         self.identity = identity
         self.signals = signals
         self.interactions = interactions
+        self.interactionCapacity = interactionCapacity
     }
+}
+
+/// An invalid item definition.
+public enum ItemDefinitionError: Error, Equatable, Sendable {
+    /// Interaction capacity must be positive.
+    case invalidInteractionCapacity
 }
 
 /// An error produced while building an item definition catalog.

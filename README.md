@@ -38,6 +38,20 @@ let package = Package(
 
 Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
 
+## 🏠 Example
+
+`Examples/NewbieHouse` runs Bob and Betty Newbie through a short simulation on
+the lot in its bundled `lot.json`, printing events, a map, and motive levels as
+time advances:
+
+```sh
+swift run NewbieHouse              # bundled lot
+swift run NewbieHouse path/to/lot.json
+```
+
+Ambient items, such as the Stereo, buff nearby Sims. Lot fields the engine
+does not simulate yet, such as `relationship`, are ignored.
+
 ## 📚 Documentation
 
 Start at [`docs/`](./docs/README.md) for the public documentation index and

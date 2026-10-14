@@ -101,6 +101,9 @@ public struct SimStateData: Equatable, Sendable {
     /// The lot the Sim currently occupies, if any.
     public let currentLotID: LotID?
 
+    /// The Sim's current grid position on its lot, if present.
+    public let position: GridPosition?
+
     /// The interaction the Sim is currently executing, if any.
     public let activeAction: InteractionActionState?
 
@@ -110,12 +113,14 @@ public struct SimStateData: Equatable, Sendable {
         motives: MotiveLevels,
         posture: SimPosture,
         currentLotID: LotID? = nil,
+        position: GridPosition? = nil,
         activeAction: InteractionActionState? = nil
     ) {
         self.id = id
         self.motives = motives
         self.posture = posture
         self.currentLotID = currentLotID
+        self.position = position
         self.activeAction = activeAction
     }
 }
@@ -213,6 +218,18 @@ public enum SimulationStateError: Error, Equatable, Sendable {
     /// A Sim refers to a lot that is not in the simulation.
     case missingCurrentLot(simID: SimID, lotID: LotID)
 
+    /// A Sim occupies a lot without a grid position.
+    case missingCurrentPosition(SimID)
+
+    /// A Sim has a position but no current lot.
+    case positionWithoutCurrentLot(SimID)
+
+    /// A Sim position lies outside its current lot.
+    case positionOutsideCurrentLot(simID: SimID, lotID: LotID)
+
+    /// Two Sims occupy the same grid position on one lot.
+    case duplicateSimPosition(lotID: LotID, position: GridPosition)
+
     /// A household refers to a Sim that is not in the simulation.
     case missingHouseholdMember(householdID: HouseholdID, simID: SimID)
 
@@ -274,12 +291,33 @@ public struct SimulationState: Equatable, Sendable {
             }
         }
 
+        var occupiedSimPositions: Set<SimOccupancyCell> = []
         for sim in sims {
             guard let lotID = sim.currentLotID else {
+                guard sim.position == nil else {
+                    throw SimulationStateError.positionWithoutCurrentLot(sim.id)
+                }
                 continue
             }
-            guard lotsByID[lotID] != nil else {
+            guard let lot = lotsByID[lotID] else {
                 throw SimulationStateError.missingCurrentLot(simID: sim.id, lotID: lotID)
+            }
+            guard let position = sim.position else {
+                throw SimulationStateError.missingCurrentPosition(sim.id)
+            }
+            guard lot.bounds.contains(position) else {
+                throw SimulationStateError.positionOutsideCurrentLot(
+                    simID: sim.id,
+                    lotID: lotID
+                )
+            }
+            guard occupiedSimPositions.insert(
+                SimOccupancyCell(lotID: lotID, position: position)
+            ).inserted else {
+                throw SimulationStateError.duplicateSimPosition(
+                    lotID: lotID,
+                    position: position
+                )
             }
         }
 
@@ -317,4 +355,9 @@ public struct SimulationState: Equatable, Sendable {
     public func lot(for id: LotID) -> LotState? {
         lots[id]
     }
+}
+
+private struct SimOccupancyCell: Hashable {
+    let lotID: LotID
+    let position: GridPosition
 }

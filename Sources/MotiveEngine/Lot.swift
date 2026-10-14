@@ -98,6 +98,78 @@ struct LotSnapshot: Sendable {
     let occupants: [Occupant]
 }
 
+/// The next step toward an interaction item's usable approach area.
+public enum InteractionRouteStep: Equatable, Sendable {
+    /// The Sim already occupies a free tile next to the item.
+    case arrived
+
+    /// The Sim should move to this adjacent tile.
+    case move(to: GridPosition)
+
+    /// No free route to an approach tile exists.
+    case unreachable
+}
+
+/// Deterministic grid routing to a free orthogonally adjacent item tile.
+public enum InteractionRoutingSystem {
+    /// Returns the next step toward a free tile next to the target item.
+    ///
+    /// Blocking items and occupied Sim positions cannot be traversed or used
+    /// as approach tiles. Ties follow the stable neighbor order exposed by
+    /// `GridPosition.orthogonalNeighbors`.
+    public static func nextStep(
+        from origin: GridPosition,
+        towardItemAt itemPosition: GridPosition,
+        blocked: Set<GridPosition>,
+        occupied: Set<GridPosition>,
+        bounds: GridSize
+    ) -> InteractionRouteStep {
+        let approachPositions = Set(itemPosition.orthogonalNeighbors.filter {
+            bounds.contains($0) && !blocked.contains($0) && !occupied.contains($0)
+        })
+        guard !approachPositions.isEmpty else {
+            return .unreachable
+        }
+        guard !approachPositions.contains(origin) else {
+            return .arrived
+        }
+
+        var cameFrom: [GridPosition: GridPosition] = [:]
+        var frontier = [origin]
+        var visited: Set<GridPosition> = [origin]
+
+        while !frontier.isEmpty {
+            var nextFrontier: [GridPosition] = []
+            for position in frontier {
+                for neighbor in position.orthogonalNeighbors {
+                    guard bounds.contains(neighbor),
+                          !blocked.contains(neighbor),
+                          !occupied.contains(neighbor),
+                          visited.insert(neighbor).inserted
+                    else {
+                        continue
+                    }
+
+                    cameFrom[neighbor] = position
+                    guard !approachPositions.contains(neighbor) else {
+                        return .move(
+                            to: Pathfinding.firstStep(
+                                from: origin,
+                                to: neighbor,
+                                cameFrom: cameFrom
+                            )
+                        )
+                    }
+                    nextFrontier.append(neighbor)
+                }
+            }
+            frontier = nextFrontier
+        }
+
+        return .unreachable
+    }
+}
+
 enum Pathfinding {
     public static func nextStep(from origin: GridPosition,
                   toward destination: GridPosition,

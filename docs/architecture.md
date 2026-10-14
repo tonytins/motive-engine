@@ -15,7 +15,7 @@ simulation loop:
   `MotiveSystem.fulfill` transformations;
 - complete, finite, nonnegative per-second decay-rate tables;
 - item identities, modifiers, and JSON motive-signal decoding;
-- a basic ambient buff extension;
+- an optional buff contract with an ambient buff rule;
 - personality traits and wants/fears catalog utilities;
 - grid geometry and pathfinding;
 - a partial household sleep-event roster;
@@ -83,29 +83,48 @@ instance IDs are unique across lots.
 `SimStateData`, `HouseholdState`, and `LotState` hold world state keyed by
 the stable `SimID`, `HouseholdID`, and `LotID` values. `SimulationState`
 indexes these values and validates household membership, current-lot
-references, and global item-instance uniqueness when it is created.
+references, per-lot Sim positions, and global item-instance uniqueness when
+it is created. A Sim on a lot must have an in-bounds grid position, and two
+Sims cannot occupy the same tile.
 Households and lots are independent: household members can be on different
-lots, and a Sim can have no current lot. A Sim state holds motive values,
-posture, and an optional active interaction action. `GridSize` exposes
+lots, and a Sim can have no current lot or position. A Sim state holds motive
+values, posture, and an optional active interaction action. `GridSize` exposes
 lot bounds through `LotState`, which requires positive dimensions.
 
-This is a validated state container, not yet a simulation coordinator.
-It does not process commands or events, move Sims, or track occupant
-positions.
+`ItemDefinition.interactionCapacity` defaults to one and must be positive.
+The session counts an active interaction as a capacity reservation, including
+while its Sim is routing to the item.
+
+`InteractionRoutingSystem` finds a deterministic shortest path to a free
+orthogonal neighbor of an interaction item. Blocking item tiles and tiles
+occupied by other Sims are excluded from both paths and approach positions.
+Movement remains separate from autonomy scoring.
 
 `SimulationSnapshot` exposes the state as read-only entity arrays ordered by
 stable ID for deterministic client iteration. `SimulationStepResult` pairs a
 resulting snapshot with ordered `SimulationEvent` values for motive changes,
-action changes, and current-lot changes. These are public data contracts;
-the simulation coordinator that produces them remains future Hokkaido work.
+action changes, current-lot changes, and position changes.
 
 `SimulationPhasePlan.standardOrder` records the intended order:
-commands, motive decay, offer generation, eligibility, autonomous
+commands, motive decay, buffs, offer generation, eligibility, autonomous
 decision, movement, action execution, then events. Commands and action
-execution own authoritative writes; motive decay updates motive state;
+execution own authoritative writes; motive decay and buffs update motive
+state;
 offer generation, eligibility, and decision produce derived values;
 movement updates position after action selection; events observe the final
-step state. This phase list is a tested contract, not a simulation runner.
+step state.
+
+`SimulationSession` coordinates one validated world state across simulation
+steps. It applies player interaction and cancellation commands,
+decays motives, applies optional buffs, chooses reachable eligible interactions for idle Sims,
+moves actors one grid tile per step, and advances an action only after the
+Sim reaches an available adjacent tile. Sims and events are processed in
+stable-ID and phase order. A cancellation suppresses autonomous reselection
+for that Sim during the same step. An action waits if other Sims temporarily
+occupy every approach tile and fails only when the static lot layout has no
+route. A rejected command leaves the session unchanged. The session does not
+transfer Sims between lots or own concurrency; callers can isolate it at their
+concurrency boundary.
 
 An `ItemDefinition` can also contain reusable `InteractionDefinition`
 values. Each interaction has its own stable ID, a name, advertised
@@ -217,11 +236,36 @@ remain game-specific policy.
 ## Pluggable extensions
 
 Buffs provide a place for passive or contextual effects without making
-the needs system depend on a particular extension. The boundary is also
-intended to support optional aspiration systems, including a
-Wants/Fears-inspired system. Aspirations are longer-horizon goals, not
-simply another physical motive, and their relationship to buffs remains
-to be designed.
+the needs system depend on a particular extension. The contract is:
+
+- **Inputs.** A `BuffRule` receives a read-only `BuffContext`: one Sim's
+  state, its current lot (if any), and the item catalog.
+- **Outputs.** A rule returns per-second `MotiveSignal` values, or none when
+  it does not apply. `BuffSystem.evaluate` rejects non-finite signals,
+  attributes the rest as `BuffEffect` values, and applies them over the
+  elapsed time.
+- **Timing.** `SimulationSession` evaluates buffs in the `buffs` phase,
+  after motive decay and before offer generation, so autonomy reads
+  buffed motives. Buffs see positions from before that step's movement.
+  For each Sim with effects, the step emits `buffsApplied` followed by
+  `motivesChanged` when the values differ.
+- **Ordering.** `BuffRuleSet` rejects duplicate `BuffID` values and runs
+  rules in ID order. Sims are processed in stable-ID order. All signals are
+  summed before clamping, so motive results do not depend on rule order.
+- **Idempotency.** Rules must be pure and hold no state. Evaluating the same
+  context returns the same result, each rule applies once per step, and
+  zero elapsed time reports effects without changing motives.
+
+Buffs are optional: a session created without a rule set applies none and
+emits no buff events. `AmbientBuffRule` applies the signals of every
+`.ambient` item on the Sim's lot within a Manhattan radius, visiting items
+in instance-ID order; hybrid items, such as an ambient stereo that also
+offers interactions, qualify.
+
+The boundary is also intended to support optional aspiration systems,
+including a Wants/Fears-inspired system. Aspirations are longer-horizon
+goals, not simply another physical motive, and their relationship to buffs
+remains to be designed.
 
 Robusta is an independent scripting subsystem for authorable behavior.
 Future integration should use a narrow, typed boundary: scripts receive
@@ -239,7 +283,7 @@ rules and authoritative state remain owned by engine systems.
    scoring.
 5. [x] Represent action source, activity, and transitions as explicit state
    and testable transformations.
-6. Define event and extension contracts for buffs and aspirations.
+6. Define event and extension contracts for buffs (done) and aspirations.
 7. Coordinate systems through explicit simulation phases and snapshots.
 8. Integrate movement, lot/household state, and the scripting boundary.
 

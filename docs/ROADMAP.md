@@ -80,18 +80,22 @@ unchecked item is planned work, not an implemented feature.
 ## Hokkaido: Coordinate simulation phases
 
 - [x] Define typed Sim, lot, and household state keyed by stable IDs, with
-  validated membership, lot references, and item instance identities.
+  validated membership, lot references, Sim positions, and item instance
+  identities.
 - [x] Specify command, motive, offer, decision, movement, execution, and event
   phase order, including intended data ownership and write order.
 - [x] Add deterministic read-only snapshots and structured step results/events
   for clients.
-- [ ] Integrate routing and occupancy while keeping movement separate from
-  decision scoring.
-- [ ] Add a session coordinator; use actors only at concurrency boundaries.
+- [x] Route Sims to free adjacent interaction tiles while respecting blocking
+  items and Sim occupancy.
+- [x] Add item interaction capacity and reserve capacity for active actions.
+- [x] Coordinate commands, motive decay, autonomy, movement, action execution,
+  snapshots, and events with a deterministic value-type session.
+- [x] Keep concurrency outside the session coordinator.
 
 ## Nishi-Kyushu: Connect optional extensions
 
-- [ ] Define buff inputs, outputs, evaluation timing, ordering, and
+- [x] Define buff inputs, outputs, evaluation timing, ordering, and
   idempotency.
 - [ ] Implement aspirations as an optional, independently testable extension
   that can express wants and fears.
@@ -109,7 +113,7 @@ unchecked item is planned work, not an implemented feature.
 
 ## Next milestone
 
-Continue with **Hokkaido**: integrate routing and occupancy, then add the
-session coordinator that produces snapshots and step results. Broader
-contextual requirements and catalog loading remain deferred until concrete
-needs arise.
+Continue with **Nishi-Kyushu**: connect optional extensions without making
+them dependencies of the core simulation. Earlier unchecked catalog and
+contextual-requirement items remain planned until concrete content needs
+define their behavior.
