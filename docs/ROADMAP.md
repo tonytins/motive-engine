@@ -28,9 +28,9 @@ unchecked item is planned work, not an implemented feature.
   position.
 - [x] Add an indexed item-definition catalog with duplicate-ID validation.
 - [x] Verify multiple placed instances can reference the same definition.
-- [ ] Define catalog composition, overrides, and content-loading policy
-  without coupling reusable definitions to a lot. Planned as content packs
-  in Yamagata.
+- [x] Define catalog composition, overrides, and content-loading policy
+  without coupling reusable definitions to a lot, as content packs in
+  Yamagata.
 
 ## Tohoku: Describe interaction offers
 
@@ -132,10 +132,12 @@ escalate step by step instead of stopping the simulation.
 
 - [x] Phase 1: Report script failures as typed values, and reject invalid
   `effect.fulfill` calls when a script is loaded where they are detectable.
-- [ ] Phase 2: Define content packs: a manifest with ID, name, version, engine
-  compatibility, dependencies, and load order; IDs namespaced by pack, with
-  explicit overrides declared in the manifest; a catalog composed from packs;
-  and loading unpacked packs through a content-source protocol.
+- [x] Phase 2: Define content packs: a manifest with ID, name, version,
+  content format, and dependencies; a game-supplied load order adjusted so
+  dependencies load first; IDs namespaced by pack, with explicit overrides
+  declared in the manifest and conflicts reported; a catalog composed from
+  packs; and loading unpacked packs through a content-source protocol.
+- [ ] Load SWAF wants and fears from content packs, namespaced the same way.
 - [ ] Phase 3: Track script health. A failing interaction goes on cooldown and
   is retried; repeated failures disable its script and fall back to written
   effects; an interaction without written effects is disabled; cascading
@@ -148,7 +150,7 @@ escalate step by step instead of stopping the simulation.
 
 ## Next milestone
 
-Continue with **Yamagata** Phase 2, content packs. Wants and
+Continue with **Yamagata** Phase 3, script health. Wants and
 fears that target a specific Sim or item, and lifetime wants, remain planned
 in Nishi-Kyushu. Earlier unchecked contextual-requirement items remain planned
 until concrete content needs define their behavior.

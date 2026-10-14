@@ -249,6 +249,42 @@ need. The first-pass continuous urgency formula and positive-score
 usefulness cutoff are documented above. Decay rules and command precedence
 remain game-specific policy.
 
+## Content packs
+
+Base content, expansions, and mods all load as content packs, so the engine
+treats them the same way. An unpacked pack is a folder:
+
+```text
+my-mod/
+  pack.json        manifest (schema/pack.json)
+  items.json       optional item definitions (schema/pack-items.json)
+  scripts/eat.rob  Robusta scripts named by interactions
+```
+
+- **Manifest.** `ContentPackManifest` holds a `ContentPackID`, a name, a
+  display version, a content `format` (this engine reads format 1), the
+  packs it depends on, and the definitions it overrides.
+- **Loading.** `ContentPack(loadingFrom:)` reads a pack through a
+  `ContentSource`. `DirectoryContentSource` reads an unpacked folder and
+  rejects absolute paths and paths that leave the folder, including through
+  symbolic links. Games can supply
+  their own source, for example for an archive. Every script an interaction
+  names is compiled when the pack loads, and file problems are reported as
+  `ContentPackError.invalidFile` with the file's path. Other files stay
+  available through the pack's `source`, so extensions such as SWAF can read
+  their own data.
+- **Composition.** `ContentComposer.compose` builds one
+  `ItemDefinitionCatalog`. The game supplies the load order; the composer
+  keeps it, except that each pack moves after its dependencies. Missing
+  dependencies, cycles, and duplicate packs are errors.
+- **Namespacing and overrides.** An item written as `fridge` in pack `mod`
+  becomes `mod:fridge`. An item written with another pack's prefix, such as
+  `base:fridge`, replaces that definition. The manifest must declare it as an
+  override, the target must be a direct or indirect dependency, and a
+  declared override must be defined. When several packs override one
+  definition, the latest in load order wins and the composition lists an
+  `OverrideConflict`. `owner(of:)` reports which pack's content is in use.
+
 ## Pluggable extensions
 
 Buffs provide a place for passive or contextual effects without making

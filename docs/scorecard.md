@@ -35,6 +35,8 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 160 tests after adding content packs.
+
 - 2026-10-14: `swift test` passed 144 tests after adding typed script
   failures and load-time `effect.fulfill` checks.
 
@@ -89,6 +91,7 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Scripted interactions in a session | Cover script effects replacing written effects, effects fixed for the action's duration, a failed command script that fails only that action without same-step autonomy, typed runtime and invalid-effect failures, autonomy falling back to the next useful offer, unscripted actions, and offers carrying scripts. |
 | Optional extensions | Run a session through autonomous selection, movement, and completion with no extensions; show default, empty, and inert buff rule sets produce identical step results; and execute authored effects without a script. |
 | Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, invalid restored boards, and wish mode: promise-only fulfillment, offer expiry leaving empty slots, aging without a lifetime, cancellation, invalid lifetimes and ages, and fulfillment buffs granted once per update and applied through session commands. |
+| Content packs | Reject invalid pack IDs and manifest values; load manifests, items, and scripts from memory and from a folder; report each invalid file with its path; reject paths and symbolic links that leave the pack; order packs after their dependencies; reject duplicate packs, missing dependencies, and cycles; qualify IDs; apply declared overrides and reject undeclared, non-dependency, missing, never-defined, and malformed ones; report competing overrides; decode both schema examples; and run composed content in a session. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
 
 ## Per-area checklists

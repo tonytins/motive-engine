@@ -17,6 +17,10 @@ The Motives Engine provides the framework for creating characters with needs, as
 	- [x] Bindings
 	- [x] Item interaction boundary
 	- [x] Run interaction scripts in the simulation session
+- [x] Content packs: manifests, dependencies, namespaced IDs, overrides,
+  and unpacked folders, for base content, expansions, and mods alike
+	- [ ] Script health: cooldowns and disabling broken content
+	- [ ] Packed pack format
 - [x] Wants and fears (SWAF), as an optional product
 	- [x] The Sims 2-style wants and fears
 	- [x] The Sims 3-style wishes

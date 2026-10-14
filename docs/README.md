@@ -6,6 +6,7 @@ The core is needs-driven: Sims have motives that decay, and with free will they 
 
 - **Buffs** are passive effects on motives, such as ambient items or a temporary mood. They live in the core but do nothing unless a game adds rules or timed buffs.
 - **Robusta** is an LSL-inspired scripting language. Item interaction scripts read a Sim's state through a typed boundary, and the simulation session runs them when an action starts to decide its motive effects.
+- **Content packs** carry base content, expansions, and mods in one format: a manifest, item definitions, and scripts. Packs declare dependencies, and their IDs are namespaced so mods can only replace content they deliberately override.
 - **Wants and fears (SWAF)** ship as a separate, optional `MotiveEngineSWAF` product. It supports The Sims 2-style wants and fears and The Sims 3-style wishes, and only observes the simulation, so a Sims 1-style game can leave it out entirely.
 
 In theory, it should be possible run this from the terminal using nothing but an ASCII interface and emojis.
@@ -15,6 +16,8 @@ In theory, it should be possible run this from the terminal using nothing but an
 - [Roadmap](./ROADMAP.md) — completed foundations and planned milestones.
 - [Architecture overview](./architecture.md) — current foundations and
   the proposed data-oriented direction.
+- [Modding guide](./modding.md) — building content packs: manifests,
+  items, scripts, and overrides.
 - [Contributor guide](./contributing.md) — build, test, and contribution
   expectations.
 - [Engineering scorecard](./scorecard.md) — advisory performance budgets
@@ -25,11 +28,12 @@ In theory, it should be possible run this from the terminal using nothing but an
 As the engine becomes more realized, this directory can grow to include:
 
 - a getting-started guide for adding the package to a game;
-- authoring item definitions and interactions;
 - configuring motives and autonomy policies;
 - integrating optional buffs and aspirations;
-- writing scripted item behavior;
 - running simulations, inspecting events, and testing game content.
+
+Authoring items, interactions, and scripted behavior is covered by the
+[modding guide](./modding.md).
 
 These guides should document supported, implemented behavior. Proposed
 features should be labeled as such rather than presented as usable APIs.
