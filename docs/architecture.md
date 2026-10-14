@@ -16,13 +16,14 @@ simulation loop:
 - complete, finite, nonnegative per-second decay-rate tables;
 - item identities, modifiers, and JSON motive-signal decoding;
 - an optional buff contract with an ambient buff rule;
-- personality traits and wants/fears catalog utilities;
+- an optional wants and fears (SWAF) extension with tag- and motive-weighted
+  rolls, an aspiration bar, and reward points;
 - grid geometry and pathfinding;
 - a partial household sleep-event roster;
 - the independent Robusta scripting implementation.
 
-The Sim scheduler, running simulation tick, Lot coordinator, and aspiration
-lifecycle are not yet implemented as complete systems. Motive transformations,
+The Sim scheduler, running simulation tick, and Lot coordinator are not yet
+implemented as complete systems. Motive transformations,
 interaction offers and eligibility, autonomy scoring, and action transitions
 exist as independently testable value-level systems, but are not yet connected
 by a complete simulation loop. The APIs and examples in this overview describe
@@ -262,15 +263,57 @@ emits no buff events. `AmbientBuffRule` applies the signals of every
 in instance-ID order; hybrid items, such as an ambient stereo that also
 offers interactions, qualify.
 
-The boundary is also intended to support optional aspiration systems,
-including a Wants/Fears-inspired system. Aspirations are longer-horizon
-goals, not simply another physical motive, and their relationship to buffs
-remains to be designed.
+### Wants and fears
+
+Wants and fears (SWAF, in `Sources/MotiveEngine/SWAF/`) give the player
+goals and let a Sim communicate what it cares about. They are an optional
+extension that observes the simulation: the system reads motives and step
+events but never changes motives, actions, or free will.
+
+- **Content.** A `WantFearCatalog` holds `WantFearDefinition` values, decoded
+  from JSON matching `schema/swaf.json`. Each has a stable ID, a want or
+  fear kind, a player-facing name, a trigger, roll weights, aspiration
+  points, and reward points.
+- **Tags.** Aspirations, life stages, traits, hobbies, seasons, and recent
+  events are game-defined `SWAFTag` values on the Sim's
+  `AspirationProfile`. Entries can require tags and add weight for others;
+  the engine only compares them.
+- **Rolling.** An entry's weight is its base weight, plus its tag weights,
+  plus each motive weight times that motive's urgency
+  (`(100 - level) / 100`), so a tired Sim tends to roll a want to sleep.
+  Draws are weighted, without repeats, visit candidates in ID order, and use
+  a seed stored in `AspirationState`, so a seed always gives the same board.
+- **Board.** The profile sets want and fear slot counts (four and three by
+  default) and a lock limit (one by default). `AspirationSystem.reroll`
+  replaces every unlocked slot; the game decides when, such as on waking or
+  visiting a community lot. Locked entries survive rerolls until fulfilled.
+  A saved board can be restored through the `AspirationState` initializer.
+- **Triggers.** `observe` fulfills entries from completed interactions in a
+  step's events and from motives below a level. `report` handles named game
+  events, such as a promotion, and `fulfill` completes one entry directly.
+  Each fulfilled slot is rerolled once, never to the same entry.
+- **Scores.** A fulfilled want raises the 0–100 aspiration bar and earns
+  reward points; a realized fear lowers both, without reward points going
+  below zero. `decay` lowers the bar over time. A profile can stop tracking
+  the bar, as for townies, while reward points still change. What happens at
+  a low bar, and what reward points buy, is game policy.
+
+Operations are pure: each returns a new state and ordered
+`AspirationEvent` values, and leaves the state unchanged on error. Wants and
+fears that target a specific Sim or item, and lifetime wants, are planned.
 
 Robusta is an independent scripting subsystem for authorable behavior.
-Future integration should use a narrow, typed boundary: scripts receive
-declared data and return declared offers or effects. Core simulation
-rules and authoritative state remain owned by engine systems.
+It connects to item interactions through a narrow, typed boundary:
+`InteractionScript` compiles a program once, and
+`InteractionScriptSystem.evaluate` runs it against an
+`InteractionScriptInput` built from a Sim and an offer. Scripts read
+immutable inputs such as `sim.hunger` and `interaction.duration`, and
+report effects only by calling `effect.fulfill(motive, strengthPerSecond)`.
+The engine validates those calls into `MotiveSignal` values; scripts never
+read or write authoritative state. Evaluation is pure and deterministic.
+The session does not run interaction scripts yet. See the
+[Robusta README](../Sources/MotiveEngine/VM/README.md#host-boundary) for
+the full input table and error behavior.
 
 ## A gradual implementation path
 
@@ -283,9 +326,10 @@ rules and authoritative state remain owned by engine systems.
    scoring.
 5. [x] Represent action source, activity, and transitions as explicit state
    and testable transformations.
-6. Define event and extension contracts for buffs (done) and aspirations.
+6. [x] Define event and extension contracts for buffs and aspirations.
 7. Coordinate systems through explicit simulation phases and snapshots.
-8. Integrate movement, lot/household state, and the scripting boundary.
+8. Integrate movement, lot/household state, and the scripting boundary
+   (boundary defined; session integration planned).
 
 Each step should preserve working behavior, add focused tests, and
 document user-facing APIs once they are supported.

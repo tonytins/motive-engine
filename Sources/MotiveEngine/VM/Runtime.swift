@@ -10,6 +10,21 @@ public struct RuntimeError: Error, Equatable, Sendable, CustomStringConvertible 
     public var description: String { message }
 }
 
+/// A plain value passed across the Robusta host boundary.
+enum HostValue: Equatable, Sendable {
+    case number(Double)
+    case boolean(Bool)
+    case trilean(Trilean)
+    case string(String)
+    case none
+}
+
+/// A call a script made to a host-declared function, in call order.
+struct HostCall: Equatable, Sendable {
+    let name: String
+    let arguments: [HostValue]
+}
+
 private enum RuntimeValue {
     case number(Double)
     case boolean(Bool)
@@ -46,6 +61,26 @@ private enum RuntimeValue {
             return "None"
         case let .reference(reference):
             return reference.value.displayValue
+        }
+    }
+
+    init(_ hostValue: HostValue) {
+        switch hostValue {
+        case let .number(value): self = .number(value)
+        case let .boolean(value): self = .boolean(value)
+        case let .trilean(value): self = .trilean(value)
+        case let .string(value): self = .string(value)
+        case .none: self = .none
+        }
+    }
+
+    var hostValue: HostValue {
+        switch resolved {
+        case let .number(value): .number(value)
+        case let .boolean(value): .boolean(value)
+        case let .trilean(value): .trilean(value)
+        case let .string(value): .string(value)
+        case .none, .reference: .none
         }
     }
 
@@ -102,6 +137,8 @@ private enum ExecutionSignal {
 
 struct Interpreter {
     private let instructions: [Instruction]
+    private let hostFunctions: [String: Int]
+    private(set) var hostCalls: [HostCall] = []
     private var stack: [RuntimeValue] = []
     private var globals: [String: RuntimeBinding] = [:]
     private var scopes: [[String: RuntimeBinding]] = []
@@ -115,8 +152,21 @@ struct Interpreter {
     private let instructionLimit = 100_000
     private let callDepthLimit = 256
 
-    init(instructions: [Instruction]) {
+    /// Creates an interpreter with optional host inputs and functions.
+    ///
+    /// Host values become immutable globals. Host functions are declared by
+    /// qualified name and arity; calls are recorded in `hostCalls` and
+    /// return `None`.
+    init(
+        instructions: [Instruction],
+        hostValues: [String: HostValue] = [:],
+        hostFunctions: [String: Int] = [:]
+    ) {
         self.instructions = instructions
+        self.hostFunctions = hostFunctions
+        for (name, value) in hostValues {
+            globals[name] = RuntimeBinding(value: RuntimeValue(value), isMutableReference: false)
+        }
     }
 
     mutating func run() throws -> [String] {
@@ -136,6 +186,9 @@ struct Interpreter {
                 let qualifiedName = namespace.map { "\($0).\(name)" } ?? name
                 guard functions[qualifiedName] == nil else {
                     throw RuntimeError(message: "Function '\(qualifiedName)' is declared more than once.")
+                }
+                guard hostFunctions[qualifiedName] == nil else {
+                    throw RuntimeError(message: "Function '\(qualifiedName)' is reserved by the host.")
                 }
                 guard Set(parameters).count == parameters.count else {
                     throw RuntimeError(message: "Function '\(qualifiedName)' has duplicate parameters.")
@@ -352,6 +405,16 @@ struct Interpreter {
                 let startIndex = stack.count - argumentCount
                 let arguments = Array(stack[startIndex...])
                 stack.removeSubrange(startIndex...)
+                if let arity = hostFunctions[name] {
+                    guard arguments.count == arity else {
+                        throw RuntimeError(
+                            message: "Function '\(name)' expects \(arity) argument(s), got \(arguments.count)."
+                        )
+                    }
+                    hostCalls.append(HostCall(name: name, arguments: arguments.map(\.hostValue)))
+                    stack.append(.none)
+                    continue
+                }
                 let function = try resolveFunction(named: name)
                 switch try invoke(function, arguments: arguments, callName: name) {
                 case .complete:

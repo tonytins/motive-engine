@@ -2,71 +2,159 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://motivesengine.dev/schemas/swaf.schema.json",
   "title": "SWAF Wants & Fears Catalog",
-  "description": "",
+  "description": "Want and fear definitions decoded by WantFearCatalog(jsonData:). Tags, game events, and item/interaction IDs are game-defined strings; the engine only compares them.",
   "type": "object",
   "$defs": {
-    "personalityTrait": {
+    "id": {
       "type": "string",
-      "description": "PersonalityTrait in SWAF.swift. Raw values match these strings exactly, not the Swift case names (e.g. the case is `.hotHeaded`, the JSON value is \"Hot-headed\").",
-      "enum": [
-        "Absent-minded",
-        "Artistic",
-        "Ambitious",
-        "Avant garde",
-        "Bookworm",
-        "Geek",
-        "Eccentric",
-        "Creative",
-        "Hot-headed",
-        "Paranoid",
-        "Plant Lover",
-        "Proper",
-        "Music Lover",
-        "Art Lover",
-        "Competitive",
-        "Lazy",
-        "Active",
-        "Goofball",
-        "Romantic",
-        "Erratic",
-        "Self-Assured",
-        "Unflirty",
-        "Flirty"
+      "minLength": 1
+    },
+    "motive": {
+      "type": "string",
+      "enum": ["hunger", "energy", "hygiene", "bladder", "social", "fun"]
+    },
+    "trigger": {
+      "description": "Exactly one way the entry is fulfilled (want) or realized (fear).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "event": {
+              "$ref": "#/$defs/id",
+              "description": "A game event reported with AspirationSystem.report, such as \"promoted\"."
+            }
+          },
+          "required": ["event"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "interactionCompleted": {
+              "type": "object",
+              "description": "The Sim completes an interaction. An omitted ID matches any value; at least one is required.",
+              "properties": {
+                "itemDefinition": { "$ref": "#/$defs/id" },
+                "interaction": { "$ref": "#/$defs/id" }
+              },
+              "minProperties": 1,
+              "additionalProperties": false
+            }
+          },
+          "required": ["interactionCompleted"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "motiveBelow": {
+              "type": "object",
+              "description": "The Sim's motive is below the level when its wants and fears are checked.",
+              "properties": {
+                "motive": { "$ref": "#/$defs/motive" },
+                "level": { "type": "number", "minimum": 0, "maximum": 100 }
+              },
+              "required": ["motive", "level"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["motiveBelow"],
+          "additionalProperties": false
+        }
       ]
     },
-    "traitList": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/personalityTrait" },
-      "uniqueItems": true,
-      "description": "The decoder itself doesn't reject duplicate traits — this schema is stricter than Swift's [PersonalityTrait] array on purpose, to catch a likely copy-paste mistake in authored JSON rather than because duplicates would break anything at runtime."
+    "entry": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "type": "string", "enum": ["want", "fear"] },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Player-facing description."
+        },
+        "trigger": { "$ref": "#/$defs/trigger" },
+        "requiredTags": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true,
+          "description": "Tags a Sim must have for this entry to be rolled."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1,
+          "description": "Roll weight before tag and motive adjustments."
+        },
+        "tagWeights": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "propertyNames": { "minLength": 1 },
+          "description": "Weight added for each tag the Sim has. Negative values discourage the entry."
+        },
+        "motiveWeights": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "propertyNames": { "$ref": "#/$defs/motive" },
+          "description": "Weight added per motive, multiplied by urgency (100 - level) / 100."
+        },
+        "aspiration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Aspiration gained for a want or lost for a fear."
+        },
+        "rewardPoints": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Reward points earned for a want or lost for a fear."
+        }
+      },
+      "required": ["id", "kind", "name", "trigger", "aspiration", "rewardPoints"],
+      "additionalProperties": false
     }
   },
   "properties": {
-    "want": {
-      "type": "object",
-      "description": "Every possible want: description text mapped to its traits.",
-      "additionalProperties": { "$ref": "#/$defs/traitList" },
-      "propertyNames": { "type": "string", "minLength": 1 }
-    },
-    "fear": {
-      "type": "object",
-      "description": "Every possible fear: description text mapped to its traits.",
-      "additionalProperties": { "$ref": "#/$defs/traitList" },
-      "propertyNames": { "type": "string", "minLength": 1 }
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" },
+      "description": "Every want and fear. IDs must be unique."
     }
   },
-  "required": ["want", "fear"],
+  "required": ["entries"],
   "additionalProperties": false,
   "examples": [
     {
-      "want": {
-        "write a novel": ["Bookworm", "Creative"],
-        "throw a party": ["Flirty", "Goofball"]
-      },
-      "fear": {
-        "public embarrassment": ["Paranoid", "Self-Assured"],
-        "losing focus": ["Absent-minded", "Geek"]
-      }
+      "entries": [
+        {
+          "id": "get-promoted",
+          "kind": "want",
+          "name": "Get promoted",
+          "trigger": { "event": "promoted" },
+          "requiredTags": ["stage:adult"],
+          "tagWeights": { "aspiration:fortune": 3 },
+          "aspiration": 20,
+          "rewardPoints": 1500
+        },
+        {
+          "id": "sleep-in-bed",
+          "kind": "want",
+          "name": "Sleep in a bed",
+          "trigger": { "interactionCompleted": { "itemDefinition": "bed" } },
+          "weight": 0.5,
+          "motiveWeights": { "energy": 4 },
+          "aspiration": 5,
+          "rewardPoints": 100
+        },
+        {
+          "id": "go-hungry",
+          "kind": "fear",
+          "name": "Go hungry",
+          "trigger": { "motiveBelow": { "motive": "hunger", "level": 10 } },
+          "aspiration": 10,
+          "rewardPoints": 50
+        }
+      ]
     }
   ]
 }

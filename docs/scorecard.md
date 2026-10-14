@@ -35,6 +35,15 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 124 tests across 14 suites after replacing
+  the sample wants and fears utilities with the SWAF extension.
+
+- 2026-10-14: `swift test` passed 112 tests across 14 suites after adding
+  optional-extension absence tests.
+
+- 2026-10-14: `swift test` passed 109 tests across 13 suites after adding
+  the typed Robusta interaction-script boundary.
+
 - 2026-10-14: `swift test` passed 101 tests across 12 suites after adding
   the buff contract, the `buffs` session phase, and the ambient buff rule.
 
@@ -58,6 +67,9 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, routes around blocked and occupied cells, ambient classifications, and sleep/wake roster changes including repeated events. |
 | World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, Sim position and occupancy, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, session phase behavior, and the declared phase order. |
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
+| Interaction scripts | Read every declared input, report effects in call order, reject the reserved `effect` module and input assignment, report each invalid-effect error, propagate runtime failures and the instruction limit without partial effects, and evaluate repeatably. |
+| Optional extensions | Run a session through autonomous selection, movement, and completion with no extensions; show default, empty, and inert buff rule sets produce identical step results; and execute authored effects without a script. |
+| Wants and fears | Decode every trigger form and the schema example; reject unknown motives, empty names, invalid triggers, weights, and points, and duplicate IDs; cover tag requirements, tag and motive weighting, repeatable seeded rolls, empty slots, interaction, motive, game-event, and direct fulfillment, realized fears clamping at zero, untracked aspiration, locking limits and shrinking slots, decay, and invalid restored boards. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
 
 ## Per-area checklists
@@ -119,6 +131,12 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 - [ ] IR encode/decode behavior rejects unknown or malformed instructions.
 - [ ] Runtime errors remain explicit and do not terminate the host process.
 - [x] Performance is measured using the same 10,001-token source corpus.
+
+### Interaction scripts
+
+- [x] Scripts read only declared, immutable inputs.
+- [x] Effects are validated by the engine and never applied by the script.
+- [x] Failures are explicit errors and return no partial effects.
 
 ### Documentation and schemas
 

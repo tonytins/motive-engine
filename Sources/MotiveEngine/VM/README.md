@@ -16,13 +16,63 @@ Robusta follows that separation:
   `MotiveSignal`, or UI instance.
 - `print` produces output lines returned by the VM. Runtime and language errors
   are thrown to the caller.
-- The current runtime has no built-in binding to Motive Engine's broadcasting,
-  motive fulfillment, buffs, or item lifecycle. Connecting item event handlers
-  and script effects to those systems belongs in a later host/engine integration
-  layer, not in the language core.
+- The language core has no built-in binding to Motive Engine's broadcasting,
+  motive fulfillment, buffs, or item lifecycle. The engine reaches scripts only
+  through the host boundary described below.
 
-This keeps the VM independently testable while leaving an explicit boundary for
-the future engine adapter.
+This keeps the VM independently testable while giving the engine one explicit,
+typed adapter.
+
+## Host Boundary
+
+The interpreter accepts two optional host declarations, both owned by the
+caller:
+
+- **Host values** become immutable globals before top-level code runs. Dotted
+  names such as `sim.hunger` are read with ordinary member syntax and cannot be
+  assigned, because assignment targets must be plain identifiers.
+- **Host functions** are declared by qualified name and arity. A call checks
+  the argument count, records the call and its plain values in order, and
+  returns `None`. The host interprets the recorded calls after the run. Scripts
+  cannot declare functions with a reserved host name.
+
+### Item interactions
+
+`InteractionScript` compiles and validates a program once. It rejects a
+program that declares the reserved `effect` module.
+`InteractionScriptSystem.evaluate(_:input:)` runs it against an
+`InteractionScriptInput` built from a `SimStateData` and an `InteractionOffer`.
+
+| Input | Type |
+| --- | --- |
+| `sim.id`, `sim.posture` | string (`"standing"` or `"sitting"`) |
+| `sim.hunger`, `sim.energy`, `sim.hygiene`, `sim.bladder`, `sim.social`, `sim.fun` | number, 0–100 |
+| `item.id`, `item.definition` | string |
+| `interaction.id`, `interaction.name` | string |
+| `interaction.duration` | number, seconds |
+
+The only output is `effect.fulfill(motive, strengthPerSecond)`. The engine
+validates each call after the run and returns `MotiveSignal` values in call
+order, along with any `print` output:
+
+```robusta
+state default
+    func stateEntry()
+        if sim.hunger < 30
+            effect.fulfill("hunger", 3)
+        else
+            effect.fulfill("hunger", 1)
+        end
+    end
+end
+```
+
+Wrong argument types, unknown motive names, and non-finite strengths are
+reported as `InteractionScriptError` values. Script failures, including the
+instruction limit, are thrown as `RuntimeError`, and no partial effects are
+returned. Evaluation is deterministic and never changes simulation state;
+applying the returned effects is the caller's responsibility.
+`SimulationSession` does not run interaction scripts yet.
 
 ## Pipeline and API
 
