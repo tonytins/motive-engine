@@ -81,11 +81,13 @@ state.
 
 An `ItemDefinition` can also contain reusable `InteractionDefinition`
 values. Each interaction has its own stable ID, a name, advertised
-`MotiveBenefit` values, and separate `MotiveSignal` effects.
+`MotiveBenefit` values, separate `MotiveSignal` effects, and
+`InteractionRequirements`. Requirements currently support a required
+actor posture.
 `ItemDefinitionCatalog.interactionOffers(for:)` combines those
 definitions with a `PlacedItem` to produce instance-specific
 `InteractionOffer` values. Offers contain advertised benefits only;
-they are candidates for future eligibility checks, not proof that an
+they are candidates for eligibility checks, not proof that an
 interaction is reachable or currently usable. The catalog resolves an
 unknown item definition as an error, and rejects duplicate interaction
 IDs within one item definition.
@@ -95,6 +97,16 @@ per-second signals. The engine does not yet execute interactions or
 apply their effects. Advertised benefits and actual effects are both
 required to have finite strengths, but they are deliberately allowed to
 differ.
+
+`InteractionEligibilitySystem.evaluate` checks an offer against optional
+actor and item snapshots. Actor snapshots provide posture and whether
+the actor can start another interaction. Item snapshots provide current
+availability, capacity, and occupancy. Missing snapshots, unavailable
+actors/items, posture mismatches, and full capacity are returned as
+explicit reasons in a stable order. Snapshot construction rejects
+negative capacity or occupancy; zero capacity and over-capacity
+occupancy are represented and report as full. Eligibility does not
+check location, routing, motives, or autonomy policy.
 
 ```swift
 if let chairDefinitionID = ItemDefinitionID("basic-chair"),

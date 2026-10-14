@@ -188,6 +188,17 @@ public struct InteractionDefinitionID: Codable, Hashable, Sendable {
     }
 }
 
+/// Requirements that must be met to start an interaction.
+public struct InteractionRequirements: Equatable, Sendable {
+    /// The actor posture required by the interaction, if any.
+    public let requiredPosture: SimPosture?
+
+    /// Creates interaction requirements.
+    public init(requiredPosture: SimPosture? = nil) {
+        self.requiredPosture = requiredPosture
+    }
+}
+
 /// Reusable interaction content with separate advertised benefits and effects.
 public struct InteractionDefinition: Equatable, Sendable {
     /// The stable identifier within its item definition.
@@ -202,6 +213,9 @@ public struct InteractionDefinition: Equatable, Sendable {
     /// Motive changes applied while the interaction executes.
     public let motiveEffects: [MotiveSignal]
 
+    /// Preconditions declared by the interaction.
+    public let requirements: InteractionRequirements
+
     /// Creates interaction content with explicit advertised and applied values.
     ///
     /// - Throws: `InteractionDefinitionError` when the name is empty or a
@@ -210,7 +224,8 @@ public struct InteractionDefinition: Equatable, Sendable {
         id: InteractionDefinitionID,
         name: String,
         advertisedBenefits: [MotiveBenefit],
-        motiveEffects: [MotiveSignal]
+        motiveEffects: [MotiveSignal],
+        requirements: InteractionRequirements = InteractionRequirements()
     ) throws {
         guard !name.isEmpty else {
             throw InteractionDefinitionError.emptyName
@@ -226,6 +241,7 @@ public struct InteractionDefinition: Equatable, Sendable {
         self.name = name
         self.advertisedBenefits = advertisedBenefits
         self.motiveEffects = motiveEffects
+        self.requirements = requirements
     }
 }
 
@@ -258,6 +274,9 @@ public struct InteractionOffer: Equatable, Sendable {
     /// Expected motive changes. These are not applied by the offer.
     public let advertisedBenefits: [MotiveBenefit]
 
+    /// Preconditions declared by the interaction.
+    public let requirements: InteractionRequirements
+
     fileprivate init(
         itemInstanceID: ItemInstanceID,
         itemDefinitionID: ItemDefinitionID,
@@ -268,6 +287,7 @@ public struct InteractionOffer: Equatable, Sendable {
         interactionDefinitionID = interaction.id
         name = interaction.name
         advertisedBenefits = interaction.advertisedBenefits
+        requirements = interaction.requirements
     }
 }
 

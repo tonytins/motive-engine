@@ -199,4 +199,140 @@ struct PublicMotiveAPITests {
             try catalog.interactionOffers(for: placedItem)
         }
     }
+
+    @Test func eligibilityAllowsAvailableActorAndItemAtCapacityBoundary() throws {
+        let offer = try makeOffer(requiredPosture: .sitting)
+        let actor = InteractionActorSnapshot(posture: .sitting, isAvailable: true)
+        let item = try makeItemSnapshot(isAvailable: true, capacity: 2, occupancy: 1)
+
+        let result = InteractionEligibilitySystem.evaluate(offer, actor: actor, item: item)
+
+        #expect(result.isEligible)
+        #expect(result.reasons.isEmpty)
+    }
+
+    @Test func eligibilityReportsEveryUnmetRequirementInStableOrder() throws {
+        let offer = try makeOffer(requiredPosture: .sitting)
+        let actor = InteractionActorSnapshot(posture: .standing, isAvailable: false)
+        let item = try makeItemSnapshot(isAvailable: false, capacity: 2, occupancy: 2)
+
+        let result = InteractionEligibilitySystem.evaluate(offer, actor: actor, item: item)
+
+        #expect(!result.isEligible)
+        #expect(result.reasons == [
+            .actorUnavailable,
+            .postureMismatch(required: .sitting, actual: .standing),
+            .itemUnavailable,
+            .itemAtCapacity(capacity: 2, occupancy: 2),
+        ])
+    }
+
+    @Test func missingEligibilitySnapshotsAreReported() throws {
+        let offer = try makeOffer(requiredPosture: nil)
+
+        let result = InteractionEligibilitySystem.evaluate(offer, actor: nil, item: nil)
+
+        #expect(result.reasons == [.missingActorSnapshot, .missingItemSnapshot])
+    }
+
+    @Test func zeroCapacityAndOverCapacityItemsAreUnavailable() throws {
+        let offer = try makeOffer(requiredPosture: nil)
+        let actor = InteractionActorSnapshot(posture: .standing, isAvailable: true)
+        let zeroCapacity = try makeItemSnapshot(isAvailable: true, capacity: 0, occupancy: 0)
+        let overCapacity = try makeItemSnapshot(isAvailable: true, capacity: 1, occupancy: 2)
+
+        #expect(InteractionEligibilitySystem.evaluate(
+            offer,
+            actor: actor,
+            item: zeroCapacity
+        ).reasons == [.itemAtCapacity(capacity: 0, occupancy: 0)])
+        #expect(InteractionEligibilitySystem.evaluate(
+            offer,
+            actor: actor,
+            item: overCapacity
+        ).reasons == [.itemAtCapacity(capacity: 1, occupancy: 2)])
+    }
+
+    @Test func itemEligibilitySnapshotsRejectNegativeCounts() throws {
+        let itemInstanceID = try #require(ItemInstanceID("eligibility-instance"))
+
+        #expect(throws: InteractionItemSnapshotError.self) {
+            try InteractionItemSnapshot(
+                itemInstanceID: itemInstanceID,
+                isAvailable: true,
+                capacity: -1,
+                occupancy: 0
+            )
+        }
+        #expect(throws: InteractionItemSnapshotError.self) {
+            try InteractionItemSnapshot(
+                itemInstanceID: itemInstanceID,
+                isAvailable: true,
+                capacity: 1,
+                occupancy: -1
+            )
+        }
+    }
+
+    @Test func eligibilityRejectsSnapshotForDifferentItemInstance() throws {
+        let offer = try makeOffer(requiredPosture: nil)
+        let actor = InteractionActorSnapshot(posture: .standing, isAvailable: true)
+        let differentItemID = try #require(ItemInstanceID("different-instance"))
+        let item = try InteractionItemSnapshot(
+            itemInstanceID: differentItemID,
+            isAvailable: true,
+            capacity: 1,
+            occupancy: 0
+        )
+        let expectedItemID = try #require(ItemInstanceID("eligibility-instance"))
+
+        let result = InteractionEligibilitySystem.evaluate(offer, actor: actor, item: item)
+
+        #expect(result.reasons == [
+            .itemSnapshotMismatch(
+                expected: expectedItemID,
+                actual: differentItemID
+            )
+        ])
+    }
+
+    private func makeOffer(requiredPosture: SimPosture?) throws -> InteractionOffer {
+        let itemDefinitionID = try #require(ItemDefinitionID("eligibility-item"))
+        let itemInstanceID = try #require(ItemInstanceID("eligibility-instance"))
+        let interactionID = try #require(InteractionDefinitionID("eligibility-test"))
+        let interaction = try InteractionDefinition(
+            id: interactionID,
+            name: "Use item",
+            advertisedBenefits: [],
+            motiveEffects: [],
+            requirements: InteractionRequirements(requiredPosture: requiredPosture)
+        )
+        let definition = ItemDefinition(
+            id: itemDefinitionID,
+            identity: ItemIdentity(name: "Test item", itemTypes: .chair),
+            signals: [],
+            interactions: [interaction]
+        )
+        let catalog = try ItemDefinitionCatalog(definitions: [definition])
+        let placedItem = PlacedItem(
+            id: itemInstanceID,
+            definitionID: itemDefinitionID,
+            position: GridPosition(x: 0, y: 0)
+        )
+
+        return try #require(catalog.interactionOffers(for: placedItem).first)
+    }
+
+    private func makeItemSnapshot(
+        isAvailable: Bool,
+        capacity: Int,
+        occupancy: Int
+    ) throws -> InteractionItemSnapshot {
+        try InteractionItemSnapshot(
+            itemInstanceID: #require(ItemInstanceID("eligibility-instance")),
+            isAvailable: isAvailable,
+            capacity: capacity,
+            occupancy: occupancy
+        )
+    }
 }
