@@ -39,7 +39,8 @@ struct PublicMotiveAPITests {
             motiveEffects: [
                 MotiveSignal(motiveType: .fun, strengthPerSecond: 1),
                 MotiveSignal(motiveType: .energy, strengthPerSecond: -0.25),
-            ]
+            ],
+            durationSeconds: 10
         )
         let definition = ItemDefinition(
             id: definitionID,
@@ -68,6 +69,8 @@ struct PublicMotiveAPITests {
         #expect(firstOffers[0].interactionDefinitionID == interactionID)
         #expect(firstOffers[0].name == interaction.name)
         #expect(firstOffers[0].advertisedBenefits == interaction.advertisedBenefits)
+        #expect(firstOffers[0].motiveEffects == interaction.motiveEffects)
+        #expect(firstOffers[0].durationSeconds == interaction.durationSeconds)
         #expect(secondOffers[0].itemInstanceID == secondInstance.id)
         #expect(firstInstance.definitionID == secondInstance.definitionID)
         #expect(firstInstance.id != secondInstance.id)
@@ -139,7 +142,8 @@ struct PublicMotiveAPITests {
             id: interactionID,
             name: "Read",
             advertisedBenefits: [],
-            motiveEffects: []
+            motiveEffects: [],
+            durationSeconds: 10
         )
         let definition = ItemDefinition(
             id: definitionID,
@@ -161,7 +165,8 @@ struct PublicMotiveAPITests {
                 id: interactionID,
                 name: "",
                 advertisedBenefits: [],
-                motiveEffects: []
+                motiveEffects: [],
+                durationSeconds: 10
             )
         }
         #expect(throws: InteractionDefinitionError.self) {
@@ -171,7 +176,8 @@ struct PublicMotiveAPITests {
                 advertisedBenefits: [
                     MotiveBenefit(motiveType: .hunger, expectedStrengthPerSecond: .infinity)
                 ],
-                motiveEffects: []
+                motiveEffects: [],
+                durationSeconds: 10
             )
         }
         #expect(throws: InteractionDefinitionError.self) {
@@ -181,8 +187,20 @@ struct PublicMotiveAPITests {
                 advertisedBenefits: [],
                 motiveEffects: [
                     MotiveSignal(motiveType: .hunger, strengthPerSecond: .nan)
-                ]
+                ],
+                durationSeconds: 10
             )
+        }
+        for invalidDuration in [0, -1, .infinity, .nan] {
+            #expect(throws: InteractionDefinitionError.invalidDuration) {
+                try InteractionDefinition(
+                    id: interactionID,
+                    name: "Eat",
+                    advertisedBenefits: [],
+                    motiveEffects: [],
+                    durationSeconds: invalidDuration
+                )
+            }
         }
     }
 
@@ -398,10 +416,101 @@ struct PublicMotiveAPITests {
         }
     }
 
+    @Test func actionProgressAppliesEffectsAndCompletesAtConfiguredDuration() throws {
+        let offer = try makeOffer(
+            motiveEffects: [
+                MotiveSignal(motiveType: .hunger, strengthPerSecond: 2),
+                MotiveSignal(motiveType: .energy, strengthPerSecond: -1),
+            ],
+            durationSeconds: 10
+        )
+        let initialMotives = try makeMotiveLevels([.hunger: 50, .energy: 50])
+        let started = InteractionActionSystem.start(offer, initiatedBy: .playerCommand)
+
+        #expect(started.status == .running)
+        #expect(started.elapsedSeconds == 0)
+        #expect(started.initiator == .playerCommand)
+
+        let partialProgress = try InteractionActionSystem.advance(
+            started,
+            motives: initialMotives,
+            bySeconds: 3
+        )
+        #expect(partialProgress.action.elapsedSeconds == 3)
+        #expect(partialProgress.action.status == .running)
+        #expect(partialProgress.motives.level(for: .hunger) == 56)
+        #expect(partialProgress.motives.level(for: .energy) == 47)
+
+        let completion = try InteractionActionSystem.advance(
+            partialProgress.action,
+            motives: partialProgress.motives,
+            bySeconds: 20
+        )
+        #expect(completion.action.elapsedSeconds == 10)
+        #expect(completion.action.status == .completed)
+        #expect(completion.motives.level(for: .hunger) == 70)
+        #expect(completion.motives.level(for: .energy) == 40)
+        #expect(throws: InteractionActionError.actionIsNotRunning) {
+            try InteractionActionSystem.advance(
+                completion.action,
+                motives: completion.motives,
+                bySeconds: 1
+            )
+        }
+    }
+
+    @Test func actionInterruptionAndFailurePreservePriorProgressAndEffects() throws {
+        let offer = try makeOffer(
+            motiveEffects: [MotiveSignal(motiveType: .hunger, strengthPerSecond: 2)],
+            durationSeconds: 10
+        )
+        let initialMotives = try makeMotiveLevels([.hunger: 50])
+        let started = InteractionActionSystem.start(offer, initiatedBy: .autonomy)
+        let progress = try InteractionActionSystem.advance(
+            started,
+            motives: initialMotives,
+            bySeconds: 2
+        )
+        let interrupted = try InteractionActionSystem.interrupt(
+            progress.action,
+            because: .cancelled
+        )
+
+        #expect(progress.motives.level(for: .hunger) == 54)
+        #expect(interrupted.elapsedSeconds == 2)
+        #expect(interrupted.status == .interrupted(.cancelled))
+        #expect(interrupted.initiator == .autonomy)
+        #expect(throws: InteractionActionError.actionIsNotRunning) {
+            try InteractionActionSystem.fail(interrupted, because: .executionFailed)
+        }
+
+        let failed = try InteractionActionSystem.fail(started, because: .itemUnavailable)
+        #expect(failed.elapsedSeconds == 0)
+        #expect(failed.status == .failed(.itemUnavailable))
+    }
+
+    @Test func actionProgressRejectsInvalidElapsedTime() throws {
+        let offer = try makeOffer()
+        let action = InteractionActionSystem.start(offer, initiatedBy: .playerCommand)
+        let motives = try makeMotiveLevels()
+
+        for invalidElapsedSeconds in [-1, .infinity, .nan] {
+            #expect(throws: MotiveLevelsError.invalidElapsedSeconds) {
+                try InteractionActionSystem.advance(
+                    action,
+                    motives: motives,
+                    bySeconds: invalidElapsedSeconds
+                )
+            }
+        }
+    }
+
     private func makeOffer(
         interactionID: String = "eligibility-test",
         itemInstanceID: String = "eligibility-instance",
         advertisedBenefits: [MotiveBenefit] = [],
+        motiveEffects: [MotiveSignal] = [],
+        durationSeconds: Double = 10,
         requiredPosture: SimPosture? = nil
     ) throws -> InteractionOffer {
         let itemDefinitionID = try #require(ItemDefinitionID("eligibility-item"))
@@ -411,7 +520,8 @@ struct PublicMotiveAPITests {
             id: interactionID,
             name: "Use item",
             advertisedBenefits: advertisedBenefits,
-            motiveEffects: [],
+            motiveEffects: motiveEffects,
+            durationSeconds: durationSeconds,
             requirements: InteractionRequirements(requiredPosture: requiredPosture)
         )
         let definition = ItemDefinition(

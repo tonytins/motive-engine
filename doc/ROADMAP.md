@@ -69,13 +69,13 @@ unchecked item is planned work, not an implemented feature.
 
 ## Kyushu: Model action execution
 
-- [ ] Define action state, start/progress/completion, interruption, and
+- [x] Define action state, start/progress/completion, interruption, and
   failure as value data.
-- [ ] Apply interaction effects through systems, separately from offer
+- [x] Apply interaction effects through systems, separately from offer
   scoring.
-- [ ] Represent player commands as explicit inputs to the same action model
+- [x] Represent player commands as explicit inputs to the same action model
   used by autonomy.
-- [ ] Test transitions and effects with pure inputs and outputs.
+- [x] Test transitions and effects with pure inputs and outputs.
 
 ## Hokkaido: Coordinate simulation phases
 
@@ -107,6 +107,6 @@ unchecked item is planned work, not an implemented feature.
 
 ## Next milestone
 
-Continue with **Kyushu**: model interaction action state and execution
-separately from eligibility and autonomous scoring. Broader contextual
-requirements and catalog loading remain deferred until concrete needs arise.
+Continue with **Hokkaido**: coordinate typed Sim, lot, and household state
+through explicit simulation phases. Broader contextual requirements and
+catalog loading remain deferred until concrete needs arise.

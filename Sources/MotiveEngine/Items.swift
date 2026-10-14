@@ -213,22 +213,29 @@ public struct InteractionDefinition: Equatable, Sendable {
     /// Motive changes applied while the interaction executes.
     public let motiveEffects: [MotiveSignal]
 
+    /// The interaction's active duration in simulated seconds.
+    public let durationSeconds: Double
+
     /// Preconditions declared by the interaction.
     public let requirements: InteractionRequirements
 
     /// Creates interaction content with explicit advertised and applied values.
     ///
-    /// - Throws: `InteractionDefinitionError` when the name is empty or a
-    ///   strength is not finite.
+    /// - Throws: `InteractionDefinitionError` when the name is empty, the
+    ///   duration is not positive and finite, or a strength is not finite.
     public init(
         id: InteractionDefinitionID,
         name: String,
         advertisedBenefits: [MotiveBenefit],
         motiveEffects: [MotiveSignal],
+        durationSeconds: Double,
         requirements: InteractionRequirements = InteractionRequirements()
     ) throws {
         guard !name.isEmpty else {
             throw InteractionDefinitionError.emptyName
+        }
+        guard durationSeconds.isFinite, durationSeconds > 0 else {
+            throw InteractionDefinitionError.invalidDuration
         }
         for benefit in advertisedBenefits where !benefit.expectedStrengthPerSecond.isFinite {
             throw InteractionDefinitionError.nonFiniteAdvertisedBenefit(benefit.motiveType)
@@ -241,6 +248,7 @@ public struct InteractionDefinition: Equatable, Sendable {
         self.name = name
         self.advertisedBenefits = advertisedBenefits
         self.motiveEffects = motiveEffects
+        self.durationSeconds = durationSeconds
         self.requirements = requirements
     }
 }
@@ -249,6 +257,9 @@ public struct InteractionDefinition: Equatable, Sendable {
 public enum InteractionDefinitionError: Error, Equatable, Sendable {
     /// The interaction name is empty.
     case emptyName
+
+    /// The interaction duration is not positive and finite.
+    case invalidDuration
 
     /// An advertised benefit has a non-finite strength.
     case nonFiniteAdvertisedBenefit(MotiveType)
@@ -274,6 +285,12 @@ public struct InteractionOffer: Equatable, Sendable {
     /// Expected motive changes. These are not applied by the offer.
     public let advertisedBenefits: [MotiveBenefit]
 
+    /// Motive changes applied while the action is active.
+    public let motiveEffects: [MotiveSignal]
+
+    /// The interaction's active duration in simulated seconds.
+    public let durationSeconds: Double
+
     /// Preconditions declared by the interaction.
     public let requirements: InteractionRequirements
 
@@ -287,6 +304,8 @@ public struct InteractionOffer: Equatable, Sendable {
         interactionDefinitionID = interaction.id
         name = interaction.name
         advertisedBenefits = interaction.advertisedBenefits
+        motiveEffects = interaction.motiveEffects
+        durationSeconds = interaction.durationSeconds
         requirements = interaction.requirements
     }
 }

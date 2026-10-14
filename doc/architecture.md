@@ -86,17 +86,14 @@ values. Each interaction has its own stable ID, a name, advertised
 actor posture.
 `ItemDefinitionCatalog.interactionOffers(for:)` combines those
 definitions with a `PlacedItem` to produce instance-specific
-`InteractionOffer` values. Offers contain advertised benefits only;
-they are candidates for eligibility checks, not proof that an
-interaction is reachable or currently usable. The catalog resolves an
-unknown item definition as an error, and rejects duplicate interaction
-IDs within one item definition.
-
-For this first slice, execution effects model motive changes as
-per-second signals. The engine does not yet execute interactions or
-apply their effects. Advertised benefits and actual effects are both
-required to have finite strengths, but they are deliberately allowed to
-differ.
+`InteractionOffer` values. Offers contain advertised benefits and the
+separate execution effects and duration from their definition. They are
+candidates for eligibility checks, not proof that an interaction is
+reachable or currently usable. The catalog resolves an unknown item
+definition as an error, and rejects duplicate interaction IDs within
+one item definition. Durations must be positive and finite. Advertised
+benefits and actual effects must have finite strengths, but they are
+deliberately allowed to differ.
 
 `InteractionEligibilitySystem.evaluate` checks an offer against optional
 actor and item snapshots. Actor snapshots provide posture and whether
@@ -124,6 +121,17 @@ changes motive state nor applies the separate execution effects. Eligibility
 must be evaluated by the caller first; player-command priority and free-will
 policy are not part of this scoring system.
 
+`InteractionActionSystem.start` creates an action state from an offer
+selected by either `.playerCommand` or `.autonomy`. The caller checks
+eligibility before starting. `advance` applies motive effects only over
+the active time in that step, bounded by the configured duration. When
+the duration is reached, the action completes; excess requested time is
+ignored. Interruption and failure stop a running action without undoing
+effects already applied. Failure reasons are explicit values supplied by
+the caller. Terminal actions cannot be advanced or terminated again.
+These transitions return new values and do not own or mutate authoritative
+simulation state.
+
 ```swift
 if let chairDefinitionID = ItemDefinitionID("basic-chair"),
    let chairInstanceID = ItemInstanceID("living-room-chair"),
@@ -142,7 +150,8 @@ if let chairDefinitionID = ItemDefinitionID("basic-chair"),
                 ],
                 motiveEffects: [
                     MotiveSignal(motiveType: .fun, strengthPerSecond: 0.25)
-                ]
+                ],
+                durationSeconds: 60
             )
         ]
     )
@@ -162,7 +171,8 @@ Motives represent immediate needs whose values change over simulated
 time. Item definitions now provide interaction offers and distinguish
 their advertised motive benefits from their actual motive effects.
 Eligibility checks and pure autonomy ranking are implemented as separate
-systems. Execution remains future work.
+systems. Actions progress as explicit values, and per-second motive
+effects are applied by pure action transitions.
 
 An autonomy policy should inspect a snapshot of relevant Sim state and
 viable interaction offers, then return a decision or ranked candidates.
@@ -197,9 +207,9 @@ rules and authoritative state remain owned by engine systems.
    coupling definitions to lot state.
 3. [x] Implement pure motive-urgency and opportunity-scoring systems over
    the advertised benefit data.
-4. Define interaction execution and apply effects separately from offer
+4. [x] Define interaction execution and apply effects separately from offer
    scoring.
-5. Represent Sim activity, commands, and transitions as explicit state
+5. [x] Represent action source, activity, and transitions as explicit state
    and testable transformations.
 6. Define event and extension contracts for buffs and aspirations.
 7. Coordinate systems through explicit simulation phases and snapshots.
