@@ -2,15 +2,6 @@ import Foundation
 import MotiveEngine
 import Testing
 
-/// An in-memory pack, keyed by relative path.
-private struct MemorySource: ContentSource {
-    let files: [String: String]
-
-    func data(atPath path: String) throws -> Data? {
-        files[path].map { Data($0.utf8) }
-    }
-}
-
 private func manifest(
     _ id: String,
     dependencies: [String] = [],

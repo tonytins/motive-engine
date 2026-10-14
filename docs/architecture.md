@@ -283,7 +283,39 @@ my-mod/
   override, the target must be a direct or indirect dependency, and a
   declared override must be defined. When several packs override one
   definition, the latest in load order wins and the composition lists an
-  `OverrideConflict`. `owner(of:)` reports which pack's content is in use.
+  `OverrideConflict`. `owner(of:)` reports which pack's content is in use,
+  and `dependents(of:)` lists the packs that rely on a pack.
+
+### Script health
+
+`SimulationSession` tracks failing interaction scripts in `contentHealth`,
+following its `ScriptFailurePolicy` (by default a 60-second cooldown, three
+failures, and three broken interactions per pack). Health is tracked per
+interaction of an item definition, so every placed instance and every Sim
+share one record.
+
+1. A script failure starts a cooldown and emits `interactionCoolingDown`.
+   Free will skips the interaction until the cooldown ends; player commands
+   may still retry it. A successful run clears the failure count.
+2. When failures in a row reach the threshold, the script is disabled
+   (`scriptDisabled`) and the interaction uses its written effects. An
+   interaction without written effects is disabled instead
+   (`interactionDisabled`).
+3. When enough interactions from one pack have broken, the pack is disabled
+   (`packDisabled` with `.failingInteractions`), followed by every pack that
+   depends on it (`.dependencyDisabled`). Their items stay on lots but offer
+   nothing. This requires a session created from a `ContentComposition`.
+
+Commands for disabled interactions or packs are rejected with
+`SimulationSessionError.interactionDisabled` or `.packDisabled`. Running
+actions on disabled content fail with `.itemUnavailable` right after the
+commands phase. Cooldowns count down by each step's elapsed time.
+`ContentHealth` is `Codable`: the game saves it and passes it back to the
+session, which rejects invalid saved values. Disabled content stays disabled
+until the player sends `enableInteraction` or `enablePack`; enabling a pack
+also restores the packs disabled because of it and clears their history.
+A disabled pack that overrode another pack's item leaves that item inert;
+recomposing without the pack at the next load restores the original.
 
 ## Pluggable extensions
 

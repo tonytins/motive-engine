@@ -22,22 +22,45 @@ public struct ContentComposition: Sendable {
     public let conflicts: [OverrideConflict]
 
     private let ownersByDefinitionID: [ItemDefinitionID: ContentPackID]
+    private let dependenciesByPackID: [ContentPackID: [ContentPackID]]
 
     init(
         catalog: ItemDefinitionCatalog,
         loadOrder: [ContentPackID],
         conflicts: [OverrideConflict],
-        ownersByDefinitionID: [ItemDefinitionID: ContentPackID]
+        ownersByDefinitionID: [ItemDefinitionID: ContentPackID],
+        dependenciesByPackID: [ContentPackID: [ContentPackID]]
     ) {
         self.catalog = catalog
         self.loadOrder = loadOrder
         self.conflicts = conflicts
         self.ownersByDefinitionID = ownersByDefinitionID
+        self.dependenciesByPackID = dependenciesByPackID
     }
 
     /// The pack whose content is used for a definition, including overrides.
     public func owner(of definitionID: ItemDefinitionID) -> ContentPackID? {
         ownersByDefinitionID[definitionID]
+    }
+
+    /// The packs a pack declares as dependencies.
+    public func dependencies(of packID: ContentPackID) -> [ContentPackID] {
+        dependenciesByPackID[packID, default: []]
+    }
+
+    /// Every loaded pack that depends on `packID`, directly or indirectly, in load order.
+    ///
+    /// This walks the dependency graph and is O(packs × dependencies).
+    public func dependents(of packID: ContentPackID) -> [ContentPackID] {
+        var affected: Set<ContentPackID> = [packID]
+        var result: [ContentPackID] = []
+        for candidate in loadOrder
+            where dependencies(of: candidate).contains(where: affected.contains)
+        {
+            affected.insert(candidate)
+            result.append(candidate)
+        }
+        return result
     }
 }
 
@@ -116,7 +139,10 @@ public enum ContentComposer {
             catalog: try ItemDefinitionCatalog(definitions: Array(definitionsByID.values)),
             loadOrder: ordered.map(\.manifest.id),
             conflicts: conflicts,
-            ownersByDefinitionID: owners
+            ownersByDefinitionID: owners,
+            dependenciesByPackID: Dictionary(uniqueKeysWithValues: ordered.map {
+                ($0.manifest.id, $0.manifest.dependencies)
+            })
         )
     }
 

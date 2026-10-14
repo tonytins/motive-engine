@@ -229,6 +229,22 @@ interaction fails for that Sim, and the game is told why. If free will chose
 the interaction, the Sim picks the next best thing instead, so a broken
 script can't stop the simulation.
 
+If a script keeps failing, the engine escalates step by step:
+
+1. After a failure, free will leaves the interaction alone for a while, then
+   tries again. One success resets the count.
+2. After several failures in a row, your script is switched off. If the
+   interaction has `effects`, it keeps working with those, so writing
+   sensible `effects` alongside a script is a good safety net.
+3. If it has no `effects`, the interaction is switched off.
+4. If several interactions in your pack break this way, the whole pack is
+   switched off, along with any packs that depend on it. Your items stay
+   where players placed them but can't be used.
+
+Switched-off content stays off, even after the game is saved and reloaded,
+until the player turns it back on. Fix the problem and ask players to
+re-enable your mod.
+
 Packs can only read files inside their own folder. Paths that leave the
 folder, including through symbolic links, are rejected.
 
@@ -265,8 +281,5 @@ files from a loaded pack through `pack.source`.
 These are planned in the [roadmap](./ROADMAP.md):
 
 - a packed format for distributing mods;
-- automatic handling of repeatedly failing scripts, which will retry them,
-  fall back to written effects, and disable a broken interaction or pack
-  until the player turns it back on;
 - wants and fears in packs;
 - source line numbers in script runtime errors.

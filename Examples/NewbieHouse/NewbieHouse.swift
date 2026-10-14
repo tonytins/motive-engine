@@ -129,6 +129,18 @@ private enum NewbieHouse {
             }
         case let .positionChanged(simID, from, to):
             return "\(world.displayName(for: simID)) walks (\(from.x),\(from.y)) -> (\(to.x),\(to.y))"
+        case let .interactionCoolingDown(interaction, failures, seconds):
+            return "\(interaction.itemDefinitionID.rawValue) failed \(failures) time(s); retrying in \(format(seconds))s"
+        case let .scriptDisabled(interaction):
+            return "\(interaction.itemDefinitionID.rawValue) script disabled; using written effects"
+        case let .interactionDisabled(interaction):
+            return "\(interaction.itemDefinitionID.rawValue) interaction disabled"
+        case let .packDisabled(packID, _):
+            return "content pack \(packID.rawValue) disabled"
+        case let .interactionEnabled(interaction):
+            return "\(interaction.itemDefinitionID.rawValue) interaction re-enabled"
+        case let .packEnabled(packID):
+            return "content pack \(packID.rawValue) re-enabled"
         case let .currentLotChanged(simID, _, to):
             return "\(world.displayName(for: simID)) moved to lot \(to?.rawValue ?? "none")"
         }

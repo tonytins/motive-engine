@@ -41,6 +41,26 @@ public enum SimulationEvent: Equatable, Sendable {
 
     /// A Sim changed grid position on its current lot.
     case positionChanged(simID: SimID, from: GridPosition, to: GridPosition)
+
+    /// An interaction's script failed and free will skips it for a while.
+    case interactionCoolingDown(InteractionReference, failureCount: Int, seconds: Double)
+
+    /// An interaction's script kept failing and is disabled. The interaction
+    /// now uses its written effects.
+    case scriptDisabled(InteractionReference)
+
+    /// An interaction's script kept failing and it has no written effects to
+    /// fall back on, so the interaction is disabled.
+    case interactionDisabled(InteractionReference)
+
+    /// A content pack was disabled. Its items offer nothing until re-enabled.
+    case packDisabled(ContentPackID, reason: PackDisableReason)
+
+    /// A disabled interaction or script was re-enabled.
+    case interactionEnabled(InteractionReference)
+
+    /// A disabled pack was re-enabled.
+    case packEnabled(ContentPackID)
 }
 
 /// The resulting snapshot and ordered events from one simulation step.

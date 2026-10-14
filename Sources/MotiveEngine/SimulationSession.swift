@@ -12,6 +12,13 @@ public enum SimulationCommand: Equatable, Sendable {
 
     /// Starts a timed buff on a Sim, replacing one with the same ID.
     case applyBuff(simID: SimID, buff: TimedBuff)
+
+    /// Re-enables an interaction and clears its failure history.
+    case enableInteraction(InteractionReference)
+
+    /// Re-enables a pack, the packs disabled because of it, and their
+    /// interactions, clearing their failure history.
+    case enablePack(ContentPackID)
 }
 
 /// An invalid simulation session input or transition.
@@ -64,6 +71,15 @@ public enum SimulationSessionError: Error, Equatable, Sendable {
 
     /// A cancel command refers to a Sim without an active interaction.
     case noActiveInteraction(SimID)
+
+    /// The requested interaction is disabled after repeated script failures.
+    case interactionDisabled(InteractionReference)
+
+    /// The requested item belongs to a disabled content pack.
+    case packDisabled(ContentPackID)
+
+    /// The supplied content health has a negative count or invalid cooldown.
+    case invalidContentHealth
 }
 
 /// Coordinates deterministic simulation steps over value state.
@@ -72,10 +88,19 @@ public enum SimulationSessionError: Error, Equatable, Sendable {
 /// movement, and action execution in the declared phase order. The session
 /// does not own concurrency; callers can isolate it at their concurrency
 /// boundary.
+///
+/// Failing interaction scripts are tracked in `contentHealth` according to
+/// the session's `ScriptFailurePolicy`. Disabling whole packs requires a
+/// session created from a `ContentComposition`.
 public struct SimulationSession: Sendable {
     /// The current validated state.
     public private(set) var state: SimulationState
 
+    /// Failing scripts and disabled content. Save this with the game.
+    public private(set) var contentHealth: ContentHealth
+
+    private let content: ContentComposition?
+    private let scriptFailurePolicy: ScriptFailurePolicy
     private let itemCatalog: ItemDefinitionCatalog
     private let motiveDecayRates: MotiveDecayRates
     private let buffRules: BuffRuleSet
@@ -84,16 +109,69 @@ public struct SimulationSession: Sendable {
     /// Creates a session and validates item references used by the world.
     ///
     /// Buffs are optional. The default empty rule set applies no buffs.
+    /// Without content packs, failing scripts can disable interactions but
+    /// not packs.
     ///
     /// - Throws: `ItemDefinitionCatalogError.missingDefinition` when a placed
     ///   item uses an unknown definition, or `SimulationSessionError` when an
-    ///   active action does not refer to an item on the Sim's current lot.
+    ///   active action does not refer to an item on the Sim's current lot or
+    ///   the content health is invalid.
     public init(
         state: SimulationState,
         itemCatalog: ItemDefinitionCatalog,
         motiveDecayRates: MotiveDecayRates,
-        buffRules: BuffRuleSet = BuffRuleSet()
+        buffRules: BuffRuleSet = BuffRuleSet(),
+        scriptFailurePolicy: ScriptFailurePolicy = ScriptFailurePolicy(),
+        contentHealth: ContentHealth = ContentHealth()
     ) throws {
+        try self.init(
+            state: state,
+            itemCatalog: itemCatalog,
+            content: nil,
+            motiveDecayRates: motiveDecayRates,
+            buffRules: buffRules,
+            scriptFailurePolicy: scriptFailurePolicy,
+            contentHealth: contentHealth
+        )
+    }
+
+    /// Creates a session from composed content packs.
+    ///
+    /// The composition's pack ownership lets repeated script failures disable
+    /// a whole pack and the packs that depend on it.
+    ///
+    /// - Throws: The same errors as `init(state:itemCatalog:motiveDecayRates:buffRules:scriptFailurePolicy:contentHealth:)`.
+    public init(
+        state: SimulationState,
+        content: ContentComposition,
+        motiveDecayRates: MotiveDecayRates,
+        buffRules: BuffRuleSet = BuffRuleSet(),
+        scriptFailurePolicy: ScriptFailurePolicy = ScriptFailurePolicy(),
+        contentHealth: ContentHealth = ContentHealth()
+    ) throws {
+        try self.init(
+            state: state,
+            itemCatalog: content.catalog,
+            content: content,
+            motiveDecayRates: motiveDecayRates,
+            buffRules: buffRules,
+            scriptFailurePolicy: scriptFailurePolicy,
+            contentHealth: contentHealth
+        )
+    }
+
+    private init(
+        state: SimulationState,
+        itemCatalog: ItemDefinitionCatalog,
+        content: ContentComposition?,
+        motiveDecayRates: MotiveDecayRates,
+        buffRules: BuffRuleSet,
+        scriptFailurePolicy: ScriptFailurePolicy,
+        contentHealth: ContentHealth
+    ) throws {
+        guard contentHealth.isValid else {
+            throw SimulationSessionError.invalidContentHealth
+        }
         var itemLocations: [ItemInstanceID: PlacedItemLocation] = [:]
         for lot in state.lots.values.sorted(by: {
             $0.id.rawValue < $1.id.rawValue
@@ -159,6 +237,9 @@ public struct SimulationSession: Sendable {
         }
 
         self.state = state
+        self.contentHealth = contentHealth
+        self.content = content
+        self.scriptFailurePolicy = scriptFailurePolicy
         self.itemCatalog = itemCatalog
         self.motiveDecayRates = motiveDecayRates
         self.buffRules = buffRules
@@ -183,6 +264,7 @@ public struct SimulationSession: Sendable {
         }
 
         var sims = state.sims
+        var health = contentHealth
         var events: [SimulationEvent] = []
         var suppressingAutonomy: Set<SimID> = []
 
@@ -190,10 +272,15 @@ public struct SimulationSession: Sendable {
             try apply(
                 command,
                 to: &sims,
+                health: &health,
                 suppressingAutonomy: &suppressingAutonomy,
                 recording: &events
             )
         }
+        health.cooldowns = health.cooldowns
+            .mapValues { $0 - elapsedSeconds }
+            .filter { $0.value > 0 }
+        try stopActionsOnDisabledContent(in: &sims, health: health, recording: &events)
 
         for simID in sortedSimIDs(in: sims) {
             guard let sim = sims[simID] else {
@@ -214,6 +301,7 @@ public struct SimulationSession: Sendable {
         try applyBuffs(to: &sims, bySeconds: elapsedSeconds, recording: &events)
         try selectAutonomousInteractions(
             for: &sims,
+            health: &health,
             suppressing: suppressingAutonomy,
             recording: &events
         )
@@ -230,6 +318,7 @@ public struct SimulationSession: Sendable {
             lots: Array(state.lots.values)
         )
         state = nextState
+        contentHealth = health
         return SimulationStepResult(
             snapshot: SimulationSnapshot(state: nextState),
             events: events
@@ -239,6 +328,7 @@ public struct SimulationSession: Sendable {
     private func apply(
         _ command: SimulationCommand,
         to sims: inout [SimID: SimStateData],
+        health: inout ContentHealth,
         suppressingAutonomy: inout Set<SimID>,
         recording events: inout [SimulationEvent]
     ) throws {
@@ -272,6 +362,12 @@ public struct SimulationSession: Sendable {
                     interactionDefinitionID: interactionID
                 )
             }
+            if let packID = disabledPack(of: offer, in: health) {
+                throw SimulationSessionError.packDisabled(packID)
+            }
+            guard !health.isInteractionDisabled(InteractionReference(offer)) else {
+                throw SimulationSessionError.interactionDisabled(InteractionReference(offer))
+            }
             let interactionEligibility = try eligibility(
                 for: offer,
                 sim: sim,
@@ -292,14 +388,19 @@ public struct SimulationSession: Sendable {
                 )
             }
 
-            let action = try startAction(offer, initiatedBy: .playerCommand, for: sim)
+            let action = try startAction(
+                offer,
+                initiatedBy: .playerCommand,
+                for: sim,
+                health: &health,
+                recording: &events
+            )
             if action.status == .running {
                 sims[simID] = replacingAction(sim, with: action)
             } else {
                 // The command still decides this step, so autonomy waits.
                 suppressingAutonomy.insert(simID)
             }
-            events.append(.actionChanged(simID: simID, action: action))
 
         case let .cancelInteraction(simID):
             guard let sim = sims[simID] else {
@@ -323,6 +424,19 @@ public struct SimulationSession: Sendable {
             let timedBuffs = sim.timedBuffs.filter { $0.id != buff.id } + [buff]
             sims[simID] = replacing(sim, timedBuffs: timedBuffs)
             events.append(.timedBuffApplied(simID: simID, buff: buff))
+
+        case let .enableInteraction(interaction):
+            health.clearHistory(of: interaction)
+            events.append(.interactionEnabled(interaction))
+
+        case let .enablePack(packID):
+            for enabledPackID in health.enablePack(packID) {
+                for interaction in Set(health.allTrackedInteractions) where owner(of: interaction) == enabledPackID {
+                    health.clearHistory(of: interaction)
+                }
+                health.brokenInteractionsByPack[enabledPackID] = nil
+                events.append(.packEnabled(enabledPackID))
+            }
         }
     }
 
@@ -363,6 +477,7 @@ public struct SimulationSession: Sendable {
 
     private func selectAutonomousInteractions(
         for sims: inout [SimID: SimStateData],
+        health: inout ContentHealth,
         suppressing suppressedSimIDs: Set<SimID>,
         recording events: inout [SimulationEvent]
     ) throws {
@@ -384,7 +499,11 @@ public struct SimulationSession: Sendable {
                     continue
                 }
                 for offer in try itemCatalog.interactionOffers(for: item) {
-                    guard try eligibility(for: offer, sim: sim, sims: sims, location: location)
+                    let interaction = InteractionReference(offer)
+                    guard disabledPack(of: offer, in: health) == nil,
+                          !health.isInteractionDisabled(interaction),
+                          !health.isCoolingDown(interaction),
+                          try eligibility(for: offer, sim: sim, sims: sims, location: location)
                             .isEligible,
                           canReachItem(for: sim, offer: offer, simID: simID, sims: sims)
                     else {
@@ -398,8 +517,21 @@ public struct SimulationSession: Sendable {
             // useful offer is tried, so one faulty script cannot idle a Sim.
             let ranking = try AutonomyScoringSystem.rank(eligibleOffers, for: sim.motives)
             for scored in ranking.rankedOffers where scored.score > 0 {
-                let action = try startAction(scored.offer, initiatedBy: .autonomy, for: sim)
-                events.append(.actionChanged(simID: simID, action: action))
+                let interaction = InteractionReference(scored.offer)
+                // An earlier failure in this loop may have disabled this offer.
+                guard disabledPack(of: scored.offer, in: health) == nil,
+                      !health.isInteractionDisabled(interaction),
+                      !health.isCoolingDown(interaction)
+                else {
+                    continue
+                }
+                let action = try startAction(
+                    scored.offer,
+                    initiatedBy: .autonomy,
+                    for: sim,
+                    health: &health,
+                    recording: &events
+                )
                 if action.status == .running {
                     sims[simID] = replacingAction(sim, with: action)
                     break
@@ -408,38 +540,137 @@ public struct SimulationSession: Sendable {
         }
     }
 
-    /// Starts an action, first running the offer's script if it has one.
+    /// Starts an action and records the result in `health`.
     ///
-    /// A script failure returns an action that already failed with
-    /// `.scriptFailed`, so one faulty script cannot stop the step.
+    /// An offer whose script is disabled uses its written effects. A script
+    /// failure returns an already-failed action rather than throwing, so one
+    /// faulty script cannot stop the step, then escalates according to the
+    /// failure policy.
     private func startAction(
         _ offer: InteractionOffer,
         initiatedBy initiator: InteractionActionInitiator,
-        for sim: SimStateData
+        for sim: SimStateData,
+        health: inout ContentHealth,
+        recording events: inout [SimulationEvent]
     ) throws -> InteractionActionState {
-        guard let script = offer.script else {
-            return InteractionActionSystem.start(offer, initiatedBy: initiator)
+        let interaction = InteractionReference(offer)
+        guard let script = offer.script, !health.isScriptDisabled(interaction) else {
+            let action = InteractionActionSystem.start(offer, initiatedBy: initiator)
+            events.append(.actionChanged(simID: sim.id, action: action))
+            return action
         }
+
         let failure: InteractionScriptFailure
         do {
             let result = try InteractionScriptSystem.evaluate(
                 script,
                 input: InteractionScriptInput(sim: sim, offer: offer)
             )
-            return InteractionActionSystem.start(
+            health.failureCounts[interaction] = nil
+            let action = InteractionActionSystem.start(
                 offer,
                 initiatedBy: initiator,
                 motiveEffects: result.motiveEffects
             )
+            events.append(.actionChanged(simID: sim.id, action: action))
+            return action
         } catch let error as RuntimeError {
             failure = .runtime(error)
         } catch let error as InteractionScriptError {
             failure = .invalidEffect(error)
         }
-        return try InteractionActionSystem.fail(
+
+        let action = try InteractionActionSystem.fail(
             InteractionActionSystem.start(offer, initiatedBy: initiator),
             because: .scriptFailed(failure)
         )
+        events.append(.actionChanged(simID: sim.id, action: action))
+        recordFailure(of: interaction, writtenEffects: offer.motiveEffects, health: &health, recording: &events)
+        return action
+    }
+
+    /// Applies the failure policy after one script failure.
+    private func recordFailure(
+        of interaction: InteractionReference,
+        writtenEffects: [MotiveSignal],
+        health: inout ContentHealth,
+        recording events: inout [SimulationEvent]
+    ) {
+        let failures = health.failureCounts[interaction, default: 0] + 1
+        guard failures >= scriptFailurePolicy.failuresBeforeDisabling else {
+            health.failureCounts[interaction] = failures
+            health.cooldowns[interaction] = scriptFailurePolicy.cooldownSeconds
+            events.append(.interactionCoolingDown(
+                interaction,
+                failureCount: failures,
+                seconds: scriptFailurePolicy.cooldownSeconds
+            ))
+            return
+        }
+
+        health.failureCounts[interaction] = nil
+        health.cooldowns[interaction] = nil
+        if writtenEffects.isEmpty {
+            health.disabledInteractions.insert(interaction)
+            events.append(.interactionDisabled(interaction))
+        } else {
+            health.disabledScripts.insert(interaction)
+            events.append(.scriptDisabled(interaction))
+        }
+
+        guard let packID = owner(of: interaction), let content else {
+            return
+        }
+        if !health.brokenInteractionsByPack[packID, default: []].contains(interaction) {
+            health.brokenInteractionsByPack[packID, default: []].append(interaction)
+        }
+        let broken = health.brokenInteractionsByPack[packID, default: []]
+        guard broken.count >= scriptFailurePolicy.disabledInteractionsBeforeDisablingPack,
+              !health.isPackDisabled(packID)
+        else {
+            return
+        }
+        health.disabledPacks[packID] = .failingInteractions(broken)
+        events.append(.packDisabled(packID, reason: .failingInteractions(broken)))
+        for dependent in content.dependents(of: packID) where !health.isPackDisabled(dependent) {
+            let reason = PackDisableReason.dependencyDisabled(packID)
+            health.disabledPacks[dependent] = reason
+            events.append(.packDisabled(dependent, reason: reason))
+        }
+    }
+
+    /// Fails running actions whose interaction or pack has been disabled.
+    private func stopActionsOnDisabledContent(
+        in sims: inout [SimID: SimStateData],
+        health: ContentHealth,
+        recording events: inout [SimulationEvent]
+    ) throws {
+        for simID in sortedSimIDs(in: sims) {
+            guard let sim = sims[simID],
+                  let action = sim.activeAction,
+                  action.status == .running,
+                  disabledPack(of: action.offer, in: health) != nil
+                    || health.isInteractionDisabled(InteractionReference(action.offer))
+            else {
+                continue
+            }
+            let failed = try InteractionActionSystem.fail(action, because: .itemUnavailable)
+            sims[simID] = replacingAction(sim, with: nil)
+            events.append(.actionChanged(simID: simID, action: failed))
+        }
+    }
+
+    /// The pack that owns an interaction's definition, when content packs are known.
+    private func owner(of interaction: InteractionReference) -> ContentPackID? {
+        content?.owner(of: interaction.itemDefinitionID)
+    }
+
+    /// The offer's pack, if that pack is disabled.
+    private func disabledPack(of offer: InteractionOffer, in health: ContentHealth) -> ContentPackID? {
+        guard let packID = content?.owner(of: offer.itemDefinitionID), health.isPackDisabled(packID) else {
+            return nil
+        }
+        return packID
     }
 
     private func moveActors(
