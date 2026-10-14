@@ -8,21 +8,21 @@ struct HouseholdRoster {
         lastBroadcast[senderName] = event
         switch event {
         case .fallAsleep:
-            break
+            sleepingSimNames.insert(senderName)
         case .wokeUp:
-            break
+            sleepingSimNames.remove(senderName)
         case .fullfilledWant, .fullfilledFear:
             break
         }
     }
 
-    func isSleeping(simNamed _: String) -> Bool {
-        false
+    func isSleeping(simNamed name: String) -> Bool {
+        sleepingSimNames.contains(name)
     }
 
     func reachableSims(excluding name: String, among allNames: [String]) -> [String] {
         allNames.filter {
-            $0 != name && sleepingSimNames.contains($0)
+            $0 != name && !sleepingSimNames.contains($0)
         }
     }
 }

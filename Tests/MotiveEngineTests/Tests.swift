@@ -41,20 +41,19 @@ struct ItemTests {
 
 @Suite("Multi-role Items")
 struct MultiRoleItemsTests {
-    @Test()
-    func itemCanBeAbmientAndSelected() {
-        withKnownIssue {
-            let stereo = Item(
-                identity: ItemIdentity(
-                    name: "Stereo",
-                    itemTypes: [.ambient, .recreation]
-                ),
-                signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
-            )
-            
-            #expect(stereo.isAmbient)
-            #expect(stereo.isSelectable)
-        }
+    @Test
+    func itemCanBeAmbientAndSelected() {
+        let stereo = Item(
+            identity: ItemIdentity(
+                name: "Stereo",
+                itemTypes: [.ambient, .recreation]
+            ),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
+        )
+
+        #expect(stereo.isAmbient)
+        #expect(stereo.isSelectable)
+        #expect(stereo.buffSignals == stereo.signals)
     }
 }
 
@@ -72,6 +71,195 @@ struct BuffTests {
         #expect(BuffRegistry.buffs(for: stereo).contains {
                 $0 is AmbientBuff
             })
+    }
+
+    @Test func bindsAmbientBuffToHybridItems() {
+        let stereo = Item(
+            identity: ItemIdentity(
+                name: "Stereo",
+                itemTypes: [.ambient, .recreation]
+            ),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)]
+        )
+
+        #expect(BuffRegistry.buffs(for: stereo).contains { $0 is AmbientBuff })
+    }
+
+    @Test func doesNotBindAmbientBuffToNonAmbientItems() {
+        let chair = Item(
+            identity: ItemIdentity(name: "Chair", itemTypes: .chair),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)]
+        )
+
+        #expect(BuffRegistry.buffs(for: chair).isEmpty)
+    }
+}
+
+@Suite("Grid Geometry")
+struct GridGeometryTests {
+    @Test func boundsUseWidthForXAndHeightForY() {
+        let bounds = GridSize(width: 3, height: 2)
+
+        #expect(bounds.contains(GridPosition(x: 2, y: 1)))
+        #expect(!bounds.contains(GridPosition(x: 3, y: 1)))
+        #expect(!bounds.contains(GridPosition(x: 2, y: 2)))
+    }
+
+    @Test func boundsRejectNegativeCoordinatesAndEmptyDimensions() {
+        #expect(!GridSize(width: 3, height: 2).contains(GridPosition(x: -1, y: 0)))
+        #expect(!GridSize(width: 3, height: 2).contains(GridPosition(x: 0, y: -1)))
+        #expect(!GridSize(width: 0, height: 2).contains(GridPosition(x: 0, y: 0)))
+    }
+}
+
+@Suite("Household Roster")
+struct HouseholdRosterTests {
+    @Test func sleepAndWakeEventsUpdateSleepingNames() {
+        var roster = HouseholdRoster()
+
+        roster.receive(.fallAsleep, from: "Alex")
+        #expect(roster.isSleeping(simNamed: "Alex"))
+        #expect(roster.lastBroadcast["Alex"] == .fallAsleep)
+
+        roster.receive(.wokeUp, from: "Alex")
+        #expect(!roster.isSleeping(simNamed: "Alex"))
+        #expect(roster.lastBroadcast["Alex"] == .wokeUp)
+    }
+
+    @Test func reachableSimsExcludesSelfAndSleepingSims() {
+        var roster = HouseholdRoster()
+        roster.receive(.fallAsleep, from: "Blair")
+
+        #expect(roster.reachableSims(
+            excluding: "Alex",
+            among: ["Alex", "Blair", "Casey"]
+        ) == ["Casey"])
+    }
+
+    @Test func aspirationEventsAreRecordedWithoutChangingSleepState() {
+        var roster = HouseholdRoster()
+        let want = WantOrFear(name: "Write a novel", traits: [.bookworm])
+
+        roster.receive(.fullfilledWant(want), from: "Alex")
+
+        #expect(roster.lastBroadcast["Alex"] == .fullfilledWant(want))
+        #expect(!roster.isSleeping(simNamed: "Alex"))
+    }
+}
+
+@Suite("Item Coding")
+struct ItemCodingTests {
+    @Test func decodesRawMotiveStrengthAndDefaultBlocking() throws {
+        let json = #"{"name":"Fridge","item":"appliance","motives":[{"hunger":50}]}"#
+        let item = try JSONDecoder().decode(Item.self, from: Data(json.utf8))
+
+        #expect(item.identity.name == "Fridge")
+        #expect(item.identity.isBlocking)
+        #expect(item.signals == [MotiveSignal(motiveType: .hunger, strengthPerSecond: 2)])
+    }
+
+    @Test func explicitBlockingOverridesTheDefault() throws {
+        let json = #"{"name":"Fridge","item":"appliance","blocking":false,"motives":[{"hunger":50}]}"#
+        let item = try JSONDecoder().decode(Item.self, from: Data(json.utf8))
+
+        #expect(!item.identity.isBlocking)
+    }
+
+    @Test func encodingRoundTripsItemValues() throws {
+        let item = Item(
+            identity: ItemIdentity(name: "Stereo", itemTypes: [.ambient, .recreation]),
+            signals: [
+                MotiveSignal(motiveType: .fun, strengthPerSecond: 2),
+                MotiveSignal(motiveType: .social, strengthPerSecond: 0.5),
+            ]
+        )
+        let encoded = try JSONEncoder().encode(item)
+        let decoded = try JSONDecoder().decode(Item.self, from: encoded)
+
+        #expect(decoded == item)
+    }
+}
+
+@Suite("Aspiration Utilities")
+struct AspirationUtilityTests {
+    @Test func catalogUsesSchemaSingularKeysAndTraitRawValues() throws {
+        let json = #"{"want":{"Write a novel":["Bookworm","Creative"]},"fear":{"Public embarrassment":["Paranoid","Romantic"]}}"#
+        let catalog = try WantFearCatalog(jsonData: Data(json.utf8))
+
+        #expect(catalog.wants == [
+            WantOrFear(name: "Write a novel", traits: [.bookworm, .creative])
+        ])
+        #expect(catalog.fears == [
+            WantOrFear(name: "Public embarrassment", traits: [.paranoid, .romatic])
+        ])
+    }
+
+    @Test func matchScoreCountsMatchingTraits() {
+        let want = WantOrFear(name: "Write a novel", traits: [.bookworm, .creative, .ambitious])
+
+        #expect(matchScore(of: want, against: [.bookworm, .creative]) == 2)
+    }
+
+    @Test func rollingPrioritizesMatchingTraitsAndClampsRequestedCount() {
+        let matching = WantOrFear(name: "Writing", traits: [.bookworm, .creative])
+        let partial = WantOrFear(name: "Reading", traits: [.bookworm])
+        let unrelated = WantOrFear(name: "Dancing", traits: [.flirty])
+        var random = TestRandomNumberGenerator(seed: 42)
+        let pool = [unrelated, partial, matching]
+
+        let selected = rollWantsOrFears(
+            from: pool,
+            matching: [.bookworm, .creative],
+            count: 2,
+            using: &random
+        )
+        #expect(selected.first == matching)
+        #expect(selected.count == 2)
+
+        var repeatRandom = TestRandomNumberGenerator(seed: 42)
+        var secondRandom = TestRandomNumberGenerator(seed: 42)
+        #expect(rollWantsOrFears(
+            from: pool,
+            matching: [.bookworm, .creative],
+            count: pool.count,
+            using: &repeatRandom
+        ) == rollWantsOrFears(
+            from: pool,
+            matching: [.bookworm, .creative],
+            count: pool.count,
+            using: &secondRandom
+        ))
+
+        #expect(rollWantsOrFears(
+            from: pool,
+            matching: [],
+            count: -1,
+            using: &random
+        ).isEmpty)
+    }
+
+    @Test func fulfilledMotiveClampsInitialAndUpdatedValues() {
+        var motive = FullfilledMotive(startingValue: 120)
+        #expect(motive.value == 100)
+
+        motive.decay(by: 120)
+        #expect(motive.value == 0)
+
+        motive.boost(by: 120)
+        #expect(motive.value == 100)
+    }
+}
+
+struct TestRandomNumberGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        state = seed
+    }
+
+    mutating func next() -> UInt64 {
+        state = state &* 6_364_136_223_846_793_005 &+ 1
+        return state
     }
 }
 

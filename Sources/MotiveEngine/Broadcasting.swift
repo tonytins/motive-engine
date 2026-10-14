@@ -18,7 +18,7 @@ extension Broadcasting {
     }
 
     var isAmbient: Bool {
-        identity.itemTypes == [.ambient]
+        identity.itemTypes.contains(.ambient)
     }
 
     var isSelectable: Bool {
@@ -38,7 +38,7 @@ extension Broadcasting {
     }
 }
 
-enum BroadcastEvent {
+enum BroadcastEvent: Equatable {
     case fallAsleep
     case wokeUp
     case fullfilledWant(WantOrFear)
