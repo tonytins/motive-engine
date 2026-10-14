@@ -27,6 +27,23 @@ public struct MotiveSignal: Equatable, Sendable {
     }
 }
 
+/// An expected motive benefit advertised by an interaction.
+///
+/// Benefits inform selection and are not applied to motive state directly.
+public struct MotiveBenefit: Equatable, Sendable {
+    /// The motive expected to change.
+    public let motiveType: MotiveType
+
+    /// The expected motive change per simulated second.
+    public let expectedStrengthPerSecond: Double
+
+    /// Creates an advertised motive benefit.
+    public init(motiveType: MotiveType, expectedStrengthPerSecond: Double) {
+        self.motiveType = motiveType
+        self.expectedStrengthPerSecond = expectedStrengthPerSecond
+    }
+}
+
 /// An error encountered while constructing or updating motive data.
 public enum MotiveLevelsError: Error, Equatable, Sendable {
     /// The supplied values do not contain every motive.
