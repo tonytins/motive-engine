@@ -40,26 +40,31 @@ unchecked item is planned work, not an implemented feature.
   interaction IDs within one item definition.
 - [x] Document that offers are candidates, not proof of eligibility or
   reachability.
-- [ ] Add explicit interaction requirements and contextual offer generation.
+- [x] Add an optional required-posture interaction requirement.
+- [ ] Add broader contextual offer generation as more requirements are
+  established.
 
 ## Hokuriku: Determine eligibility
 
-- [ ] Define typed requirements for actor state, posture, item state, and
+- [x] Define typed requirements for posture and snapshots for actor/item
+  availability.
+- [x] Represent capacity and occupancy as explicit item snapshot data.
+- [x] Evaluate eligibility from optional immutable snapshots and return
+  explicit reasons when an offer is unavailable.
+- [x] Test eligible, ineligible, missing-context, and capacity-boundary cases
+  without a running simulation actor.
+- [ ] Add broader typed requirements for actor state, item state, and
   interaction availability.
-- [ ] Represent capacity and occupancy as explicit world data.
-- [ ] Evaluate eligibility from immutable snapshots, returning reasons when
-  an offer is unavailable.
-- [ ] Test eligible, ineligible, missing-context, and boundary cases without
-  a running simulation actor.
 
 ## Joetsu: Rank autonomous opportunities
 
-- [ ] Define motive urgency policy and named thresholds with test examples.
-- [ ] Score eligible offers from motive state and advertised benefits.
-- [ ] Specify deterministic tie-breaking and behavior when no offer is useful.
-- [ ] Return explainable ranked candidates or a choice without mutating
+- [x] Define continuous motive urgency and the positive-score usefulness
+  cutoff with test examples.
+- [x] Score eligible offers from motive state and advertised benefits.
+- [x] Specify deterministic tie-breaking and behavior when no offer is useful.
+- [x] Return explainable ranked candidates or a choice without mutating
   simulation state.
-- [ ] Keep player-command priority and free-will policy separate from action
+- [x] Keep player-command priority and free-will policy separate from action
   execution.
 
 ## Kyushu: Model action execution
@@ -102,7 +107,6 @@ unchecked item is planned work, not an implemented feature.
 
 ## Next milestone
 
-Continue with **Hokuriku**: define interaction eligibility from explicit
-requirements and world/actor snapshots. Keep the first version small and
-pure; add scoring only after the engine can distinguish an advertised
-candidate from an interaction that is actually usable.
+Continue with **Kyushu**: model interaction action state and execution
+separately from eligibility and autonomous scoring. Broader contextual
+requirements and catalog loading remain deferred until concrete needs arise.
