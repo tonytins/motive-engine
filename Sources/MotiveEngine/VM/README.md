@@ -67,16 +67,22 @@ state default
 end
 ```
 
-Wrong argument types, unknown motive names, and non-finite strengths are
-reported as `InteractionScriptError` values. Script failures, including the
-instruction limit, are thrown as `RuntimeError`, and no partial effects are
-returned. Evaluation is deterministic and never changes simulation state;
-applying the returned effects is the caller's responsibility.
+Wrong argument counts or types, unknown motive names, and non-finite
+strengths are reported as `InteractionScriptError` values. When the arguments
+are literals, `InteractionScript` rejects the call as soon as the script is
+loaded; computed arguments are checked when the script runs. Script failures,
+including the instruction limit, are thrown as `RuntimeError`, and no partial
+effects are returned. Evaluation is deterministic and never changes
+simulation state; applying the returned effects is the caller's
+responsibility.
+
 Attach a script to an `InteractionDefinition` with its `script` parameter.
 `SimulationSession` then runs it once when an action for that interaction
 starts, and the action applies the script's effects instead of the written
 ones. A failing script fails only that action, with
-`.failed(.scriptFailed(message))`, and the step continues.
+`.failed(.scriptFailed(failure))`, and the step continues. The
+`InteractionScriptFailure` is `.runtime(RuntimeError)` or
+`.invalidEffect(InteractionScriptError)`.
 
 ## Pipeline and API
 

@@ -2,6 +2,17 @@ import Foundation
 import MotiveEngine
 import Testing
 
+/// Places statements inside the required default state's entry handler.
+private func wrappedInEntry(_ statements: String) -> String {
+    """
+    state default
+        func stateEntry()
+            \(statements)
+        end
+    end
+    """
+}
+
 @Suite("Interaction scripts")
 struct InteractionScriptTests {
     @Test func scriptsReadDeclaredInputsAndReportEffects() throws {
@@ -92,25 +103,33 @@ struct InteractionScriptTests {
         }
     }
 
-    @Test(arguments: invalidEffectCases)
-    func invalidEffectsAreReportedAsTypedErrors(call: String, expectedError: InteractionScriptError) throws {
-        let script = try InteractionScript(source: """
-        state default
-            func stateEntry()
-                \(call)
-            end
-        end
-        """)
+    @Test(arguments: invalidLiteralCalls)
+    func invalidLiteralEffectsAreRejectedWhenLoaded(call: String, expectedError: InteractionScriptError) {
+        #expect(throws: expectedError) {
+            try InteractionScript(source: wrappedInEntry(call))
+        }
+    }
+
+    static let invalidLiteralCalls: [(String, InteractionScriptError)] = [
+        (#"effect.fulfill("thirst", 1)"#, .unknownMotive("thirst")),
+        (#"effect.fulfill(1, "hunger")"#, .invalidEffectArguments),
+        (#"effect.fulfill("fun", None)"#, .invalidEffectArguments),
+        (#"effect.fulfill("fun")"#, .invalidEffectArguments),
+        (#"if true effect.fulfill("fun", 1, 2) end"#, .invalidEffectArguments),
+    ]
+
+    @Test(arguments: invalidComputedCalls)
+    func invalidComputedEffectsAreRejectedWhenRun(call: String, expectedError: InteractionScriptError) throws {
+        let script = try InteractionScript(source: wrappedInEntry(call))
 
         #expect(throws: expectedError) {
             try InteractionScriptSystem.evaluate(script, input: makeInput(hunger: 50))
         }
     }
 
-    static let invalidEffectCases: [(String, InteractionScriptError)] = [
-        ("effect.fulfill(\"thirst\", 1)", .unknownMotive("thirst")),
-        ("effect.fulfill(1, \"hunger\")", .invalidEffectArguments),
-        ("effect.fulfill(\"fun\", None)", .invalidEffectArguments),
+    static let invalidComputedCalls: [(String, InteractionScriptError)] = [
+        (#"val motive = "thirst" effect.fulfill(motive, 1)"#, .unknownMotive("thirst")),
+        (#"val strength = "high" effect.fulfill("fun", strength)"#, .invalidEffectArguments),
         ("""
         mut val big = 10
         while big * 10 > big
@@ -120,14 +139,16 @@ struct InteractionScriptTests {
         """, .nonFiniteEffect(.fun)),
     ]
 
+    @Test func computedArgumentsAreAcceptedWhenLoaded() throws {
+        // Only the literal motive is known here; the strength is computed.
+        let script = try InteractionScript(source: wrappedInEntry(#"effect.fulfill("fun", sim.fun / 10)"#))
+
+        let result = try InteractionScriptSystem.evaluate(script, input: makeInput(hunger: 50))
+
+        #expect(result.motiveEffects == [MotiveSignal(motiveType: .fun, strengthPerSecond: 5)])
+    }
+
     @Test func runtimeFailuresPropagateWithoutPartialEffects() throws {
-        let wrongArity = try InteractionScript(source: """
-        state default
-            func stateEntry()
-                effect.fulfill("fun")
-            end
-        end
-        """)
         let thrown = try InteractionScript(source: """
         state default
             func stateEntry()
@@ -145,7 +166,7 @@ struct InteractionScriptTests {
         end
         """)
 
-        for script in [wrongArity, thrown, endless] {
+        for script in [thrown, endless] {
             #expect(throws: RuntimeError.self) {
                 try InteractionScriptSystem.evaluate(script, input: makeInput(hunger: 50))
             }

@@ -29,7 +29,8 @@ unchecked item is planned work, not an implemented feature.
 - [x] Add an indexed item-definition catalog with duplicate-ID validation.
 - [x] Verify multiple placed instances can reference the same definition.
 - [ ] Define catalog composition, overrides, and content-loading policy
-  without coupling reusable definitions to a lot.
+  without coupling reusable definitions to a lot. Planned as content packs
+  in Yamagata.
 
 ## Tohoku: Describe interaction offers
 
@@ -123,9 +124,31 @@ unchecked item is planned work, not an implemented feature.
 - [ ] Preserve observable behavior and public domain types when changing
   storage.
 
+## Yamagata: Load content packs safely
+
+Base content, expansions, and user mods all load as content packs: content
+plus a metadata manifest, runnable unpacked for debugging. Broken scripts
+escalate step by step instead of stopping the simulation.
+
+- [x] Phase 1: Report script failures as typed values, and reject invalid
+  `effect.fulfill` calls when a script is loaded where they are detectable.
+- [ ] Phase 2: Define content packs: a manifest with ID, name, version, engine
+  compatibility, dependencies, and load order; IDs namespaced by pack, with
+  explicit overrides declared in the manifest; a catalog composed from packs;
+  and loading unpacked packs through a content-source protocol.
+- [ ] Phase 3: Track script health. A failing interaction goes on cooldown and
+  is retried; repeated failures disable its script and fall back to written
+  effects; an interaction without written effects is disabled; cascading
+  failures disable its pack and the packs that depend on it. Each stage emits
+  an event, disabled state is saved with the game, and only the player
+  re-enables it. Placed items from a disabled pack stay on lots but offer
+  nothing.
+- [ ] Phase 4: Choose and support a packed pack format.
+- [ ] Phase 5: Report source line numbers in Robusta runtime errors.
+
 ## Next milestone
 
-Continue with **Nishi-Kyushu**: connect optional extensions without making
-them dependencies of the core simulation. Earlier unchecked catalog and
-contextual-requirement items remain planned until concrete content needs
-define their behavior.
+Continue with **Yamagata** Phase 2, content packs. Wants and
+fears that target a specific Sim or item, and lifetime wants, remain planned
+in Nishi-Kyushu. Earlier unchecked contextual-requirement items remain planned
+until concrete content needs define their behavior.

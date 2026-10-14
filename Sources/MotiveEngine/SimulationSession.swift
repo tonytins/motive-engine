@@ -420,6 +420,7 @@ public struct SimulationSession: Sendable {
         guard let script = offer.script else {
             return InteractionActionSystem.start(offer, initiatedBy: initiator)
         }
+        let failure: InteractionScriptFailure
         do {
             let result = try InteractionScriptSystem.evaluate(
                 script,
@@ -430,12 +431,15 @@ public struct SimulationSession: Sendable {
                 initiatedBy: initiator,
                 motiveEffects: result.motiveEffects
             )
-        } catch {
-            return try InteractionActionSystem.fail(
-                InteractionActionSystem.start(offer, initiatedBy: initiator),
-                because: .scriptFailed(String(describing: error))
-            )
+        } catch let error as RuntimeError {
+            failure = .runtime(error)
+        } catch let error as InteractionScriptError {
+            failure = .invalidEffect(error)
         }
+        return try InteractionActionSystem.fail(
+            InteractionActionSystem.start(offer, initiatedBy: initiator),
+            because: .scriptFailed(failure)
+        )
     }
 
     private func moveActors(

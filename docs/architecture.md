@@ -130,7 +130,10 @@ state, and the action applies the script's effects instead of the written
 `motiveEffects` for its whole duration. The effects are stored in the
 action's `motiveEffects`. A script that throws, exceeds the instruction
 limit, or reports an invalid effect does not stop the step: the action ends
-as `.failed(.scriptFailed(message))` and an `actionChanged` event reports it.
+as `.failed(.scriptFailed(failure))`, where the typed
+`InteractionScriptFailure` separates runtime errors from invalid effects, and
+an `actionChanged` event reports it. Invalid `effect.fulfill` calls with
+literal arguments are rejected earlier, when the script is created.
 A failed player command then keeps autonomy idle for that Sim for the rest of
 the step, while autonomy reports the failure and tries the next useful offer.
 Advertised benefits are unaffected, so scripts do not change ranking. An action waits if other Sims temporarily

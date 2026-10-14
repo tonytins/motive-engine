@@ -15,6 +15,8 @@ state default
 end
 """
 
+private let outOfFood = InteractionScriptFailure.runtime(RuntimeError(message: "out of food"))
+
 private let brokenScript = """
 state default
     func stateEntry()
@@ -57,7 +59,7 @@ struct ScriptedSessionTests {
             guard case let .actionChanged(_, action) = event else { return nil }
             return action.status
         }
-        #expect(failure == [.failed(.scriptFailed("out of food"))])
+        #expect(failure == [.failed(.scriptFailed(outOfFood))])
         let sim = try #require(session.state.sim(for: fixture.simID))
         #expect(sim.activeAction == nil)
         #expect(sim.motives.level(for: .fun) == 49)
@@ -78,8 +80,29 @@ struct ScriptedSessionTests {
             return (action.offer.itemInstanceID.rawValue, action.status)
         }
         #expect(attempts.map(\.0) == ["broken-fridge", "fridge"])
-        #expect(attempts.map(\.1) == [.failed(.scriptFailed("out of food")), .running])
+        #expect(attempts.map(\.1) == [.failed(.scriptFailed(outOfFood)), .running])
         #expect(session.state.sim(for: fixture.simID)?.activeAction?.offer.itemInstanceID.rawValue == "fridge")
+    }
+
+    @Test func invalidRuntimeEffectsAreReportedAsTypedFailures() throws {
+        let fixture = try makeFixture(items: [
+            ScriptedItem(name: "fridge", x: 1, script: """
+            state default
+                func stateEntry()
+                    val motive = "thirst"
+                    effect.fulfill(motive, 1)
+                end
+            end
+            """),
+        ])
+        var session = try fixture.session(hunger: 20)
+
+        let result = try session.step(bySeconds: 0, commands: [fixture.command("fridge")])
+
+        #expect(result.events.contains {
+            guard case let .actionChanged(_, action) = $0 else { return false }
+            return action.status == .failed(.scriptFailed(.invalidEffect(.unknownMotive("thirst"))))
+        })
     }
 
     @Test func actionsWithoutScriptsKeepTheirWrittenEffects() throws {

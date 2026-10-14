@@ -31,7 +31,7 @@ public enum InteractionActionFailureReason: Equatable, Sendable {
     case executionFailed
 
     /// The interaction's script failed or reported an invalid effect.
-    case scriptFailed(String)
+    case scriptFailed(InteractionScriptFailure)
 }
 
 /// The lifecycle state of an interaction action.
