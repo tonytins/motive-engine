@@ -184,6 +184,113 @@ struct BuffTests {
         #expect(session.state.sim(for: simID)?.motives == buffed)
     }
 
+    // MARK: Timed buffs
+
+    @Test func timedBuffsRejectInvalidDurationsAndSignals() throws {
+        let id = try #require(BuffID("fulfilled"))
+        for duration in [0, -1, Double.infinity, .nan] {
+            #expect(throws: BuffError.invalidDuration(id)) {
+                try TimedBuff(id: id, signals: [], durationSeconds: duration)
+            }
+        }
+        #expect(throws: BuffError.nonFiniteSignal(buffID: id, motiveType: .fun)) {
+            try TimedBuff(
+                id: id,
+                signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: .infinity)],
+                durationSeconds: 1
+            )
+        }
+    }
+
+    @Test func timedBuffsApplyOnlyForTheirRemainingTime() throws {
+        let id = try #require(BuffID("fulfilled"))
+        let buff = try TimedBuff(
+            id: id,
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 2)],
+            durationSeconds: 3
+        )
+        let sim = SimStateData(
+            id: try #require(SimID("sim")),
+            motives: try makeMotiveLevels(),
+            posture: .standing,
+            timedBuffs: [buff]
+        )
+        let context = BuffContext(sim: sim, lot: nil, itemCatalog: try ItemDefinitionCatalog(definitions: []))
+
+        let partial = try BuffSystem.evaluate(BuffRuleSet(), in: context, overSeconds: 1)
+        let overrun = try BuffSystem.evaluate(BuffRuleSet(), in: context, overSeconds: 10)
+        let instant = try BuffSystem.evaluate(BuffRuleSet(), in: context, overSeconds: 0)
+
+        #expect(partial.motives.level(for: .fun) == 52)
+        #expect(partial.timedBuffs.map(\.remainingSeconds) == [2])
+        #expect(partial.expiredBuffIDs.isEmpty)
+        #expect(partial.effects == [BuffEffect(buffID: id, signals: buff.signals)])
+        #expect(overrun.motives.level(for: .fun) == 56)
+        #expect(overrun.timedBuffs.isEmpty)
+        #expect(overrun.expiredBuffIDs == [id])
+        #expect(instant.motives == sim.motives)
+        #expect(instant.timedBuffs == [buff])
+    }
+
+    @Test func sessionAppliesRestartsAndExpiresTimedBuffs() throws {
+        let fixture = try makeAmbientFixture()
+        let simID = try #require(SimID("sim"))
+        let buffID = try #require(BuffID("fulfilled"))
+        let buff = try TimedBuff(
+            id: buffID,
+            signals: [MotiveSignal(motiveType: .social, strengthPerSecond: 1)],
+            durationSeconds: 3
+        )
+        var session = try SimulationSession(
+            state: fixture.state(simAt: GridPosition(x: 4, y: 4)),
+            itemCatalog: fixture.catalog,
+            motiveDecayRates: makeDecayRates(0)
+        )
+
+        let started = try session.step(bySeconds: 2, commands: [.applyBuff(simID: simID, buff: buff)])
+        #expect(started.events.first == .timedBuffApplied(simID: simID, buff: buff))
+        #expect(session.state.sim(for: simID)?.motives.level(for: .social) == 52)
+        #expect(session.state.sim(for: simID)?.timedBuffs.map(\.remainingSeconds) == [1])
+
+        // Reapplying restarts the buff instead of stacking a second copy.
+        try session.step(bySeconds: 0, commands: [.applyBuff(simID: simID, buff: buff)])
+        #expect(session.state.sim(for: simID)?.timedBuffs == [buff])
+
+        let expired = try session.step(bySeconds: 5)
+        #expect(session.state.sim(for: simID)?.motives.level(for: .social) == 55)
+        #expect(session.state.sim(for: simID)?.timedBuffs.isEmpty == true)
+        #expect(expired.events.last == .timedBuffExpired(simID: simID, buffID: buffID))
+
+        let quiet = try session.step(bySeconds: 1)
+        #expect(quiet.events.isEmpty)
+    }
+
+    @Test func timedBuffCommandsAndStateAreValidated() throws {
+        let fixture = try makeAmbientFixture()
+        let buff = try TimedBuff(id: #require(BuffID("fulfilled")), signals: [], durationSeconds: 1)
+        let state = try fixture.state(simAt: GridPosition(x: 0, y: 0))
+        var session = try SimulationSession(
+            state: state,
+            itemCatalog: fixture.catalog,
+            motiveDecayRates: makeDecayRates(0)
+        )
+        let missing = try #require(SimID("missing"))
+
+        #expect(throws: SimulationSessionError.missingSim(missing)) {
+            try session.step(bySeconds: 1, commands: [.applyBuff(simID: missing, buff: buff)])
+        }
+        #expect(session.state == state)
+
+        let sim = try fixture.sim(at: GridPosition(x: 0, y: 0))
+        #expect(throws: SimulationStateError.duplicateTimedBuff(simID: sim.id, buffID: buff.id)) {
+            try SimulationState(
+                sims: [SimStateData(id: sim.id, motives: sim.motives, posture: .standing, timedBuffs: [buff, buff])],
+                households: [],
+                lots: []
+            )
+        }
+    }
+
     // MARK: - Fixtures
 
     private struct FixedBuffRule: BuffRule {

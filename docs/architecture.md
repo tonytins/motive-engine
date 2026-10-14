@@ -104,7 +104,8 @@ Movement remains separate from autonomy scoring.
 `SimulationSnapshot` exposes the state as read-only entity arrays ordered by
 stable ID for deterministic client iteration. `SimulationStepResult` pairs a
 resulting snapshot with ordered `SimulationEvent` values for motive changes,
-action changes, current-lot changes, and position changes.
+buff effects, timed buffs starting and expiring, action changes, current-lot
+changes, and position changes.
 
 `SimulationPhasePlan.standardOrder` records the intended order:
 commands, motive decay, buffs, offer generation, eligibility, autonomous
@@ -257,6 +258,16 @@ the needs system depend on a particular extension. The contract is:
   context returns the same result, each rule applies once per step, and
   zero elapsed time reports effects without changing motives.
 
+Timed buffs cover effects that last a limited time, such as a "Fulfilled"
+mood after a wish. A `TimedBuff` has a `BuffID`, per-second signals, and the
+seconds remaining; it is instance state stored in `SimStateData.timedBuffs`,
+at most one per ID. The `applyBuff` command starts one and emits
+`timedBuffApplied`; applying an ID that is already active restarts it rather
+than stacking. In the `buffs` phase each timed buff applies only for its
+remaining time, after rule effects, and is removed with a
+`timedBuffExpired` event when it runs out. Timed buffs work without any
+buff rules.
+
 Buffs are optional: a session created without a rule set applies none and
 emits no buff events. `AmbientBuffRule` applies the signals of every
 `.ambient` item on the Sim's lot within a Manhattan radius, visiting items
@@ -305,7 +316,10 @@ actions, or free will.
   entries can be fulfilled, and `offerLifetimeSeconds` so `advance` removes
   unpromised entries that reach that age. An expired slot stays empty until
   the next reroll. `cancel` removes any entry. The lock limit is the number
-  of wishes that can be promised at once.
+  of wishes that can be promised at once. A profile's `fulfillmentBuff` is
+  a `TimedBuff` granted whenever a want is fulfilled. SWAF does not apply it:
+  the update's `commands` carry `applyBuff` commands for the game to pass to
+  the next session step.
 
 Operations are pure: each returns a new state and ordered
 `AspirationEvent` values, and leaves the state unchanged on error. Wants and

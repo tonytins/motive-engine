@@ -8,7 +8,8 @@ import MotiveEngine
 /// The defaults follow The Sims 2. For Sims 3-style wishes, use no fear
 /// slots, turn off aspiration tracking, require promises, and set an offer
 /// lifetime. Locking an entry then promises it, and the lock limit is the
-/// number of wishes that can be promised at once.
+/// number of wishes that can be promised at once. A fulfillment buff gives
+/// the Sim a temporary "Fulfilled" effect.
 public struct AspirationProfile: Equatable, Sendable {
     /// Tags that shape which entries are rolled.
     public let tags: Set<SWAFTag>
@@ -38,6 +39,11 @@ public struct AspirationProfile: Equatable, Sendable {
     /// `nil` keeps entries until they are rerolled.
     public let offerLifetimeSeconds: Double?
 
+    /// A timed buff granted each time a want is fulfilled, if any.
+    ///
+    /// Fulfilling another want while it is active restarts it.
+    public let fulfillmentBuff: TimedBuff?
+
     /// Creates a profile. The defaults are four wants, three fears, and one
     /// lock, without promises or expiry.
     ///
@@ -50,7 +56,8 @@ public struct AspirationProfile: Equatable, Sendable {
         lockLimit: Int = 1,
         tracksAspiration: Bool = true,
         requiresPromise: Bool = false,
-        offerLifetimeSeconds: Double? = nil
+        offerLifetimeSeconds: Double? = nil,
+        fulfillmentBuff: TimedBuff? = nil
     ) throws {
         guard wantSlots >= 0, fearSlots >= 0, lockLimit >= 0 else {
             throw AspirationError.invalidProfile
@@ -67,6 +74,7 @@ public struct AspirationProfile: Equatable, Sendable {
         self.tracksAspiration = tracksAspiration
         self.requiresPromise = requiresPromise
         self.offerLifetimeSeconds = offerLifetimeSeconds
+        self.fulfillmentBuff = fulfillmentBuff
     }
 }
 

@@ -32,6 +32,23 @@ public struct AspirationUpdate: Equatable, Sendable {
 
     /// Facts produced by the operation, in order.
     public let events: [AspirationEvent]
+
+    /// Timed buffs to start on the Sim, such as the profile's fulfillment buff.
+    ///
+    /// The aspiration system never changes simulation state. Pass `commands`
+    /// to the next `SimulationSession.step` to apply these.
+    public let grantedBuffs: [TimedBuff]
+
+    init(state: AspirationState, events: [AspirationEvent], grantedBuffs: [TimedBuff] = []) {
+        self.state = state
+        self.events = events
+        self.grantedBuffs = grantedBuffs
+    }
+
+    /// Session commands that apply `grantedBuffs` to the Sim.
+    public var commands: [SimulationCommand] {
+        grantedBuffs.map { .applyBuff(simID: state.simID, buff: $0) }
+    }
 }
 
 /// Pure operations over one Sim's wants and fears.
@@ -275,7 +292,13 @@ public enum AspirationSystem {
             }
             next.setSlots(slots, for: kind)
         }
-        return AspirationUpdate(state: next, events: events)
+
+        let fulfilledWant = events.contains {
+            if case .wantFulfilled = $0 { return true }
+            return false
+        }
+        let grantedBuffs = fulfilledWant ? state.profile.fulfillmentBuff.map { [$0] } ?? [] : []
+        return AspirationUpdate(state: next, events: events, grantedBuffs: grantedBuffs)
     }
 
     private static func apply(

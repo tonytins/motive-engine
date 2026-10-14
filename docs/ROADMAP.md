@@ -105,7 +105,7 @@ unchecked item is planned work, not an implemented feature.
   expiry that leaves slots empty, and cancellation.
 - [ ] Add wants and fears that target a specific Sim or item, and lifetime
   wants, including bonus points for wishes related to a lifetime wish.
-- [ ] Add timed buffs so fulfilling a wish can grant a temporary
+- [x] Add timed buffs so fulfilling a wish can grant a temporary
   "Fulfilled" mood effect.
 - [x] Define the typed data boundary between the Robusta VM and item
   interactions.

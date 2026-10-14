@@ -399,6 +399,70 @@ struct AspirationTests {
         }
     }
 
+    @Test func fulfilledWishesGrantTheFulfillmentBuff() throws {
+        let catalog = try makeCatalog()
+        let buff = try TimedBuff(
+            id: #require(BuffID("fulfilled")),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)],
+            durationSeconds: 60
+        )
+        let profile = try AspirationProfile(wantSlots: 2, fearSlots: 1, fulfillmentBuff: buff)
+        let state = try AspirationState(
+            simID: simID(),
+            profile: profile,
+            wants: [WantFearSlot(definitionID: id("sleep")), WantFearSlot(definitionID: id("promoted"))],
+            fears: [WantFearSlot(definitionID: id("starve"))],
+            seed: 1
+        )
+
+        // Two wants fulfilled together grant the buff once.
+        let wants = try AspirationSystem.observe(
+            state,
+            events: [completedAction(item: "bed", interaction: "sleep")],
+            catalog: catalog,
+            motives: motives()
+        )
+        let both = try AspirationSystem.report(event("promoted"), to: wants.state, catalog: catalog, motives: motives())
+        let fear = try AspirationSystem.observe(state, events: [], catalog: catalog, motives: motives([.hunger: 5]))
+
+        #expect(wants.grantedBuffs == [buff])
+        #expect(wants.commands == [.applyBuff(simID: try simID(), buff: buff)])
+        #expect(both.grantedBuffs == [buff])
+        #expect(fear.grantedBuffs.isEmpty)
+        #expect(try AspirationSystem.reroll(state, catalog: catalog, motives: motives()).commands.isEmpty)
+    }
+
+    @Test func fulfillmentBuffCommandsDriveTheSession() throws {
+        let simID = try simID()
+        let buff = try TimedBuff(
+            id: #require(BuffID("fulfilled")),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)],
+            durationSeconds: 60
+        )
+        let state = try AspirationState(
+            simID: simID,
+            profile: AspirationProfile(wantSlots: 1, fearSlots: 0, fulfillmentBuff: buff),
+            wants: [WantFearSlot(definitionID: id("promoted"))],
+            seed: 1
+        )
+        let update = try AspirationSystem.report(event("promoted"), to: state, catalog: makeCatalog(), motives: motives())
+        var session = try SimulationSession(
+            state: SimulationState(
+                sims: [SimStateData(id: simID, motives: motives(), posture: .standing)],
+                households: [],
+                lots: []
+            ),
+            itemCatalog: ItemDefinitionCatalog(definitions: []),
+            motiveDecayRates: MotiveDecayRates(ratesPerSecond: Dictionary(
+                uniqueKeysWithValues: MotiveType.allCases.map { ($0, 0.0) }
+            ))
+        )
+
+        try session.step(bySeconds: 10, commands: update.commands)
+
+        #expect(session.state.sim(for: simID)?.motives.level(for: .fun) == 60)
+    }
+
     @Test func wishProfilesRejectInvalidLifetimesAndRestoredAges() throws {
         #expect(throws: AspirationError.invalidProfile) {
             try AspirationProfile(offerLifetimeSeconds: 0)
