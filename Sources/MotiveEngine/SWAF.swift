@@ -19,7 +19,7 @@ enum PersonalityTrait: String, Codable, CaseIterable, Hashable {
     case lazy = "Lazy"
     case active = "Active"
     case goofball = "Goofball"
-    case romatic = "Romatic"
+    case romatic = "Romantic"
     case erratic = "Erratic"
     case selfAssured = "Self-Assured"
     case unflirty = "Unflirty"
@@ -32,6 +32,11 @@ struct WantOrFear: Codable, Hashable {
 }
 
 private struct WantsFearsPayload: Codable {
+    enum CodingKeys: String, CodingKey {
+        case wants = "want"
+        case fears = "fear"
+    }
+
     let wants: [String: [PersonalityTrait]]
     let fears: [String: [PersonalityTrait]]
 }
@@ -82,18 +87,18 @@ func matchScore(of item: WantOrFear, against personalityTraits: Set<PersonalityT
     })
 }
 
-func rollWantsOrFears(
+func rollWantsOrFears<Generator: RandomNumberGenerator>(
     from pool: [WantOrFear],
     matching personalityTraits: Set<PersonalityTrait>,
     count: Int,
-    using randomNumberGenerator: inout RandomNumberGenerator,
+    using randomNumberGenerator: inout Generator,
 ) -> [WantOrFear] {
     let shuffledPool = pool.shuffled(using: &randomNumberGenerator)
-    let rankedPool = shuffledPool.sorted {
-        lhs, rhs in matchScore(of: lhs, against: personalityTraits) > matchScore(
-            of: rhs,
-            against: personalityTraits,
-        )
+    let rankedPool = shuffledPool.enumerated().sorted {
+        lhs, rhs in
+        let lhsScore = matchScore(of: lhs.element, against: personalityTraits)
+        let rhsScore = matchScore(of: rhs.element, against: personalityTraits)
+        return lhsScore == rhsScore ? lhs.offset < rhs.offset : lhsScore > rhsScore
     }
-    return Array(rankedPool.prefix(count))
+    return rankedPool.prefix(max(0, count)).map(\.element)
 }

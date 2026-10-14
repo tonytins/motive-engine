@@ -4,11 +4,11 @@ The Motives Engine provides the framework for creating characters with needs, as
 
 ## 📝 Goals
 
-- [ ] [Scripting](./Sources/MotiveEngine/VM/README.md)
-	- [ ] AST
-	- [ ] Lexer
-	- [ ] IR
-	- [ ] Bindings
+- [x] [Scripting](./Sources/MotiveEngine/VM/README.md)
+	- [x] AST
+	- [x] Lexer
+	- [x] IR
+	- [x] Bindings
 - [ ] Items
 - [ ] Motives
 - [ ] Aspirations (SWAF)
@@ -38,9 +38,14 @@ let package = Package(
 
 Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
 
+## 📚 Documentation
+
+Start at [`doc/`](./doc/README.md) for the public documentation index and
+the proposed engine architecture.
+
 ## ✅ Supported Versions
 
-| swift-cst    | Minimum Swift Version |
+| motive-engine    | Minimum Swift Version |
 | ------- | --------------------- |
 | ``main`` | 6.3                   |
 
