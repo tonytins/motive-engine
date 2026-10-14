@@ -9,6 +9,9 @@ public enum SimulationPhase: String, CaseIterable, Sendable {
     /// Apply passive motive decay.
     case motiveDecay
 
+    /// Apply passive buff effects to decayed motives.
+    case buffs
+
     /// Generate interaction offers from current world state.
     case offerGeneration
 
@@ -32,7 +35,8 @@ public enum SimulationPhase: String, CaseIterable, Sendable {
 public enum SimulationPhasePlan {
     /// Commands, state updates, derived decisions, execution, then events.
     ///
-    /// Command and action phases write authoritative state. Offer generation,
+    /// Command and action phases write authoritative state. Motive decay and
+    /// buffs update motive values before decisions read them. Offer generation,
     /// eligibility, and autonomous decision phases produce derived values.
     /// Movement updates positions after decisions. Event emission observes the
     /// resulting state and does not change it.

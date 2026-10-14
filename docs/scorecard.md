@@ -35,6 +35,9 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 101 tests across 12 suites after adding
+  the buff contract, the `buffs` session phase, and the ambient buff rule.
+
 - 2026-10-14: `swift test` passed 95 tests across 12 suites after adding
   Sim positions, interaction routing, and the simulation session. The
   optimized benchmark measurements above were collected on the same date.
@@ -51,6 +54,7 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Eligibility | Cover every declared eligibility failure reason, missing snapshots, a passing case, occupancy exactly at capacity, and occupancy above capacity. |
 | Autonomy | Cover all 6 motives, positive/zero/negative scores, no useful offer, non-finite scoring input, and ties resolved by each documented identifier key. |
 | Actions | Cover start, progress, completion, duration overrun, interruption, failure, and attempts to advance or terminate a terminal action. |
+| Buffs | Cover rule-set ID validation and ordering, effect attribution, summing before clamping, repeatable and zero-time evaluation, invalid time and non-finite signals, ambient radius and lot boundaries, hybrid ambient items, and a session with and without buffs. |
 | Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, routes around blocked and occupied cells, ambient classifications, and sleep/wake roster changes including repeated events. |
 | World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, Sim position and occupancy, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, session phase behavior, and the declared phase order. |
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
@@ -80,6 +84,13 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 - [ ] Action transitions apply effects only for active elapsed time.
 - [ ] Completion, interruption, failure, and terminal-state behavior are covered.
 - [x] Performance is measured with the 1,000-offer workload.
+
+### Buffs
+
+- [x] Rule sets reject duplicate IDs and evaluate rules in ID order.
+- [x] Evaluation is pure, repeatable, and independent of rule order.
+- [x] Sessions without buffs are unchanged; sessions with buffs apply them
+  after motive decay.
 
 ### Grid and household
 

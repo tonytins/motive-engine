@@ -506,6 +506,7 @@ struct PublicMotiveAPITests {
         #expect(SimulationPhasePlan.standardOrder == [
             .commands,
             .motiveDecay,
+            .buffs,
             .offerGeneration,
             .eligibility,
             .autonomousDecision,

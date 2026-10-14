@@ -6,13 +6,14 @@ import MotiveEngine
 ///
 /// Pass a path as the first argument to load a different lot file.
 ///
-/// Fields the engine does not simulate yet, such as `relationship` and ambient
-/// item effects, are read but ignored.
+/// Ambient items such as the Stereo apply a passive buff to nearby Sims.
+/// Fields the engine does not simulate yet, such as `relationship`, are ignored.
 @main
 private enum NewbieHouse {
     private static let stepSeconds = 5.0
     private static let stepCount = 36
     private static let summaryInterval = 6
+    private static let ambientRadius = 2
 
     static func main() {
         do {
@@ -29,7 +30,8 @@ private enum NewbieHouse {
         var session = try SimulationSession(
             state: world.state,
             itemCatalog: world.catalog,
-            motiveDecayRates: decayRates()
+            motiveDecayRates: decayRates(),
+            buffRules: buffRules()
         )
 
         print("Newbie house: \(lotFile.width)x\(lotFile.height) lot, \(world.catalog.definitions.count) items")
@@ -77,6 +79,13 @@ private enum NewbieHouse {
         return url
     }
 
+    private static func buffRules() throws -> BuffRuleSet {
+        guard let ambientID = BuffID("ambient") else {
+            throw NewbieHouseError.invalidIdentifier("ambient")
+        }
+        return try BuffRuleSet(rules: [AmbientBuffRule(id: ambientID, radius: ambientRadius)])
+    }
+
     private static func decayRates() throws -> MotiveDecayRates {
         try MotiveDecayRates(ratesPerSecond: [
             .hunger: 0.30,
@@ -95,6 +104,9 @@ private enum NewbieHouse {
         case .motivesChanged:
             // Motives change every step; they are summarized periodically instead.
             return nil
+        case let .buffsApplied(simID, effects):
+            let motives = Set(effects.flatMap(\.signals).map(\.motiveType.rawValue)).sorted()
+            return "\(world.displayName(for: simID)) feels nearby ambience (\(motives.joined(separator: ", ")))"
         case let .actionChanged(simID, action):
             let who = world.displayName(for: simID)
             let item = world.itemName(for: action.offer.itemInstanceID)
@@ -234,8 +246,8 @@ private struct NewbieWorld {
                 }
             }
 
-            // Ambient broadcasting is not simulated yet, so ambient items are
-            // placed without a usable interaction.
+            // Ambient items work passively through the ambient buff rather than
+            // offering an interaction.
             let interactions: [InteractionDefinition] = modifiers.contains(.ambient) ? [] : [
                 try InteractionDefinition(
                     id: useInteractionID,

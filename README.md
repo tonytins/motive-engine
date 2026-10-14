@@ -49,8 +49,8 @@ swift run NewbieHouse              # bundled lot
 swift run NewbieHouse path/to/lot.json
 ```
 
-Lot fields the engine does not simulate yet, such as `relationship` and
-ambient item effects, are ignored.
+Ambient items, such as the Stereo, buff nearby Sims. Lot fields the engine
+does not simulate yet, such as `relationship`, are ignored.
 
 ## 📚 Documentation
 

@@ -65,7 +65,7 @@ public enum SimulationSessionError: Error, Equatable, Sendable {
 
 /// Coordinates deterministic simulation steps over value state.
 ///
-/// Each step applies commands, motive decay, autonomous selection,
+/// Each step applies commands, motive decay, buffs, autonomous selection,
 /// movement, and action execution in the declared phase order. The session
 /// does not own concurrency; callers can isolate it at their concurrency
 /// boundary.
@@ -75,9 +75,12 @@ public struct SimulationSession: Sendable {
 
     private let itemCatalog: ItemDefinitionCatalog
     private let motiveDecayRates: MotiveDecayRates
+    private let buffRules: BuffRuleSet
     private let itemLocations: [ItemInstanceID: PlacedItemLocation]
 
     /// Creates a session and validates item references used by the world.
+    ///
+    /// Buffs are optional. The default empty rule set applies no buffs.
     ///
     /// - Throws: `ItemDefinitionCatalogError.missingDefinition` when a placed
     ///   item uses an unknown definition, or `SimulationSessionError` when an
@@ -85,7 +88,8 @@ public struct SimulationSession: Sendable {
     public init(
         state: SimulationState,
         itemCatalog: ItemDefinitionCatalog,
-        motiveDecayRates: MotiveDecayRates
+        motiveDecayRates: MotiveDecayRates,
+        buffRules: BuffRuleSet = BuffRuleSet()
     ) throws {
         var itemLocations: [ItemInstanceID: PlacedItemLocation] = [:]
         for lot in state.lots.values.sorted(by: {
@@ -154,6 +158,7 @@ public struct SimulationSession: Sendable {
         self.state = state
         self.itemCatalog = itemCatalog
         self.motiveDecayRates = motiveDecayRates
+        self.buffRules = buffRules
         self.itemLocations = itemLocations
     }
 
@@ -203,6 +208,7 @@ public struct SimulationSession: Sendable {
             events.append(.motivesChanged(simID: simID, motives: decayedMotives))
         }
 
+        try applyBuffs(to: &sims, bySeconds: elapsedSeconds, recording: &events)
         try selectAutonomousInteractions(
             for: &sims,
             suppressing: suppressingAutonomy,
@@ -301,6 +307,40 @@ public struct SimulationSession: Sendable {
             sims[simID] = replacingAction(sim, with: nil)
             suppressingAutonomy.insert(simID)
             events.append(.actionChanged(simID: simID, action: interrupted))
+        }
+    }
+
+    private func applyBuffs(
+        to sims: inout [SimID: SimStateData],
+        bySeconds elapsedSeconds: Double,
+        recording events: inout [SimulationEvent]
+    ) throws {
+        guard !buffRules.isEmpty else {
+            return
+        }
+        for simID in sortedSimIDs(in: sims) {
+            guard let sim = sims[simID] else {
+                continue
+            }
+            let context = BuffContext(
+                sim: sim,
+                lot: sim.currentLotID.flatMap { state.lots[$0] },
+                itemCatalog: itemCatalog
+            )
+            let evaluation = try BuffSystem.evaluate(
+                buffRules,
+                in: context,
+                overSeconds: elapsedSeconds
+            )
+            guard !evaluation.effects.isEmpty else {
+                continue
+            }
+            events.append(.buffsApplied(simID: simID, effects: evaluation.effects))
+            guard evaluation.motives != sim.motives else {
+                continue
+            }
+            sims[simID] = replacing(sim, motives: evaluation.motives)
+            events.append(.motivesChanged(simID: simID, motives: evaluation.motives))
         }
     }
 

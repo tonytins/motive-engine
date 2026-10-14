@@ -95,7 +95,7 @@ unchecked item is planned work, not an implemented feature.
 
 ## Nishi-Kyushu: Connect optional extensions
 
-- [ ] Define buff inputs, outputs, evaluation timing, ordering, and
+- [x] Define buff inputs, outputs, evaluation timing, ordering, and
   idempotency.
 - [ ] Implement aspirations as an optional, independently testable extension
   that can express wants and fears.
