@@ -38,6 +38,11 @@ let package = Package(
 
 Or in Xcode: File -> Add Package Dependencies, then paste the repo URL.
 
+## 📚 Documentation
+
+Start at [`doc/`](./doc/README.md) for the public documentation index and
+the proposed engine architecture.
+
 ## ✅ Supported Versions
 
 | motive-engine    | Minimum Swift Version |
