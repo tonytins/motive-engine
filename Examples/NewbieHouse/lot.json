@@ -1,0 +1,151 @@
+{
+   "height": 6,
+   "items": [
+      {
+         "item": "appliance",
+         "motives": [
+            {
+               "hunger": 50
+            }
+         ],
+         "name": "Fridge",
+         "x": 0,
+         "y": 0
+      },
+      {
+         "item": "appliance",
+         "motives": [
+            {
+               "energy": 20
+            }
+         ],
+         "name": "Coffee",
+         "x": 1,
+         "y": 0
+      },
+      {
+         "item": "comfort",
+         "modifiers": [
+            "bed"
+         ],
+         "motives": [
+            {
+               "energy": 37.5
+            }
+         ],
+         "name": "Bed",
+         "x": 7,
+         "y": 0
+      },
+      {
+         "item": "plumbing",
+         "modifiers": [
+            "shower"
+         ],
+         "motives": [
+            {
+               "hygiene": 62.5
+            }
+         ],
+         "name": "Shower",
+         "x": 7,
+         "y": 5
+      },
+      {
+         "item": "plumbing",
+         "modifiers": [
+            "toilet"
+         ],
+         "motives": [
+            {
+               "bladder": 75
+            }
+         ],
+         "name": "Toilet",
+         "x": 5,
+         "y": 5
+      },
+      {
+         "item": "recreation",
+         "motives": [
+            {
+               "fun": 25
+            },
+            {
+               "social": 7.5
+            }
+         ],
+         "name": "Television",
+         "x": 3,
+         "y": 0
+      },
+      {
+         "item": "comfort",
+         "modifiers": [
+            "chair"
+         ],
+         "motives": [
+            {
+               "energy": 10
+            }
+         ],
+         "name": "Armchair",
+         "x": 3,
+         "y": 1
+      },
+      {
+         "item": "activity",
+         "motives": [
+            {
+               "fun": 15
+            }
+         ],
+         "name": "Chess Set",
+         "x": 1,
+         "y": 4
+      },
+      {
+         "item": "recreation",
+         "modifiers": [
+            "ambient"
+         ],
+         "motives": [
+            {
+               "fun": 15
+            }
+         ],
+         "name": "Stereo",
+         "x": 0,
+         "y": 5
+      },
+      {
+         "item": "decoration",
+         "modifiers": [
+            "ambient"
+         ],
+         "motives": [
+            {
+               "energy": 5
+            }
+         ],
+         "name": "Rare Gem",
+         "x": 6,
+         "y": 2
+      }
+   ],
+   "sims": [
+      {
+         "name": "Bob",
+         "relationship": 30,
+         "x": 0,
+         "y": 3
+      },
+      {
+         "name": "Betty",
+         "relationship": 50,
+         "x": 7,
+         "y": 3
+      }
+   ],
+   "width": 8
+}
