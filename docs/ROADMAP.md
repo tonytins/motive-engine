@@ -10,7 +10,7 @@ unchecked item is planned work, not an implemented feature.
 ## Tokaido: Establish tested foundations
 
 - [x] Keep the core render-agnostic and document the proposed architecture.
-- [x] Add a public `/doc` entry point and architecture overview.
+- [x] Add a public `/docs` entry point and architecture overview.
 - [x] Expose complete, validated motive snapshots and decay-rate tables.
 - [x] Apply motive decay and fulfillment as pure transformations.
 - [x] Add focused tests for bounds, invalid input, clamping, and deterministic

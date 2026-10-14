@@ -21,12 +21,12 @@ simulation loop:
 - a partial household sleep-event roster;
 - the independent Robusta scripting implementation.
 
-The Sim scheduler, motive decay and fulfillment loop, concrete
-interaction model, Lot simulation actor, and aspiration lifecycle are
-not yet implemented as complete systems. The APIs and examples in this
-overview describe direction, not guarantees about available runtime
-features. Motive decay and fulfillment arithmetic exists as pure value
-operations, but it is not yet connected to a running simulation tick.
+The Sim scheduler, running simulation tick, Lot coordinator, and aspiration
+lifecycle are not yet implemented as complete systems. Motive transformations,
+interaction offers and eligibility, autonomy scoring, and action transitions
+exist as independently testable value-level systems, but are not yet connected
+by a complete simulation loop. The APIs and examples in this overview describe
+direction where features remain planned; consult the roadmap for current status.
 
 Motive state requires a value for every `MotiveType`; missing values or
 decay rates are rejected during construction. Finite motive levels are
@@ -202,8 +202,8 @@ rules and authoritative state remain owned by engine systems.
 
 ## A gradual implementation path
 
-1. Complete and test the current value-level motive and item primitives.
-2. Add eligibility requirements and contextual offer generation without
+1. [x] Complete and test the current value-level motive and item primitives.
+2. [x] Add eligibility requirements and contextual offer generation without
    coupling definitions to lot state.
 3. [x] Implement pure motive-urgency and opportunity-scoring systems over
    the advertised benefit data.
