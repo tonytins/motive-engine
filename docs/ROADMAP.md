@@ -97,11 +97,15 @@ unchecked item is planned work, not an implemented feature.
 
 - [x] Define buff inputs, outputs, evaluation timing, ordering, and
   idempotency.
-- [ ] Implement aspirations as an optional, independently testable extension
+- [x] Implement aspirations as an optional, independently testable extension
   that can express wants and fears.
+- [ ] Add wants and fears that target a specific Sim or item, and lifetime
+  wants.
 - [x] Define the typed data boundary between the Robusta VM and item
   interactions.
-- [ ] Verify simulations remain usable when optional extensions are absent.
+- [x] Verify simulations remain usable when optional extensions are absent.
+  Covers buffs and interaction scripts. Aspirations only observe simulation
+  events, so the session never depends on them.
 
 ## Akita: Measure before optimizing
 

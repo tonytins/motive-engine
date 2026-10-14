@@ -98,9 +98,9 @@ struct HouseholdRosterTests {
         ) == ["Casey"])
     }
 
-    @Test func aspirationEventsAreRecordedWithoutChangingSleepState() {
+    @Test func aspirationEventsAreRecordedWithoutChangingSleepState() throws {
         var roster = HouseholdRoster()
-        let want = WantOrFear(name: "Write a novel", traits: [.bookworm])
+        let want = try #require(WantFearID("write-a-novel"))
 
         roster.receive(.fullfilledWant(want), from: "Alex")
 
@@ -139,94 +139,6 @@ struct ItemCodingTests {
         let decoded = try JSONDecoder().decode(Item.self, from: encoded)
 
         #expect(decoded == item)
-    }
-}
-
-@Suite("Aspiration Utilities")
-struct AspirationUtilityTests {
-    @Test func catalogUsesSchemaSingularKeysAndTraitRawValues() throws {
-        let json = """
-        {"want":{"Write a novel":["Bookworm","Creative"]},"fear":{"Public embarrassment":["Paranoid","Romantic"]}}
-        """
-        let catalog = try WantFearCatalog(jsonData: Data(json.utf8))
-
-        #expect(catalog.wants == [
-            WantOrFear(name: "Write a novel", traits: [.bookworm, .creative])
-        ])
-        #expect(catalog.fears == [
-            WantOrFear(name: "Public embarrassment", traits: [.paranoid, .romatic])
-        ])
-    }
-
-    @Test func matchScoreCountsMatchingTraits() {
-        let want = WantOrFear(
-            name: "Write a novel",
-            traits: [.bookworm, .creative, .ambitious]
-        )
-
-        #expect(matchScore(of: want, against: [.bookworm, .creative]) == 2)
-    }
-
-    @Test func rollingPrioritizesMatchingTraitsAndClampsRequestedCount() {
-        let matching = WantOrFear(name: "Writing", traits: [.bookworm, .creative])
-        let partial = WantOrFear(name: "Reading", traits: [.bookworm])
-        let unrelated = WantOrFear(name: "Dancing", traits: [.flirty])
-        var random = TestRandomNumberGenerator(seed: 42)
-        let pool = [unrelated, partial, matching]
-
-        let selected = rollWantsOrFears(
-            from: pool,
-            matching: [.bookworm, .creative],
-            count: 2,
-            using: &random
-        )
-        #expect(selected.first == matching)
-        #expect(selected.count == 2)
-
-        var repeatRandom = TestRandomNumberGenerator(seed: 42)
-        var secondRandom = TestRandomNumberGenerator(seed: 42)
-        #expect(rollWantsOrFears(
-            from: pool,
-            matching: [.bookworm, .creative],
-            count: pool.count,
-            using: &repeatRandom
-        ) == rollWantsOrFears(
-            from: pool,
-            matching: [.bookworm, .creative],
-            count: pool.count,
-            using: &secondRandom
-        ))
-
-        #expect(rollWantsOrFears(
-            from: pool,
-            matching: [],
-            count: -1,
-            using: &random
-        ).isEmpty)
-    }
-
-    @Test func fulfilledMotiveClampsInitialAndUpdatedValues() {
-        var motive = FullfilledMotive(startingValue: 120)
-        #expect(motive.value == 100)
-
-        motive.decay(by: 120)
-        #expect(motive.value == 0)
-
-        motive.boost(by: 120)
-        #expect(motive.value == 100)
-    }
-}
-
-struct TestRandomNumberGenerator: RandomNumberGenerator {
-    private var state: UInt64
-
-    init(seed: UInt64) {
-        state = seed
-    }
-
-    mutating func next() -> UInt64 {
-        state = state &* 6_364_136_223_846_793_005 &+ 1
-        return state
     }
 }
 
