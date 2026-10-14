@@ -93,6 +93,21 @@ struct BuffTests {
 
         #expect(BuffRegistry.buffs(for: chair).isEmpty)
     }
+
+    @Test func bindsAmbientBuffToItemDefinition() throws {
+        let definition = ItemDefinition(
+            id: try #require(ItemDefinitionID("ambient-stereo")),
+            identity: ItemIdentity(
+                name: "Stereo",
+                itemTypes: [.ambient, .recreation]
+            ),
+            signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)]
+        )
+
+        #expect(definition.isAmbient)
+        #expect(definition.isSelectable)
+        #expect(BuffRegistry.buffs(for: definition).contains { $0 is AmbientBuff })
+    }
 }
 
 @Suite("Grid Geometry")

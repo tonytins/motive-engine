@@ -70,9 +70,32 @@ Keep these concepts distinct:
 - **Snapshots and reports** expose read-only views to decision policies,
   extensions, debugging tools, and the game.
 
-Stable identifiers can connect instances to definitions. The specific
-ID types and collection layout remain open; the important first step is
-that data ownership and system inputs/outputs are clear.
+`ItemDefinitionID` and `ItemInstanceID` are distinct, content-supplied
+string identifiers. A definition catalog stores reusable content by
+definition ID, while `PlacedItem` stores an instance ID, a definition
+reference, and a position. Multiple placed instances can therefore
+share one item definition without duplicating its content. Empty IDs and
+duplicate definition IDs are rejected. The catalog does not yet manage
+lot placement or instance uniqueness; those belong to future world
+state.
+
+```swift
+if let chairDefinitionID = ItemDefinitionID("basic-chair"),
+   let chairInstanceID = ItemInstanceID("living-room-chair")
+{
+    let chairDefinition = ItemDefinition(
+        id: chairDefinitionID,
+        identity: ItemIdentity(name: "Basic Chair", itemTypes: .chair),
+        signals: [MotiveSignal(motiveType: .fun, strengthPerSecond: 1)]
+    )
+    let catalog = try ItemDefinitionCatalog(definitions: [chairDefinition])
+    let placedChair = PlacedItem(
+        id: chairInstanceID,
+        definitionID: chairDefinitionID,
+        position: GridPosition(x: 2, y: 3)
+    )
+}
+```
 
 ## Needs, interactions, and autonomy
 

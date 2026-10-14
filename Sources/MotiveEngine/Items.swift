@@ -12,7 +12,7 @@ enum ItemFunction: String, CaseIterable, Hashable, Codable {
     case sim
 }
 
-enum ItemModifier: String, CaseIterable, Hashable, Codable {
+public enum ItemModifier: String, CaseIterable, Hashable, Codable, Sendable {
     case appliance
     case bed
     case shower
@@ -75,14 +75,14 @@ extension ItemModifier {
     }
 }
 
-struct ItemIdentity: Equatable {
-    let name: String
-    let itemTypes: Set<ItemModifier>
-    let isBlocking: Bool
+public struct ItemIdentity: Equatable, Sendable {
+    public let name: String
+    public let itemTypes: Set<ItemModifier>
+    public let isBlocking: Bool
 
-    init(name: String,
-         itemTypes: some Sequence<ItemModifier>,
-         isBlocking: Bool? = nil)
+    public init(name: String,
+                itemTypes: some Sequence<ItemModifier>,
+                isBlocking: Bool? = nil)
     {
         let set = Set(itemTypes)
         self.name = name
@@ -90,8 +90,122 @@ struct ItemIdentity: Equatable {
         self.isBlocking = isBlocking ?? set.isBlockingByDefualt
     }
 
-    init(name: String, itemTypes: ItemModifier) {
+    public init(name: String, itemTypes: ItemModifier) {
         self.init(name: name, itemTypes: [itemTypes])
+    }
+}
+
+/// A stable identifier for reusable item content.
+public struct ItemDefinitionID: Codable, Hashable, Sendable {
+    /// The content-defined identifier.
+    public let rawValue: String
+
+    /// Creates an identifier from a nonempty, content-defined string.
+    ///
+    /// - Returns: `nil` when `rawValue` is empty.
+    public init?(_ rawValue: String) {
+        guard !rawValue.isEmpty else { return nil }
+        self.rawValue = rawValue
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard !rawValue.isEmpty else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Item definition ID must not be empty",
+            )
+        }
+        self.rawValue = rawValue
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+}
+
+/// A stable identifier for one placed item instance.
+public struct ItemInstanceID: Codable, Hashable, Sendable {
+    /// The game-defined identifier.
+    public let rawValue: String
+
+    /// Creates an identifier from a nonempty, game-defined string.
+    ///
+    /// - Returns: `nil` when `rawValue` is empty.
+    public init?(_ rawValue: String) {
+        guard !rawValue.isEmpty else { return nil }
+        self.rawValue = rawValue
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard !rawValue.isEmpty else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Item instance ID must not be empty",
+            )
+        }
+        self.rawValue = rawValue
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+}
+
+/// Reusable item content, separate from any placed item instance.
+public struct ItemDefinition: Broadcasting, Equatable, Sendable {
+    /// The stable identifier used by placed instances.
+    public let id: ItemDefinitionID
+
+    /// The name, item modifiers, and blocking behavior shared by instances.
+    public let identity: ItemIdentity
+
+    /// The motive signals offered by this item content.
+    public let signals: [MotiveSignal]
+
+    /// Creates reusable item content with an explicit stable identifier.
+    public init(id: ItemDefinitionID, identity: ItemIdentity, signals: [MotiveSignal]) {
+        self.id = id
+        self.identity = identity
+        self.signals = signals
+    }
+}
+
+/// An error produced while building an item definition catalog.
+public enum ItemDefinitionCatalogError: Error, Equatable, Sendable {
+    /// Two definitions use the same identifier.
+    case duplicateDefinitionID(ItemDefinitionID)
+}
+
+/// Reusable item definitions indexed by their stable content IDs.
+public struct ItemDefinitionCatalog: Sendable {
+    private let definitionsByID: [ItemDefinitionID: ItemDefinition]
+
+    /// Creates a catalog and rejects duplicate definition IDs.
+    public init(definitions: [ItemDefinition]) throws {
+        var definitionsByID: [ItemDefinitionID: ItemDefinition] = [:]
+        for definition in definitions {
+            guard definitionsByID[definition.id] == nil else {
+                throw ItemDefinitionCatalogError.duplicateDefinitionID(definition.id)
+            }
+            definitionsByID[definition.id] = definition
+        }
+        self.definitionsByID = definitionsByID
+    }
+
+    /// Returns the definition with the specified ID, if present.
+    public func definition(for id: ItemDefinitionID) -> ItemDefinition? {
+        definitionsByID[id]
+    }
+
+    /// All definitions sorted by ID. Accessing this property is O(n log n).
+    public var definitions: [ItemDefinition] {
+        definitionsByID.values.sorted { $0.id.rawValue < $1.id.rawValue }
     }
 }
 
