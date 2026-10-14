@@ -42,7 +42,7 @@ struct PublicMotiveAPITests {
             ],
             durationSeconds: 10
         )
-        let definition = ItemDefinition(
+        let definition = try ItemDefinition(
             id: definitionID,
             identity: ItemIdentity(name: "Small Chair", itemTypes: .chair),
             signals: [],
@@ -75,7 +75,21 @@ struct PublicMotiveAPITests {
         #expect(firstInstance.definitionID == secondInstance.definitionID)
         #expect(firstInstance.id != secondInstance.id)
         #expect(firstInstance.position != secondInstance.position)
+        #expect(definition.interactionCapacity == 1)
         #expect(catalog.definitions == [definition])
+    }
+
+    @Test func itemDefinitionsRejectNonpositiveInteractionCapacity() throws {
+        let definitionID = try #require(ItemDefinitionID("invalid-capacity"))
+
+        #expect(throws: ItemDefinitionError.invalidInteractionCapacity) {
+            try ItemDefinition(
+                id: definitionID,
+                identity: ItemIdentity(name: "Item", itemTypes: .chair),
+                signals: [],
+                interactionCapacity: 0
+            )
+        }
     }
 
     @Test func interactionDefinitionIDsAreNonemptyAndCodableAsStrings() throws {
@@ -158,13 +172,15 @@ struct PublicMotiveAPITests {
             id: firstSimID,
             motives: try makeMotiveLevels([.hunger: 25]),
             posture: .sitting,
-            currentLotID: firstLotID
+            currentLotID: firstLotID,
+            position: GridPosition(x: 0, y: 0)
         )
         let secondSim = SimStateData(
             id: secondSimID,
             motives: try makeMotiveLevels([.fun: 75]),
             posture: .standing,
-            currentLotID: secondLotID
+            currentLotID: secondLotID,
+            position: GridPosition(x: 1, y: 1)
         )
         let household = try HouseholdState(
             id: householdID,
@@ -240,7 +256,8 @@ struct PublicMotiveAPITests {
             id: simID,
             motives: try makeMotiveLevels(),
             posture: .standing,
-            currentLotID: firstLotID
+            currentLotID: firstLotID,
+            position: GridPosition(x: 0, y: 0)
         )
         let state = try SimulationState(sims: [sim], households: [], lots: [lot])
         let snapshot = SimulationSnapshot(state: state)
@@ -291,7 +308,8 @@ struct PublicMotiveAPITests {
             id: simID,
             motives: try makeMotiveLevels(),
             posture: .standing,
-            currentLotID: lotID
+            currentLotID: lotID,
+            position: GridPosition(x: 0, y: 0)
         )
         #expect(throws: SimulationStateError.missingHouseholdMember(
             householdID: householdID,
@@ -311,7 +329,8 @@ struct PublicMotiveAPITests {
             id: simID,
             motives: try makeMotiveLevels(),
             posture: .standing,
-            currentLotID: lotID
+            currentLotID: lotID,
+            position: GridPosition(x: 0, y: 0)
         )
         #expect(throws: SimulationStateError.simInMultipleHouseholds(simID)) {
             try SimulationState(
@@ -399,6 +418,90 @@ struct PublicMotiveAPITests {
         }
     }
 
+    @Test func simulationStateValidatesSimPositionsAndUniqueOccupancy() throws {
+        let lotID = try #require(LotID("position-lot"))
+        let lot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 2, height: 1),
+            placedItems: []
+        )
+        let firstSimID = try #require(SimID("first"))
+        let secondSimID = try #require(SimID("second"))
+        let motives = try makeMotiveLevels()
+
+        #expect(throws: SimulationStateError.missingCurrentPosition(firstSimID)) {
+            try SimulationState(
+                sims: [
+                    SimStateData(
+                        id: firstSimID,
+                        motives: motives,
+                        posture: .standing,
+                        currentLotID: lotID
+                    ),
+                ],
+                households: [],
+                lots: [lot]
+            )
+        }
+        #expect(throws: SimulationStateError.positionWithoutCurrentLot(firstSimID)) {
+            try SimulationState(
+                sims: [
+                    SimStateData(
+                        id: firstSimID,
+                        motives: motives,
+                        posture: .standing,
+                        position: GridPosition(x: 0, y: 0)
+                    ),
+                ],
+                households: [],
+                lots: [lot]
+            )
+        }
+        #expect(throws: SimulationStateError.positionOutsideCurrentLot(
+            simID: firstSimID,
+            lotID: lotID
+        )) {
+            try SimulationState(
+                sims: [
+                    SimStateData(
+                        id: firstSimID,
+                        motives: motives,
+                        posture: .standing,
+                        currentLotID: lotID,
+                        position: GridPosition(x: 2, y: 0)
+                    ),
+                ],
+                households: [],
+                lots: [lot]
+            )
+        }
+        #expect(throws: SimulationStateError.duplicateSimPosition(
+            lotID: lotID,
+            position: GridPosition(x: 0, y: 0)
+        )) {
+            try SimulationState(
+                sims: [
+                    SimStateData(
+                        id: firstSimID,
+                        motives: motives,
+                        posture: .standing,
+                        currentLotID: lotID,
+                        position: GridPosition(x: 0, y: 0)
+                    ),
+                    SimStateData(
+                        id: secondSimID,
+                        motives: motives,
+                        posture: .standing,
+                        currentLotID: lotID,
+                        position: GridPosition(x: 0, y: 0)
+                    ),
+                ],
+                households: [],
+                lots: [lot]
+            )
+        }
+    }
+
     @Test func standardSimulationPhaseOrderMatchesTheDeclaredWriteSequence() {
         #expect(SimulationPhasePlan.standardOrder == [
             .commands,
@@ -412,14 +515,333 @@ struct PublicMotiveAPITests {
         ])
     }
 
+    @Test func interactionRoutingAvoidsBlockedAndOccupiedPositions() {
+        let bounds = GridSize(width: 5, height: 5)
+        let origin = GridPosition(x: 0, y: 2)
+        let itemPosition = GridPosition(x: 2, y: 2)
+        let occupied = Set([GridPosition(x: 1, y: 2)])
+        var position = origin
+
+        for _ in 0 ..< 20 {
+            let step = InteractionRoutingSystem.nextStep(
+                from: position,
+                towardItemAt: itemPosition,
+                blocked: [GridPosition(x: 2, y: 1)],
+                occupied: occupied,
+                bounds: bounds
+            )
+            switch step {
+            case .arrived:
+                #expect(position.distance(to: itemPosition) == 1)
+                #expect(!occupied.contains(position))
+                #expect(position != GridPosition(x: 2, y: 1))
+                return
+            case let .move(to: nextPosition):
+                #expect(position.distance(to: nextPosition) == 1)
+                #expect(!occupied.contains(nextPosition))
+                #expect(nextPosition != GridPosition(x: 2, y: 1))
+                position = nextPosition
+            case .unreachable:
+                Issue.record("Expected a route to a free approach tile.")
+                return
+            }
+        }
+        Issue.record("Routing did not reach an approach tile within the grid.")
+    }
+
+    @Test func interactionRoutingReportsNoFreeApproachTile() {
+        let itemPosition = GridPosition(x: 1, y: 1)
+        let occupied = Set(itemPosition.orthogonalNeighbors)
+
+        #expect(
+            InteractionRoutingSystem.nextStep(
+                from: GridPosition(x: 0, y: 0),
+                towardItemAt: itemPosition,
+                blocked: [],
+                occupied: occupied,
+                bounds: GridSize(width: 3, height: 3)
+            ) == .unreachable
+        )
+    }
+
+    @Test func simulationSessionRoutesThenExecutesRequestedInteraction() throws {
+        let simID = try #require(SimID("sim"))
+        let lotID = try #require(LotID("home"))
+        let itemDefinitionID = try #require(ItemDefinitionID("chair"))
+        let itemInstanceID = try #require(ItemInstanceID("chair-1"))
+        let interactionID = try #require(InteractionDefinitionID("sit"))
+        let interaction = try InteractionDefinition(
+            id: interactionID,
+            name: "Sit",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: 2)
+            ],
+            motiveEffects: [
+                MotiveSignal(motiveType: .fun, strengthPerSecond: 2)
+            ],
+            durationSeconds: 2
+        )
+        let definition = try ItemDefinition(
+            id: itemDefinitionID,
+            identity: ItemIdentity(name: "Chair", itemTypes: .chair),
+            signals: [],
+            interactions: [interaction]
+        )
+        let itemCatalog = try ItemDefinitionCatalog(definitions: [definition])
+        let item = PlacedItem(
+            id: itemInstanceID,
+            definitionID: itemDefinitionID,
+            position: GridPosition(x: 3, y: 1)
+        )
+        let lot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 5, height: 3),
+            placedItems: [item]
+        )
+        let sim = SimStateData(
+            id: simID,
+            motives: try makeMotiveLevels([.fun: 50]),
+            posture: .standing,
+            currentLotID: lotID,
+            position: GridPosition(x: 0, y: 1)
+        )
+        let state = try SimulationState(sims: [sim], households: [], lots: [lot])
+        let decayRates = try MotiveDecayRates(
+            ratesPerSecond: Dictionary(
+                uniqueKeysWithValues: MotiveType.allCases.map { ($0, 0.0) }
+            )
+        )
+        var session = try SimulationSession(
+            state: state,
+            itemCatalog: itemCatalog,
+            motiveDecayRates: decayRates
+        )
+
+        let approachResult = try session.step(
+            bySeconds: 1,
+            commands: [
+                .startInteraction(
+                    simID: simID,
+                    itemInstanceID: itemInstanceID,
+                    interactionDefinitionID: interactionID
+                ),
+            ]
+        )
+        let approachingSim = try #require(session.state.sim(for: simID))
+        #expect(approachingSim.position == GridPosition(x: 1, y: 1))
+        #expect(approachingSim.activeAction?.elapsedSeconds == 0)
+        #expect(approachingSim.motives.level(for: .fun) == 50)
+        #expect(approachResult.events.contains(
+            .positionChanged(
+                simID: simID,
+                from: GridPosition(x: 0, y: 1),
+                to: GridPosition(x: 1, y: 1)
+            )
+        ))
+
+        let completionResult = try session.step(bySeconds: 5)
+        let completedSim = try #require(session.state.sim(for: simID))
+        #expect(completedSim.position == GridPosition(x: 2, y: 1))
+        #expect(completedSim.activeAction == nil)
+        #expect(completedSim.motives.level(for: .fun) == 54)
+        #expect(completionResult.events.contains {
+            if case .actionChanged(simID: simID, action: let action) = $0 {
+                return action.status == .completed
+            }
+            return false
+        })
+    }
+
+    @Test func simulationSessionWaitsWhenSimsBlockEveryApproachTile() throws {
+        let lotID = try #require(LotID("crowded-lot"))
+        let itemDefinitionID = try #require(ItemDefinitionID("chair"))
+        let itemInstanceID = try #require(ItemInstanceID("chair-1"))
+        let interactionID = try #require(InteractionDefinitionID("sit"))
+        let interaction = try InteractionDefinition(
+            id: interactionID,
+            name: "Sit",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: 1)
+            ],
+            motiveEffects: [],
+            durationSeconds: 5
+        )
+        let definition = try ItemDefinition(
+            id: itemDefinitionID,
+            identity: ItemIdentity(name: "Chair", itemTypes: .chair),
+            signals: [],
+            interactions: [interaction]
+        )
+        let catalog = try ItemDefinitionCatalog(definitions: [definition])
+        let item = PlacedItem(
+            id: itemInstanceID,
+            definitionID: itemDefinitionID,
+            position: GridPosition(x: 2, y: 1)
+        )
+        let lot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 5, height: 4),
+            placedItems: [item]
+        )
+        let occupiedPositions = [
+            GridPosition(x: 1, y: 1),
+            GridPosition(x: 3, y: 1),
+            GridPosition(x: 2, y: 0),
+            GridPosition(x: 2, y: 2),
+        ]
+        let blockingSims = try occupiedPositions.enumerated().map { index, position in
+            SimStateData(
+                id: try #require(SimID("blocker-\(index)")),
+                motives: try makeMotiveLevels([.fun: 100]),
+                posture: .standing,
+                currentLotID: lotID,
+                position: position
+            )
+        }
+        let targetSimID = try #require(SimID("target"))
+        let targetSim = SimStateData(
+            id: targetSimID,
+            motives: try makeMotiveLevels([.fun: 0]),
+            posture: .standing,
+            currentLotID: lotID,
+            position: GridPosition(x: 0, y: 0)
+        )
+        let state = try SimulationState(
+            sims: blockingSims + [targetSim],
+            households: [],
+            lots: [lot]
+        )
+        let decayRates = try MotiveDecayRates(
+            ratesPerSecond: Dictionary(
+                uniqueKeysWithValues: MotiveType.allCases.map { ($0, 0.0) }
+            )
+        )
+        var session = try SimulationSession(
+            state: state,
+            itemCatalog: catalog,
+            motiveDecayRates: decayRates
+        )
+
+        _ = try session.step(
+            bySeconds: 1,
+            commands: [
+                .startInteraction(
+                    simID: targetSimID,
+                    itemInstanceID: itemInstanceID,
+                    interactionDefinitionID: interactionID
+                ),
+            ]
+        )
+
+        let waitingSim = try #require(session.state.sim(for: targetSimID))
+        #expect(waitingSim.position == GridPosition(x: 0, y: 0))
+        #expect(waitingSim.activeAction?.status == .running)
+        #expect(waitingSim.activeAction?.elapsedSeconds == 0)
+    }
+
+    @Test func simulationSessionReservesItemCapacityAndRollsBackInvalidCommands() throws {
+        let firstSimID = try #require(SimID("a-sim"))
+        let secondSimID = try #require(SimID("b-sim"))
+        let lotID = try #require(LotID("lot"))
+        let itemDefinitionID = try #require(ItemDefinitionID("toilet"))
+        let itemInstanceID = try #require(ItemInstanceID("toilet-1"))
+        let interactionID = try #require(InteractionDefinitionID("use"))
+        let interaction = try InteractionDefinition(
+            id: interactionID,
+            name: "Use",
+            advertisedBenefits: [
+                MotiveBenefit(motiveType: .bladder, expectedStrengthPerSecond: 2)
+            ],
+            motiveEffects: [
+                MotiveSignal(motiveType: .bladder, strengthPerSecond: 1)
+            ],
+            durationSeconds: 10
+        )
+        let definition = try ItemDefinition(
+            id: itemDefinitionID,
+            identity: ItemIdentity(name: "Toilet", itemTypes: .toilet),
+            signals: [],
+            interactions: [interaction],
+            interactionCapacity: 1
+        )
+        let catalog = try ItemDefinitionCatalog(definitions: [definition])
+        let item = PlacedItem(
+            id: itemInstanceID,
+            definitionID: itemDefinitionID,
+            position: GridPosition(x: 2, y: 1)
+        )
+        let lot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 4, height: 3),
+            placedItems: [item]
+        )
+        let firstSim = SimStateData(
+            id: firstSimID,
+            motives: try makeMotiveLevels([.bladder: 10]),
+            posture: .standing,
+            currentLotID: lotID,
+            position: GridPosition(x: 0, y: 1)
+        )
+        let secondSim = SimStateData(
+            id: secondSimID,
+            motives: try makeMotiveLevels([.bladder: 10]),
+            posture: .standing,
+            currentLotID: lotID,
+            position: GridPosition(x: 0, y: 2)
+        )
+        let state = try SimulationState(
+            sims: [firstSim, secondSim],
+            households: [],
+            lots: [lot]
+        )
+        let decayRates = try MotiveDecayRates(
+            ratesPerSecond: Dictionary(
+                uniqueKeysWithValues: MotiveType.allCases.map { ($0, 0.0) }
+            )
+        )
+        var session = try SimulationSession(
+            state: state,
+            itemCatalog: catalog,
+            motiveDecayRates: decayRates
+        )
+
+        _ = try session.step(bySeconds: 1)
+        #expect(session.state.sim(for: firstSimID)?.activeAction != nil)
+        #expect(session.state.sim(for: secondSimID)?.activeAction == nil)
+
+        let cancellation = try session.step(
+            bySeconds: 1,
+            commands: [.cancelInteraction(simID: firstSimID)]
+        )
+        #expect(session.state.sim(for: firstSimID)?.activeAction == nil)
+        #expect(
+            session.state.sim(for: secondSimID)?.activeAction?.initiator == .autonomy
+        )
+        #expect(cancellation.events.contains {
+            if case .actionChanged(simID: firstSimID, action: let action) = $0 {
+                return action.status == .interrupted(.cancelled)
+            }
+            return false
+        })
+
+        let beforeInvalidCommand = session.state
+        #expect(throws: SimulationSessionError.noActiveInteraction(firstSimID)) {
+            try session.step(
+                bySeconds: 1,
+                commands: [.cancelInteraction(simID: firstSimID)]
+            )
+        }
+        #expect(session.state == beforeInvalidCommand)
+    }
+
     @Test func catalogRejectsDuplicateDefinitionIDs() throws {
         let definitionID = try #require(ItemDefinitionID("chair"))
-        let first = ItemDefinition(
+        let first = try ItemDefinition(
             id: definitionID,
             identity: ItemIdentity(name: "Chair A", itemTypes: .chair),
             signals: []
         )
-        let duplicate = ItemDefinition(
+        let duplicate = try ItemDefinition(
             id: definitionID,
             identity: ItemIdentity(name: "Chair B", itemTypes: .chair),
             signals: []
@@ -440,7 +862,7 @@ struct PublicMotiveAPITests {
             motiveEffects: [],
             durationSeconds: 10
         )
-        let definition = ItemDefinition(
+        let definition = try ItemDefinition(
             id: definitionID,
             identity: ItemIdentity(name: "Bookcase", itemTypes: .recreation),
             signals: [],
@@ -819,7 +1241,7 @@ struct PublicMotiveAPITests {
             durationSeconds: durationSeconds,
             requirements: InteractionRequirements(requiredPosture: requiredPosture)
         )
-        let definition = ItemDefinition(
+        let definition = try ItemDefinition(
             id: itemDefinitionID,
             identity: ItemIdentity(name: "Test item", itemTypes: .chair),
             signals: [],

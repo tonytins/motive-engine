@@ -35,8 +35,8 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
-- 2026-10-14: `swift test` passed 88 tests across 12 suites after adding
-  deterministic simulation snapshots and step result/event models. The
+- 2026-10-14: `swift test` passed 95 tests across 12 suites after adding
+  Sim positions, interaction routing, and the simulation session. The
   optimized benchmark measurements above were collected on the same date.
 
 ## Regression corpus floors
@@ -47,12 +47,12 @@ claims about the current number of tests. Keep fixtures small and deterministic.
 | Area | Minimum corpus floor |
 | --- | --- |
 | Motives | Exercise all 6 `MotiveType` values; cover levels 0, 50, and 100; cover zero and positive decay; reject missing values, out-of-range/non-finite values, negative elapsed time, and non-finite signals. |
-| Item definitions and offers | Use 1 definition referenced by at least 2 placed instances; cover a valid offer, duplicate IDs, an unknown definition, invalid duration, and non-finite benefit/effect strengths. |
+| Item definitions and offers | Use 1 definition referenced by at least 2 placed instances; cover default and invalid interaction capacity, a valid offer, duplicate IDs, an unknown definition, invalid duration, and non-finite benefit/effect strengths. |
 | Eligibility | Cover every declared eligibility failure reason, missing snapshots, a passing case, occupancy exactly at capacity, and occupancy above capacity. |
 | Autonomy | Cover all 6 motives, positive/zero/negative scores, no useful offer, non-finite scoring input, and ties resolved by each documented identifier key. |
 | Actions | Cover start, progress, completion, duration overrun, interruption, failure, and attempts to advance or terminate a terminal action. |
-| Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, ambient classifications, and sleep/wake roster changes including repeated events. |
-| World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, and the declared phase order. |
+| Grid and household utilities | Cover rectangular bounds and edges, reachable and unreachable paths, routes around blocked and occupied cells, ambient classifications, and sleep/wake roster changes including repeated events. |
+| World state and phase plan | Cover stable ID validation, duplicate and missing references, household membership, Sim position and occupancy, lot bounds and placement uniqueness, deterministic snapshots, ordered step events, session phase behavior, and the declared phase order. |
 | Robusta | Keep at least one valid fixture for each supported token and language construct; cover malformed input, diagnostic/error paths, and equivalent source/AST/IR execution where supported. |
 | Schemas and content | Validate representative valid and invalid item and SWAF JSON documents against the schemas and decoding behavior. |
 
@@ -96,6 +96,11 @@ claims about the current number of tests. Keep fixtures small and deterministic.
   lots.
 - [x] The standard simulation phase order is covered by a public API test.
 - [x] Snapshots sort entities by stable ID; step results preserve event order.
+- [x] Routing avoids blocking items and occupied Sim tiles.
+- [x] Session commands, motive decay, autonomy, movement, and action execution
+  produce validated state and ordered events.
+- [x] Item occupancy reservations respect definition capacity; temporary
+  Sim-occupied routes wait instead of failing.
 
 ### Robusta
 

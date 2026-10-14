@@ -95,7 +95,7 @@ struct BuffTests {
     }
 
     @Test func bindsAmbientBuffToItemDefinition() throws {
-        let definition = ItemDefinition(
+        let definition = try ItemDefinition(
             id: try #require(ItemDefinitionID("ambient-stereo")),
             identity: ItemIdentity(
                 name: "Stereo",

@@ -142,7 +142,7 @@ private enum BenchmarkRunner {
             motiveEffects: [],
             durationSeconds: 30
         )
-        let definition = ItemDefinition(
+        let definition = try ItemDefinition(
             id: itemDefinitionID,
             identity: ItemIdentity(name: "Benchmark item", itemTypes: .recreation),
             signals: [],
