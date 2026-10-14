@@ -1,61 +1,67 @@
 import Foundation
 
-enum TokenKind: Equatable {
-    case number(Double)
-    case string(String)
+/// A single lexical token, one unit of Robusta source text.
+public struct Token: Sendable, Equatable {
+    public let kind: TokenKind
+    public let line: Int
+
+    public init(kind: TokenKind, line: Int) {
+        self.kind = kind
+        self.line = line
+    }
+}
+
+/// The kind of value a single token carries.
+public enum TokenKind: Sendable, Equatable {
+    case keyword(Keyword)
     case identifier(String)
-    case keyword(String)
-    case symbol(String)
-    case newline
+    case numberLiteral(Double)
+    case stringLiteral(String)
+    case symbol(Symbol)
     case endOfInput
 }
 
-struct Token: Equatable {
-    let kind: TokenKind
-    let line: Int
-}
-
-private enum Keyword: String, CaseIterable, Equatable {
-    case val, mut, emit, match, end
+/// A reserved word in Robusta's frontend syntax.
+///
+/// Cases whose Swift name would collide with a Swift keyword carry an
+/// explicit raw value instead of a backtick-escaped case name, matching how
+/// `Trilean` avoided the same collision.
+public enum Keyword: String, Sendable, Equatable, CaseIterable {
+    case mod
     case state
-    case function = "func"
-    case and, or, not
-    case trueLiteral = "true"
-    case falseLiteral = "false"
-    case none = "None"
-    case hasModifier = "hasmodifier"
-    case wildcard = "_"
-    case hunger = "Hunger"
-    case energy = "Energy"
-    case hygiene = "Hygiene"
-    case bladder = "Bladder"
-    case social = "Social"
-    case fun = "Fun"
-
-    init?(matching text: String) {
-        let lower = text.lowercased()
-        guard let match = Keyword.allCases.first(
-            where: {
-                $0.rawValue.lowercased() == lower
-            },
-        ) else {
-            return nil
-        }
-
-        self = match
-    }
+    case end
+    case funcKeyword = "func"
+    case val
+    case mut
+    case ifKeyword = "if"
+    case elseKeyword = "else"
+    case match
+    case caseKeyword = "case"
+    case tryKeyword = "try"
+    case catchKeyword = "catch"
+    case print
+    case returnKeyword = "return"
+    case trueKeyword = "true"
+    case falseKeyword = "false"
+    case unknownKeyword = "Unknown"
+    case noneKeyword = "None"
 }
 
-extension Keyword {
-    var motiveType: MotiveType? {
-        switch self {
-        case .hunger: .hunger
-        case .energy: .energy
-        case .hygiene: .hygiene
-        case .bladder: .bladder
-        case .social: .social
-        case .fun: .fun
-        default: nil
-        }
-    }
+/// A punctuation or operator symbol.
+public enum Symbol: String, Sendable, Equatable, CaseIterable {
+    case leftParenthesis = "("
+    case rightParenthesis = ")"
+    case comma = ","
+    case dot = "."
+    case plus = "+"
+    case minus = "-"
+    case asterisk = "*"
+    case slash = "/"
+    case equalEqual = "=="
+    case notEqual = "!="
+    case andAnd = "&&"
+    case orOr = "||"
+    case not = "!"
+    case equal = "="
+    case underscore = "_"
 }
