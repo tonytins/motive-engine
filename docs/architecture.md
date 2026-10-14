@@ -71,8 +71,10 @@ Keep these concepts distinct:
 - **Snapshots and reports** expose read-only views to decision policies,
   extensions, debugging tools, and the game.
 
-`ItemDefinitionID` and `ItemInstanceID` are distinct, content-supplied
-string identifiers. A definition catalog stores reusable content by
+Every stable identifier, such as `SimID`, `ItemDefinitionID`, or `BuffID`,
+conforms to `StringIdentifier`: it rejects empty strings when created or
+decoded and encodes as a single JSON string. `ItemDefinitionID` and
+`ItemInstanceID` are distinct, content-supplied string identifiers. A definition catalog stores reusable content by
 definition ID, while `PlacedItem` stores an instance ID, a definition
 reference, and a position. Multiple placed instances can therefore
 share one item definition without duplicating its content. Empty IDs and

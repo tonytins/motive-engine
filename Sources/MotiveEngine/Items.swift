@@ -1,17 +1,10 @@
 
 let motiveStrengthScale = 25.0
 
-enum ItemFunction: String, CaseIterable, Hashable, Codable {
-    case comfort
-    case plumbing
-    case appliance
-    case recreation
-    case activity
-    case lighting
-    case decoration
-    case sim
-}
-
+/// A behavior an item has, such as being a bed or giving off ambience.
+///
+/// An item can carry several modifiers. They decide whether the item blocks
+/// movement by default.
 public enum ItemModifier: String, CaseIterable, Hashable, Codable, Sendable {
     case appliance
     case bed
@@ -32,10 +25,6 @@ public enum ItemModifier: String, CaseIterable, Hashable, Codable, Sendable {
         }
     }
 
-    var motivesFullfilledDirectly: Bool {
-        self != .skill
-    }
-
     var grantsSittingPosture: Bool {
         switch self {
         case .chair, .toilet:
@@ -45,7 +34,8 @@ public enum ItemModifier: String, CaseIterable, Hashable, Codable, Sendable {
         }
     }
 
-    func delegatesTo(posture: SimPosture) -> Set<ItemModifier> {
+    /// The modifiers a Sim in the given posture can also use alongside this item.
+    func delegatedModifiers(for posture: SimPosture) -> Set<ItemModifier> {
         switch self {
         case .chair:
             [.recreation, .sim]
@@ -55,48 +45,60 @@ public enum ItemModifier: String, CaseIterable, Hashable, Codable, Sendable {
             []
         }
     }
-}
 
-extension ItemModifier {
-    static func decodedSet<Key: CodingKey>(from container: KeyedDecodingContainer<Key>, forKey key: Key) throws -> Set<ItemModifier> {
-        if let multiple = try? container.decode([ItemModifier].self, forKey: key) {
-            guard !multiple.isEmpty else {
-                throw DecodingError
-                    .dataCorruptedError(
-                        forKey: key,
-                        in: container,
-                        debugDescription: "Item must contain name of at least one type",
-                    )
-            }
-            return Set(multiple)
+    /// Decodes either one modifier or a nonempty array of modifiers.
+    static func decodedSet<Key: CodingKey>(
+        from container: KeyedDecodingContainer<Key>,
+        forKey key: Key
+    ) throws -> Set<ItemModifier> {
+        guard let modifiers = try? container.decode([ItemModifier].self, forKey: key) else {
+            return try [container.decode(ItemModifier.self, forKey: key)]
         }
-
-        return try [container.decode(ItemModifier.self, forKey: key)]
+        guard !modifiers.isEmpty else {
+            throw DecodingError.dataCorruptedError(
+                forKey: key,
+                in: container,
+                debugDescription: "Item must contain at least one type"
+            )
+        }
+        return Set(modifiers)
     }
 }
 
+/// The name, modifiers, and blocking behavior shared by an item's instances.
 public struct ItemIdentity: Equatable, Sendable {
+    /// The player-facing name.
     public let name: String
+
+    /// The item's modifiers.
     public let itemTypes: Set<ItemModifier>
+
+    /// Whether the item's tile blocks movement.
     public let isBlocking: Bool
 
-    public init(name: String,
-                itemTypes: some Sequence<ItemModifier>,
-                isBlocking: Bool? = nil)
-    {
-        let set = Set(itemTypes)
+    /// Creates an identity.
+    ///
+    /// When `isBlocking` is `nil`, the item blocks movement if any of its
+    /// modifiers blocks by default.
+    public init(
+        name: String,
+        itemTypes: some Sequence<ItemModifier>,
+        isBlocking: Bool? = nil
+    ) {
+        let modifiers = Set(itemTypes)
         self.name = name
-        self.itemTypes = set
-        self.isBlocking = isBlocking ?? set.isBlockingByDefualt
+        self.itemTypes = modifiers
+        self.isBlocking = isBlocking ?? modifiers.contains { $0.isBlockingByDefault }
     }
 
+    /// Creates an identity with a single modifier and default blocking.
     public init(name: String, itemTypes: ItemModifier) {
         self.init(name: name, itemTypes: [itemTypes])
     }
 }
 
 /// A stable identifier for reusable item content.
-public struct ItemDefinitionID: Codable, Hashable, Sendable {
+public struct ItemDefinitionID: StringIdentifier {
     /// The content-defined identifier.
     public let rawValue: String
 
@@ -107,27 +109,10 @@ public struct ItemDefinitionID: Codable, Hashable, Sendable {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
     }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Item definition ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
 }
 
 /// A stable identifier for one placed item instance.
-public struct ItemInstanceID: Codable, Hashable, Sendable {
+public struct ItemInstanceID: StringIdentifier {
     /// The game-defined identifier.
     public let rawValue: String
 
@@ -138,27 +123,10 @@ public struct ItemInstanceID: Codable, Hashable, Sendable {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
     }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Item instance ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
 }
 
 /// A stable identifier for an interaction within item content.
-public struct InteractionDefinitionID: Codable, Hashable, Sendable {
+public struct InteractionDefinitionID: StringIdentifier {
     /// The content-defined identifier.
     public let rawValue: String
 
@@ -168,23 +136,6 @@ public struct InteractionDefinitionID: Codable, Hashable, Sendable {
     public init?(_ rawValue: String) {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Interaction definition ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
     }
 }
 
@@ -424,14 +375,10 @@ public struct ItemDefinitionCatalog: Sendable {
     }
 }
 
+/// An item decoded from lot or content JSON, with raw motive values.
 struct Item: Broadcasting, Codable, Equatable {
     let identity: ItemIdentity
     let signals: [MotiveSignal]
-
-    init(identity: ItemIdentity, signals: [MotiveSignal]) {
-        self.identity = identity
-        self.signals = signals
-    }
 
     private enum CodingKeys: String, CodingKey {
         case name
@@ -440,68 +387,44 @@ struct Item: Broadcasting, Codable, Equatable {
         case blocking
     }
 
+    init(identity: ItemIdentity, signals: [MotiveSignal]) {
+        self.identity = identity
+        self.signals = signals
+    }
+
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let name = try container.decode(String.self, forKey: .name)
-        let itemTypes = try ItemModifier.decodedSet(
-            from: container,
-            forKey: .itemType,
+        identity = try ItemIdentity(
+            name: container.decode(String.self, forKey: .name),
+            itemTypes: ItemModifier.decodedSet(from: container, forKey: .itemType),
+            isBlocking: container.decodeIfPresent(Bool.self, forKey: .blocking)
         )
-
-        if let explicitIsBlocking = try container.decodeIfPresent(
-            Bool.self,
-            forKey: .blocking,
-        ) {
-            identity = ItemIdentity(
-                name: name,
-                itemTypes: itemTypes,
-                isBlocking: explicitIsBlocking,
-            )
-        } else {
-            identity = ItemIdentity(
-                name: name,
-                itemTypes: itemTypes,
-            )
-        }
-
-        let rawMotives = try container.decode([[String: Double]].self, forKey: .motives)
-
-        signals = Item.signals(fromRawMotives: rawMotives)
+        signals = try Self.signals(fromRawMotives: container.decode([[String: Double]].self, forKey: .motives))
     }
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(identity.name, forKey: .name)
-
         if identity.itemTypes.count == 1, let onlyType = identity.itemTypes.first {
             try container.encode(onlyType, forKey: .itemType)
         } else {
             try container.encode(identity.itemTypes.sorted { $0.rawValue < $1.rawValue }, forKey: .itemType)
         }
-
         try container.encode(identity.isBlocking, forKey: .blocking)
-
         let rawMotives = signals.map {
-            signal in
-            [signal.motiveType.rawValue: signal.strengthPerSecond * motiveStrengthScale]
+            [$0.motiveType.rawValue: $0.strengthPerSecond * motiveStrengthScale]
         }
-
         try container.encode(rawMotives, forKey: .motives)
     }
-}
 
-extension Item {
+    /// Converts raw JSON motive values to per-second signals, skipping unknown motives.
     static func signals(fromRawMotives rawMotives: [[String: Double]]) -> [MotiveSignal] {
-        rawMotives.flatMap {
-            motivepair -> [MotiveSignal] in
-            motivepair.compactMap {
-                key, needValue in
-                guard let motiveType = MotiveType(rawValue: key) else { return nil }
-                return MotiveSignal(
-                    motiveType: motiveType,
-                    strengthPerSecond: needValue
-                        / motiveStrengthScale,
-                )
+        rawMotives.flatMap { motiveValues in
+            motiveValues.compactMap { name, rawValue -> MotiveSignal? in
+                guard let motiveType = MotiveType(rawValue: name) else {
+                    return nil
+                }
+                return MotiveSignal(motiveType: motiveType, strengthPerSecond: rawValue / motiveStrengthScale)
             }
         }
     }

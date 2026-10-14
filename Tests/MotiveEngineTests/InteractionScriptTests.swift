@@ -92,32 +92,33 @@ struct InteractionScriptTests {
         }
     }
 
-    @Test func invalidEffectsAreReportedAsTypedErrors() throws {
-        let cases: [(String, InteractionScriptError)] = [
-            ("effect.fulfill(\"thirst\", 1)", .unknownMotive("thirst")),
-            ("effect.fulfill(1, \"hunger\")", .invalidEffectArguments),
-            ("effect.fulfill(\"fun\", None)", .invalidEffectArguments),
-            ("""
-            mut val big = 10
-            while big * 10 > big
-                big = big * 10
+    @Test(arguments: invalidEffectCases)
+    func invalidEffectsAreReportedAsTypedErrors(call: String, expectedError: InteractionScriptError) throws {
+        let script = try InteractionScript(source: """
+        state default
+            func stateEntry()
+                \(call)
             end
-            effect.fulfill("fun", big)
-            """, .nonFiniteEffect(.fun)),
-        ]
-        for (call, expectedError) in cases {
-            let script = try InteractionScript(source: """
-            state default
-                func stateEntry()
-                    \(call)
-                end
-            end
-            """)
-            #expect(throws: expectedError) {
-                try InteractionScriptSystem.evaluate(script, input: makeInput(hunger: 50))
-            }
+        end
+        """)
+
+        #expect(throws: expectedError) {
+            try InteractionScriptSystem.evaluate(script, input: makeInput(hunger: 50))
         }
     }
+
+    static let invalidEffectCases: [(String, InteractionScriptError)] = [
+        ("effect.fulfill(\"thirst\", 1)", .unknownMotive("thirst")),
+        ("effect.fulfill(1, \"hunger\")", .invalidEffectArguments),
+        ("effect.fulfill(\"fun\", None)", .invalidEffectArguments),
+        ("""
+        mut val big = 10
+        while big * 10 > big
+            big = big * 10
+        end
+        effect.fulfill("fun", big)
+        """, .nonFiniteEffect(.fun)),
+    ]
 
     @Test func runtimeFailuresPropagateWithoutPartialEffects() throws {
         let wrongArity = try InteractionScript(source: """

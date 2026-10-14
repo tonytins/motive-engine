@@ -6,7 +6,7 @@ import MotiveEngine
 /// Tags stand in for aspirations, life stages, traits, hobbies, seasons, and
 /// recent events, such as `aspiration:romance` or `stage:teen`. The engine
 /// only compares tags; their meaning belongs to the game.
-public struct SWAFTag: Codable, Hashable, Sendable {
+public struct SWAFTag: StringIdentifier {
     /// The game-defined label.
     public let rawValue: String
 
@@ -15,27 +15,10 @@ public struct SWAFTag: Codable, Hashable, Sendable {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
     }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "SWAF tag must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
 }
 
 /// A stable identifier for one want or fear definition.
-public struct WantFearID: Codable, Hashable, Sendable {
+public struct WantFearID: StringIdentifier {
     /// The content-defined identifier.
     public let rawValue: String
 
@@ -44,27 +27,10 @@ public struct WantFearID: Codable, Hashable, Sendable {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
     }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Want/fear ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
 }
 
 /// A stable identifier for an event the game reports, such as a promotion.
-public struct GameEventID: Codable, Hashable, Sendable {
+public struct GameEventID: StringIdentifier {
     /// The game-defined identifier.
     public let rawValue: String
 
@@ -72,23 +38,6 @@ public struct GameEventID: Codable, Hashable, Sendable {
     public init?(_ rawValue: String) {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Game event ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
     }
 }
 

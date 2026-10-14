@@ -4,10 +4,12 @@ public enum Trilean: Sendable, Equatable {
     case falseValue
     case unknown
 
+    /// Whether the value is true. `unknown` counts as false.
     public var booleanValue: Bool {
         self == .trueValue
     }
 
+    /// The logical negation. The negation of `unknown` is `unknown`.
     public func negated() -> Trilean {
         switch self {
         case .trueValue: .falseValue
@@ -16,12 +18,14 @@ public enum Trilean: Sendable, Equatable {
         }
     }
 
+    /// Three-valued AND: false if either is false, otherwise unknown if either is unknown.
     public func conjunction(with other: Trilean) -> Trilean {
         if self == .falseValue || other == .falseValue { return .falseValue }
         if self == .unknown || other == .unknown { return .unknown }
         return .trueValue
     }
 
+    /// Three-valued OR: true if either is true, otherwise unknown if either is unknown.
     public func disjunction(with other: Trilean) -> Trilean {
         if self == .trueValue || other == .trueValue { return .trueValue }
         if self == .unknown || other == .unknown { return .unknown }
@@ -63,6 +67,8 @@ public enum BinaryOperator: String, Sendable, Equatable, CaseIterable {
     case greaterThanOrEqual
     case and
     case or
+
+    // Short spellings kept for source compatibility with earlier clients.
 
     public static var sub: Self { .subtract }
     public static var mul: Self { .multiply }

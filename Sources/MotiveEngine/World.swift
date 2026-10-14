@@ -1,7 +1,7 @@
 import Foundation
 
 /// A stable identifier for one Sim in a simulation.
-public struct SimID: Codable, Hashable, Sendable {
+public struct SimID: StringIdentifier {
     /// The game-defined identifier.
     public let rawValue: String
 
@@ -9,28 +9,11 @@ public struct SimID: Codable, Hashable, Sendable {
     public init?(_ rawValue: String) {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Sim ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
     }
 }
 
 /// A stable identifier for one household in a simulation.
-public struct HouseholdID: Codable, Hashable, Sendable {
+public struct HouseholdID: StringIdentifier {
     /// The game-defined identifier.
     public let rawValue: String
 
@@ -38,28 +21,11 @@ public struct HouseholdID: Codable, Hashable, Sendable {
     public init?(_ rawValue: String) {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Household ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
     }
 }
 
 /// A stable identifier for one lot in a simulation.
-public struct LotID: Codable, Hashable, Sendable {
+public struct LotID: StringIdentifier {
     /// The game-defined identifier.
     public let rawValue: String
 
@@ -67,23 +33,6 @@ public struct LotID: Codable, Hashable, Sendable {
     public init?(_ rawValue: String) {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Lot ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
     }
 }
 

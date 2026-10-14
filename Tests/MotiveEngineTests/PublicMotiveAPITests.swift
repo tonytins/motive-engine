@@ -105,6 +105,15 @@ struct PublicMotiveAPITests {
         )
     }
 
+    @Test func identifiersEncodeAsBareStringsAndRejectEmptyJSON() throws {
+        let encoded = try JSONEncoder().encode(#require(BuffID("fulfilled")))
+
+        #expect(String(decoding: encoded, as: UTF8.self) == #""fulfilled""#)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(LotID.self, from: Data(#""""#.utf8))
+        }
+    }
+
     @Test func identifierTypesRejectEmptyValuesAndEncodeAsStrings() throws {
         #expect(ItemDefinitionID("") == nil)
         #expect(ItemInstanceID("") == nil)

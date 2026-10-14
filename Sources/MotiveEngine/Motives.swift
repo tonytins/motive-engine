@@ -90,7 +90,8 @@ public struct MotiveDecayRates: Equatable, Sendable {
 
     /// Returns the decay rate for a motive.
     public func rate(for motiveType: MotiveType) -> Double {
-        ratesPerSecond[motiveType]!
+        // The initializer requires a rate for every motive, so the default is never used.
+        ratesPerSecond[motiveType, default: 0]
     }
 }
 
@@ -134,7 +135,8 @@ public struct MotiveLevels: Equatable, Sendable {
 
     /// Returns the value for a motive.
     public func level(for motiveType: MotiveType) -> Double {
-        levels[motiveType]!
+        // The initializer requires a level for every motive, so the default is never used.
+        levels[motiveType, default: Self.minimumValue]
     }
 
     /// The lowest motive, using `MotiveType` declaration order to break ties.

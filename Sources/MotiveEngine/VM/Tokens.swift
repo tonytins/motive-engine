@@ -2,9 +2,13 @@ import Foundation
 
 /// A single lexical token, one unit of Robusta source text.
 public struct Token: Sendable, Equatable {
+    /// What the token is.
     public let kind: TokenKind
+
+    /// The 1-based source line the token came from.
     public let line: Int
 
+    /// Creates a token.
     public init(kind: TokenKind, line: Int) {
         self.kind = kind
         self.line = line

@@ -35,6 +35,10 @@ input and environment fixed while comparing changes.
 
 ## Latest test result
 
+- 2026-10-14: `swift test` passed 136 tests after aligning the code with the
+  Swift style guide: shared `StringIdentifier` conformance, removed dead
+  code, documented public API, and parameterized tests.
+
 - 2026-10-14: `swift test` passed 134 tests after adding timed buffs and the
   SWAF fulfillment buff.
 

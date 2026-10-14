@@ -156,13 +156,18 @@ public enum RobustaVM {
     }
 }
 
+/// A Robusta program that parses but breaks a structural rule, such as a
+/// missing `default` state.
 public struct ProgramError: Error, Equatable, Sendable, CustomStringConvertible {
+    /// A description of the problem.
     public let message: String
 
+    /// Creates an error with a message.
     public init(message: String) {
         self.message = message
     }
 
+    /// The message.
     public var description: String { message }
 }
 

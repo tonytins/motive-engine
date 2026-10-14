@@ -1,5 +1,5 @@
 /// A stable identifier for one buff rule.
-public struct BuffID: Codable, Hashable, Sendable {
+public struct BuffID: StringIdentifier {
     /// The content-defined identifier.
     public let rawValue: String
 
@@ -7,23 +7,6 @@ public struct BuffID: Codable, Hashable, Sendable {
     public init?(_ rawValue: String) {
         guard !rawValue.isEmpty else { return nil }
         self.rawValue = rawValue
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let rawValue = try container.decode(String.self)
-        guard !rawValue.isEmpty else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Buff ID must not be empty",
-            )
-        }
-        self.rawValue = rawValue
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
     }
 }
 
@@ -245,6 +228,7 @@ public enum BuffSystem {
 /// A Sim without a lot or position receives nothing. Ambient items are
 /// visited in item-instance ID order.
 public struct AmbientBuffRule: BuffRule {
+    /// The stable identity of this rule.
     public let id: BuffID
 
     /// The maximum Manhattan distance at which an ambient item applies.
@@ -261,6 +245,10 @@ public struct AmbientBuffRule: BuffRule {
         self.radius = radius
     }
 
+    /// Returns the signals of nearby ambient items.
+    ///
+    /// - Throws: `ItemDefinitionCatalogError.missingDefinition` if an item on
+    ///   the lot has no definition in the catalog.
     public func signals(in context: BuffContext) throws -> [MotiveSignal] {
         guard let lot = context.lot,
               context.sim.currentLotID == lot.id,

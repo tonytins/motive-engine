@@ -1,35 +1,6 @@
-extension Double {
-    func clamped(_ value: Double, lowerBound: Double = 0, upperBound: Double = 100) -> Double {
-        if value < lowerBound { return lowerBound }
-        if value > upperBound { return upperBound }
-        return value
-    }
-
-    func clamped(to range: ClosedRange<Double>) -> Double {
+extension Comparable {
+    /// Returns this value limited to the closed range.
+    func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
-    }
-}
-
-extension Set<ItemModifier> {
-    var isBlockingByDefualt: Bool {
-        contains { $0.isBlockingByDefault }
-    }
-}
-
-extension Sequence<ItemModifier> {
-    var isBlockingByDefualt: Bool {
-        contains { $0.isBlockingByDefault }
-    }
-
-    var grantsSittingPosture: Bool {
-        contains { $0.grantsSittingPosture }
-    }
-
-    func delegatesTo(posture: SimPosture) -> Set<ItemModifier> {
-        reduce(into: Set<ItemModifier>()) { $0.formUnion($1.delegatesTo(posture: posture)) }
-    }
-
-    func toSet() -> Set<ItemModifier> {
-        Set(self)
     }
 }

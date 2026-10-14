@@ -4,38 +4,18 @@ import Testing
 
 @Suite("Item Tests")
 struct ItemTests {
-    @Test()
-    func chairDelegation() async throws {
-        
-        #expect(
-            ItemModifier.chair.delegatesTo(posture: .sitting) == [.recreation, .sim]
-        )
-        
+    @Test func chairDelegatesToRecreationAndSims() {
+        #expect(ItemModifier.chair.delegatedModifiers(for: .sitting) == [.recreation, .sim])
     }
-    
-    @Test func fridgeDelegation() async throws {
-        
-        #expect(
-            ItemModifier.appliance
-                .delegatesTo(posture: .standing) == [.sim]
-        )
-        
-        #expect(
-            ItemModifier.appliance
-                .delegatesTo(posture: .sitting)
-                .isEmpty
-        )
+
+    @Test func appliancesDelegateToSimsOnlyWhileStanding() {
+        #expect(ItemModifier.appliance.delegatedModifiers(for: .standing) == [.sim])
+        #expect(ItemModifier.appliance.delegatedModifiers(for: .sitting).isEmpty)
     }
-    
-    @Test func toiletSitsButDelegatesNothings() {
-        
+
+    @Test func toiletGrantsSittingButDelegatesNothing() {
         #expect(ItemModifier.toilet.grantsSittingPosture)
-        
-        #expect(ItemModifier.toilet
-            .delegatesTo(posture: .sitting)
-            .isEmpty
-        )
-        
+        #expect(ItemModifier.toilet.delegatedModifiers(for: .sitting).isEmpty)
     }
 }
 
@@ -277,23 +257,23 @@ struct MotiveStateTests {
 struct PathfindingTests {
     let origin = GridPosition(x: 0, y: 0)
     let destination = GridPosition(x: 1, y: 0)
-    
+
     // The Grid
     // A digital frontier
     let theGrid = GridSize(width: 5, height: 5)
-    
-    @Test func StepsDirectlyAdjacentDestiation() {
+
+    @Test func stepsDirectlyToAdjacentDestination() {
         let next = Pathfinding.nextStep(
             from: origin,
             toward: destination,
             blocked: [],
             bounds: theGrid
         )
-        
+
         #expect(next == GridPosition(x: 1, y: 0))
     }
-    
-    @Test func routeAroundBlockedTile() {
+
+    @Test func routesAroundBlockedTile() {
         let blocked: Set<GridPosition> = [destination]
         let next = Pathfinding.nextStep(
             from: origin,
@@ -301,23 +281,23 @@ struct PathfindingTests {
             blocked: blocked,
             bounds: theGrid
         )
-        
+
         #expect(next != destination)
         #expect(origin.distance(to: next) == 1)
     }
-    
+
     // When the character needs to use the object
-    @Test func canStepOntoBlockedDestiation() {
+    @Test func canStepOntoBlockedDestination() {
         let next = Pathfinding.nextStep(
             from: origin,
             toward: destination,
             blocked: [destination],
             bounds: theGrid
         )
-        
+
         #expect(next == destination)
     }
-    
+
     @Test func stayPutWhenAlreadyThere() {
         let position = GridPosition(x: 2, y: 2)
         let next = Pathfinding.nextStep(
@@ -326,10 +306,10 @@ struct PathfindingTests {
             blocked: [],
             bounds: theGrid
         )
-        
+
         #expect(next == position)
     }
-    
+
     @Test func staysPutWhenNoRouteExists() {
         let blocked: Set<GridPosition> = [
             destination,
@@ -341,7 +321,7 @@ struct PathfindingTests {
             blocked: blocked,
             bounds: GridSize(width: 2, height: 2)
         )
-        
+
         #expect(next == origin)
     }
 }

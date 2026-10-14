@@ -1,12 +1,17 @@
 import Foundation
 
+/// A failure while running a Robusta program, including thrown values and
+/// the instruction limit.
 public struct RuntimeError: Error, Equatable, Sendable, CustomStringConvertible {
+    /// A description of the problem.
     public let message: String
 
+    /// Creates an error with a message.
     public init(message: String) {
         self.message = message
     }
 
+    /// The message.
     public var description: String { message }
 }
 

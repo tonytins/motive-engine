@@ -186,13 +186,18 @@ struct BuffTests {
 
     // MARK: Timed buffs
 
-    @Test func timedBuffsRejectInvalidDurationsAndSignals() throws {
+    @Test(arguments: [0, -1, Double.infinity, .nan])
+    func timedBuffsRejectInvalidDurations(durationSeconds: Double) throws {
         let id = try #require(BuffID("fulfilled"))
-        for duration in [0, -1, Double.infinity, .nan] {
-            #expect(throws: BuffError.invalidDuration(id)) {
-                try TimedBuff(id: id, signals: [], durationSeconds: duration)
-            }
+
+        #expect(throws: BuffError.invalidDuration(id)) {
+            try TimedBuff(id: id, signals: [], durationSeconds: durationSeconds)
         }
+    }
+
+    @Test func timedBuffsRejectNonFiniteSignals() throws {
+        let id = try #require(BuffID("fulfilled"))
+
         #expect(throws: BuffError.nonFiniteSignal(buffID: id, motiveType: .fun)) {
             try TimedBuff(
                 id: id,

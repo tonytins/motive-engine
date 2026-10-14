@@ -2,6 +2,10 @@ import Foundation
 
 /// Turns Robusta source text into a flat stream of tokens.
 public enum Lexer {
+    /// Splits source into tokens, ending with an `endOfInput` token.
+    ///
+    /// - Throws: `LexError` for invalid numbers, unterminated strings, or
+    ///   unexpected characters.
     public static func tokenize(_ source: String) throws -> [Token] {
         var scanner = Scanner(source: source)
         return try scanner.tokenize()

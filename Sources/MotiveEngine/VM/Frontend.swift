@@ -1,12 +1,17 @@
 /// Converts Robusta source text into its abstract syntax tree.
 public protocol Frontend {
+    /// Parses a complete program, throwing on invalid syntax.
     func parse(_ source: String) throws -> [Statement]
 }
 
 /// The production parser for the Robusta language.
 public struct RobustaFrontend: Frontend {
+    /// Creates the parser.
     public init() {}
 
+    /// Tokenizes and parses a complete program.
+    ///
+    /// - Throws: `LexError` or `ParseError` for invalid source.
     public func parse(_ source: String) throws -> [Statement] {
         var parser = try Parser(tokens: Lexer.tokenize(source))
         return try parser.parseProgram()
@@ -15,14 +20,19 @@ public struct RobustaFrontend: Frontend {
 
 /// A syntax error produced by the Robusta frontend.
 public struct ParseError: Error, Equatable, Sendable, CustomStringConvertible {
+    /// A description of the problem.
     public let message: String
+
+    /// The 1-based source line where the problem was found.
     public let line: Int
 
+    /// Creates an error for a source line.
     public init(message: String, line: Int) {
         self.message = message
         self.line = line
     }
 
+    /// The message prefixed with its line number.
     public var description: String {
         "line \(line): \(message)"
     }
