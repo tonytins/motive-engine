@@ -39,11 +39,16 @@ public enum Keyword: String, Sendable, Equatable, CaseIterable {
     case caseKeyword = "case"
     case tryKeyword = "try"
     case catchKeyword = "catch"
+    case throwKeyword = "throw"
+    case whileKeyword = "while"
     case print
     case returnKeyword = "return"
     case trueKeyword = "true"
+    case trueTrileanKeyword = "True"
     case falseKeyword = "false"
+    case falseTrileanKeyword = "False"
     case unknownKeyword = "Unknown"
+    case lowercaseUnknownKeyword = "unknown"
     case noneKeyword = "None"
 }
 
@@ -59,6 +64,10 @@ public enum Symbol: String, Sendable, Equatable, CaseIterable {
     case slash = "/"
     case equalEqual = "=="
     case notEqual = "!="
+    case lessThan = "<"
+    case lessThanOrEqual = "<="
+    case greaterThan = ">"
+    case greaterThanOrEqual = ">="
     case andAnd = "&&"
     case orOr = "||"
     case not = "!"

@@ -4,7 +4,7 @@ The Motives Engine provides the framework for creating characters with needs, as
 
 ## 📝 Goals
 
-- [ ] [Scripting](./MotiveEngine/VM/README)
+- [ ] [Scripting](./Sources/MotiveEngine/VM/README.md)
 	- [ ] AST
 	- [ ] Lexer
 	- [ ] IR

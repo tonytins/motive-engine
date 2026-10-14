@@ -93,19 +93,23 @@ struct LexerTests {
         ])
     }
 
-    @Test("None and Unknown are keywords, none and unknown are identifiers")
+    @Test("Both Trilean spellings and None tokenize as keywords")
     func caseSensitivityDistinguishesKeywordsFromIdentifiers() throws {
-        let keywordTokens = try Lexer.tokenize("None Unknown")
+        let keywordTokens = try Lexer.tokenize("None true True false False Unknown unknown")
         #expect(keywordTokens.map(\.kind) == [
             .keyword(.noneKeyword),
+            .keyword(.trueKeyword),
+            .keyword(.trueTrileanKeyword),
+            .keyword(.falseKeyword),
+            .keyword(.falseTrileanKeyword),
             .keyword(.unknownKeyword),
+            .keyword(.lowercaseUnknownKeyword),
             .endOfInput
         ])
 
-        let identifierTokens = try Lexer.tokenize("none unknown")
+        let identifierTokens = try Lexer.tokenize("none")
         #expect(identifierTokens.map(\.kind) == [
             .identifier("none"),
-            .identifier("unknown"),
             .endOfInput
         ])
     }

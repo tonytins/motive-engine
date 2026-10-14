@@ -109,6 +109,9 @@ private struct Scanner {
 
     private func classify(_ word: String) -> TokenKind {
         guard word != "_" else { return .symbol(.underscore) }
+        if word == "unknown" {
+            return .keyword(.lowercaseUnknownKeyword)
+        }
         guard let keyword = Keyword(rawValue: word) else { return .identifier(word) }
         return .keyword(keyword)
     }
