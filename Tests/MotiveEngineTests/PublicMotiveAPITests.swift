@@ -325,6 +325,19 @@ struct PublicMotiveAPITests {
         }
     }
 
+    @Test func standardSimulationPhaseOrderMatchesTheDeclaredWriteSequence() {
+        #expect(SimulationPhasePlan.standardOrder == [
+            .commands,
+            .motiveDecay,
+            .offerGeneration,
+            .eligibility,
+            .autonomousDecision,
+            .movement,
+            .actionExecution,
+            .events,
+        ])
+    }
+
     @Test func catalogRejectsDuplicateDefinitionIDs() throws {
         let definitionID = try #require(ItemDefinitionID("chair"))
         let first = ItemDefinition(

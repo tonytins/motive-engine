@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-benchmark:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.3"
+
+      - name: Run tests
+        run: swift test
+
+      - name: Run performance budgets
+        shell: bash
+        run: swift run -c release MotiveEngineBenchmarks | tee -a "$GITHUB_STEP_SUMMARY"

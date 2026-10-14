@@ -26,6 +26,11 @@ let package = Package(
             name: "MotiveEngineTests",
             dependencies: ["MotiveEngine"],
         ),
+        .executableTarget(
+            name: "MotiveEngineBenchmarks",
+            dependencies: ["MotiveEngine"],
+            path: "Benchmarks/MotiveEngineBenchmarks",
+        ),
     ],
     swiftLanguageModes: [.v6],
 )

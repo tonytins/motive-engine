@@ -81,8 +81,8 @@ unchecked item is planned work, not an implemented feature.
 
 - [x] Define typed Sim, lot, and household state keyed by stable IDs, with
   validated membership, lot references, and item instance identities.
-- [ ] Specify command, motive, offer, decision, movement, execution, and event
-  phases, including data ownership and write order.
+- [x] Specify command, motive, offer, decision, movement, execution, and event
+  phase order, including intended data ownership and write order.
 - [ ] Add read-only snapshots and structured results/events for clients.
 - [ ] Integrate routing and occupancy while keeping movement separate from
   decision scoring.
@@ -100,7 +100,7 @@ unchecked item is planned work, not an implemented feature.
 
 ## Akita: Measure before optimizing
 
-- [ ] Benchmark representative workloads before changing collection layout.
+- [x] Benchmark representative workloads before changing collection layout.
 - [ ] Consider batched or structure-of-arrays storage only if measurements
   justify it.
 - [ ] Preserve observable behavior and public domain types when changing
