@@ -76,8 +76,23 @@ definition ID, while `PlacedItem` stores an instance ID, a definition
 reference, and a position. Multiple placed instances can therefore
 share one item definition without duplicating its content. Empty IDs and
 duplicate definition IDs are rejected. The catalog does not yet manage
-lot placement or instance uniqueness; those belong to future world
-state.
+lot placement or instance uniqueness. `LotState` validates placement
+bounds and local uniqueness, while `SimulationState` validates that item
+instance IDs are unique across lots.
+
+`SimStateData`, `HouseholdState`, and `LotState` hold world state keyed by
+the stable `SimID`, `HouseholdID`, and `LotID` values. `SimulationState`
+indexes these values and validates household membership, current-lot
+references, and global item-instance uniqueness when it is created.
+Households and lots are independent: household members can be on different
+lots, and a Sim can have no current lot. A Sim state holds motive values,
+posture, and an optional active interaction action. `GridSize` exposes
+lot bounds through `LotState`, which requires positive dimensions.
+
+This is a validated state container, not yet a simulation coordinator.
+It does not define command or event queues, phase ordering, movement,
+occupant positions, or multi-step snapshots and reports. Those remain
+separate Hokkaido work.
 
 An `ItemDefinition` can also contain reusable `InteractionDefinition`
 values. Each interaction has its own stable ID, a name, advertised

@@ -79,7 +79,8 @@ unchecked item is planned work, not an implemented feature.
 
 ## Hokkaido: Coordinate simulation phases
 
-- [ ] Define typed Sim, lot, and household state keyed by stable IDs.
+- [x] Define typed Sim, lot, and household state keyed by stable IDs, with
+  validated membership, lot references, and item instance identities.
 - [ ] Specify command, motive, offer, decision, movement, execution, and event
   phases, including data ownership and write order.
 - [ ] Add read-only snapshots and structured results/events for clients.

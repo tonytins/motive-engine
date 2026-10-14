@@ -94,11 +94,17 @@ struct PublicMotiveAPITests {
     @Test func identifierTypesRejectEmptyValuesAndEncodeAsStrings() throws {
         #expect(ItemDefinitionID("") == nil)
         #expect(ItemInstanceID("") == nil)
+        #expect(SimID("") == nil)
+        #expect(HouseholdID("") == nil)
+        #expect(LotID("") == nil)
 
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         let definitionID = try #require(ItemDefinitionID("lamp"))
         let instanceID = try #require(ItemInstanceID("hall-lamp"))
+        let simID = try #require(SimID("sim-1"))
+        let householdID = try #require(HouseholdID("household-1"))
+        let lotID = try #require(LotID("lot-1"))
 
         #expect(
             try decoder.decode(ItemDefinitionID.self, from: encoder.encode(definitionID))
@@ -108,12 +114,214 @@ struct PublicMotiveAPITests {
             try decoder.decode(ItemInstanceID.self, from: encoder.encode(instanceID))
                 == instanceID
         )
+        #expect(try decoder.decode(SimID.self, from: encoder.encode(simID)) == simID)
+        #expect(
+            try decoder.decode(HouseholdID.self, from: encoder.encode(householdID))
+                == householdID
+        )
+        #expect(try decoder.decode(LotID.self, from: encoder.encode(lotID)) == lotID)
         #expect(
             try decoder.decode(ItemDefinitionID.self, from: Data("\"lamp\"".utf8))
                 == definitionID
         )
         #expect(throws: DecodingError.self) {
             try decoder.decode(ItemInstanceID.self, from: Data("\"\"".utf8))
+        }
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(SimID.self, from: Data("\"\"".utf8))
+        }
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(HouseholdID.self, from: Data("\"\"".utf8))
+        }
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(LotID.self, from: Data("\"\"".utf8))
+        }
+    }
+
+    @Test func simulationStateIndexesEntitiesAndAllowsHouseholdMembersOnDifferentLots() throws {
+        let firstSimID = try #require(SimID("sim-1"))
+        let secondSimID = try #require(SimID("sim-2"))
+        let householdID = try #require(HouseholdID("family"))
+        let firstLotID = try #require(LotID("home"))
+        let secondLotID = try #require(LotID("park"))
+        let firstLot = try LotState(
+            id: firstLotID,
+            bounds: GridSize(width: 4, height: 3),
+            placedItems: []
+        )
+        let secondLot = try LotState(
+            id: secondLotID,
+            bounds: GridSize(width: 2, height: 2),
+            placedItems: []
+        )
+        let firstSim = SimStateData(
+            id: firstSimID,
+            motives: try makeMotiveLevels([.hunger: 25]),
+            posture: .sitting,
+            currentLotID: firstLotID
+        )
+        let secondSim = SimStateData(
+            id: secondSimID,
+            motives: try makeMotiveLevels([.fun: 75]),
+            posture: .standing,
+            currentLotID: secondLotID
+        )
+        let household = try HouseholdState(
+            id: householdID,
+            memberIDs: [firstSimID, secondSimID]
+        )
+
+        let state = try SimulationState(
+            sims: [firstSim, secondSim],
+            households: [household],
+            lots: [firstLot, secondLot]
+        )
+
+        #expect(state.sim(for: firstSimID) == firstSim)
+        #expect(state.household(for: householdID) == household)
+        #expect(state.lot(for: secondLotID) == secondLot)
+        #expect(state.sims.count == 2)
+        #expect(state.households.count == 1)
+        #expect(state.lots.count == 2)
+    }
+
+    @Test func simulationStateRejectsMissingAndDuplicateReferences() throws {
+        let simID = try #require(SimID("sim"))
+        let householdID = try #require(HouseholdID("household"))
+        let missingLotID = try #require(LotID("missing-lot"))
+        let lotID = try #require(LotID("lot"))
+        let sim = SimStateData(
+            id: simID,
+            motives: try makeMotiveLevels(),
+            posture: .standing,
+            currentLotID: missingLotID
+        )
+
+        #expect(throws: SimulationStateError.missingCurrentLot(
+            simID: simID,
+            lotID: missingLotID
+        )) {
+            try SimulationState(sims: [sim], households: [], lots: [])
+        }
+
+        let validLot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 1, height: 1),
+            placedItems: []
+        )
+        let missingMember = try HouseholdState(
+            id: householdID,
+            memberIDs: [try #require(SimID("unknown"))]
+        )
+        let simAtValidLot = SimStateData(
+            id: simID,
+            motives: try makeMotiveLevels(),
+            posture: .standing,
+            currentLotID: lotID
+        )
+        #expect(throws: SimulationStateError.missingHouseholdMember(
+            householdID: householdID,
+            simID: try #require(SimID("unknown"))
+        )) {
+            try SimulationState(
+                sims: [simAtValidLot],
+                households: [missingMember],
+                lots: [validLot]
+            )
+        }
+
+        let otherHouseholdID = try #require(HouseholdID("other-household"))
+        let firstMembership = try HouseholdState(id: householdID, memberIDs: [simID])
+        let secondMembership = try HouseholdState(id: otherHouseholdID, memberIDs: [simID])
+        let simAtLot = SimStateData(
+            id: simID,
+            motives: try makeMotiveLevels(),
+            posture: .standing,
+            currentLotID: lotID
+        )
+        #expect(throws: SimulationStateError.simInMultipleHouseholds(simID)) {
+            try SimulationState(
+                sims: [simAtLot],
+                households: [firstMembership, secondMembership],
+                lots: [validLot]
+            )
+        }
+    }
+
+    @Test func lotStateValidatesGridBoundsAndUniqueItemIDs() throws {
+        let lotID = try #require(LotID("lot"))
+        let definitionID = try #require(ItemDefinitionID("chair"))
+        let itemID = try #require(ItemInstanceID("chair-1"))
+        let item = PlacedItem(
+            id: itemID,
+            definitionID: definitionID,
+            position: GridPosition(x: 1, y: 0)
+        )
+
+        #expect(throws: LotStateError.invalidBounds) {
+            try LotState(id: lotID, bounds: GridSize(width: 0, height: 2), placedItems: [])
+        }
+        #expect(throws: LotStateError.itemOutsideBounds(itemID)) {
+            try LotState(
+                id: lotID,
+                bounds: GridSize(width: 1, height: 1),
+                placedItems: [item]
+            )
+        }
+        #expect(throws: LotStateError.duplicateItemID(itemID)) {
+            try LotState(
+                id: lotID,
+                bounds: GridSize(width: 2, height: 1),
+                placedItems: [item, item]
+            )
+        }
+
+        let secondLot = try LotState(
+            id: try #require(LotID("second-lot")),
+            bounds: GridSize(width: 2, height: 1),
+            placedItems: [item]
+        )
+        let firstLot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 2, height: 1),
+            placedItems: [item]
+        )
+        #expect(throws: SimulationStateError.duplicatePlacedItemID(itemID)) {
+            try SimulationState(sims: [], households: [], lots: [firstLot, secondLot])
+        }
+    }
+
+    @Test func simulationEntitiesRejectDuplicateIDsAndHouseholdMembers() throws {
+        let simID = try #require(SimID("duplicate-sim"))
+        let householdID = try #require(HouseholdID("duplicate-household"))
+        let lotID = try #require(LotID("duplicate-lot"))
+        let motives = try makeMotiveLevels()
+        let sim = SimStateData(id: simID, motives: motives, posture: .standing)
+        let emptyHousehold = try HouseholdState(id: householdID, memberIDs: [])
+        let emptyLot = try LotState(
+            id: lotID,
+            bounds: GridSize(width: 1, height: 1),
+            placedItems: []
+        )
+
+        #expect(throws: SimulationStateError.duplicateSimID(simID)) {
+            try SimulationState(sims: [sim, sim], households: [], lots: [])
+        }
+        #expect(throws: SimulationStateError.duplicateHouseholdID(householdID)) {
+            try SimulationState(
+                sims: [],
+                households: [emptyHousehold, emptyHousehold],
+                lots: []
+            )
+        }
+        #expect(throws: SimulationStateError.duplicateLotID(lotID)) {
+            try SimulationState(sims: [], households: [], lots: [emptyLot, emptyLot])
+        }
+        #expect(throws: HouseholdStateError.duplicateMember(
+            householdID: householdID,
+            simID: simID
+        )) {
+            try HouseholdState(id: householdID, memberIDs: [simID, simID])
         }
     }
 
