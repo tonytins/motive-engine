@@ -1,11 +1,21 @@
 
 import Foundation
 
-struct GridPosition: Hashable {
-    let x: Int
-    let y: Int
+public struct GridPosition: Hashable, Sendable {
+    /// The horizontal coordinate.
+    public let x: Int
 
-    var orthogonalNeighbors: [GridPosition] {
+    /// The vertical coordinate.
+    public let y: Int
+
+    /// Creates a position using integer grid coordinates.
+    public init(x: Int, y: Int) {
+        self.x = x
+        self.y = y
+    }
+
+    /// The four directly adjacent positions.
+    public var orthogonalNeighbors: [GridPosition] {
         [
             GridPosition(x: x, y: y - 1),
             GridPosition(x: x, y: y + 1),
@@ -14,7 +24,8 @@ struct GridPosition: Hashable {
         ]
     }
 
-    func distance(to other: GridPosition) -> Int {
+    /// Returns the Manhattan distance to another grid position.
+    public func distance(to other: GridPosition) -> Int {
         abs(x - other.x) + abs(y - other.y)
     }
 }
@@ -43,9 +54,23 @@ struct RadarPing: Sendable {
     let distance: Int
 }
 
-struct PlacedItem: Sendable {
-    let item: Item
-    let position: GridPosition
+/// Mutable placement data for one item instance on a lot.
+public struct PlacedItem: Equatable, Sendable {
+    /// The stable identity of this placed instance.
+    public let id: ItemInstanceID
+
+    /// The reusable content this instance uses.
+    public let definitionID: ItemDefinitionID
+
+    /// The instance's current grid position.
+    public var position: GridPosition
+
+    /// Creates an item instance referencing reusable content.
+    public init(id: ItemInstanceID, definitionID: ItemDefinitionID, position: GridPosition) {
+        self.id = id
+        self.definitionID = definitionID
+        self.position = position
+    }
 }
 
 struct LotSnapshot: Sendable {

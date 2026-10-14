@@ -70,16 +70,70 @@ Keep these concepts distinct:
 - **Snapshots and reports** expose read-only views to decision policies,
   extensions, debugging tools, and the game.
 
-Stable identifiers can connect instances to definitions. The specific
-ID types and collection layout remain open; the important first step is
-that data ownership and system inputs/outputs are clear.
+`ItemDefinitionID` and `ItemInstanceID` are distinct, content-supplied
+string identifiers. A definition catalog stores reusable content by
+definition ID, while `PlacedItem` stores an instance ID, a definition
+reference, and a position. Multiple placed instances can therefore
+share one item definition without duplicating its content. Empty IDs and
+duplicate definition IDs are rejected. The catalog does not yet manage
+lot placement or instance uniqueness; those belong to future world
+state.
+
+An `ItemDefinition` can also contain reusable `InteractionDefinition`
+values. Each interaction has its own stable ID, a name, advertised
+`MotiveBenefit` values, and separate `MotiveSignal` effects.
+`ItemDefinitionCatalog.interactionOffers(for:)` combines those
+definitions with a `PlacedItem` to produce instance-specific
+`InteractionOffer` values. Offers contain advertised benefits only;
+they are candidates for future eligibility checks, not proof that an
+interaction is reachable or currently usable. The catalog resolves an
+unknown item definition as an error, and rejects duplicate interaction
+IDs within one item definition.
+
+For this first slice, execution effects model motive changes as
+per-second signals. The engine does not yet execute interactions or
+apply their effects. Advertised benefits and actual effects are both
+required to have finite strengths, but they are deliberately allowed to
+differ.
+
+```swift
+if let chairDefinitionID = ItemDefinitionID("basic-chair"),
+   let chairInstanceID = ItemInstanceID("living-room-chair"),
+   let sitInteractionID = InteractionDefinitionID("sit")
+{
+    let chairDefinition = ItemDefinition(
+        id: chairDefinitionID,
+        identity: ItemIdentity(name: "Basic Chair", itemTypes: .chair),
+        signals: [],
+        interactions: [
+            try InteractionDefinition(
+                id: sitInteractionID,
+                name: "Sit",
+                advertisedBenefits: [
+                    MotiveBenefit(motiveType: .fun, expectedStrengthPerSecond: 0.5)
+                ],
+                motiveEffects: [
+                    MotiveSignal(motiveType: .fun, strengthPerSecond: 0.25)
+                ]
+            )
+        ]
+    )
+    let catalog = try ItemDefinitionCatalog(definitions: [chairDefinition])
+    let placedChair = PlacedItem(
+        id: chairInstanceID,
+        definitionID: chairDefinitionID,
+        position: GridPosition(x: 2, y: 3)
+    )
+    let offers = try catalog.interactionOffers(for: placedChair)
+}
+```
 
 ## Needs, interactions, and autonomy
 
 Motives represent immediate needs whose values change over simulated
-time. Items should make concrete interactions available, and those
-interactions should advertise their expected motive benefits separately
-from the effects they actually apply.
+time. Item definitions now provide interaction offers and distinguish
+their advertised motive benefits from their actual motive effects.
+Eligibility checks, execution, and autonomy scoring remain future work.
 
 An autonomy policy should inspect a snapshot of relevant Sim state and
 viable interaction offers, then return a decision or ranked candidates.
@@ -108,14 +162,17 @@ rules and authoritative state remain owned by engine systems.
 ## A gradual implementation path
 
 1. Complete and test the current value-level motive and item primitives.
-2. Define interaction offers and item definitions without changing
-   storage or JSON formats prematurely.
-3. Implement pure motive-urgency and opportunity-scoring systems.
-4. Represent Sim activity, commands, and transitions as explicit state
+2. Add eligibility requirements and contextual offer generation without
+   coupling definitions to lot state.
+3. Implement pure motive-urgency and opportunity-scoring systems over
+   the advertised benefit data.
+4. Define interaction execution and apply effects separately from offer
+   scoring.
+5. Represent Sim activity, commands, and transitions as explicit state
    and testable transformations.
-5. Define event and extension contracts for buffs and aspirations.
-6. Coordinate systems through explicit simulation phases and snapshots.
-7. Integrate movement, lot/household state, and the scripting boundary.
+6. Define event and extension contracts for buffs and aspirations.
+7. Coordinate systems through explicit simulation phases and snapshots.
+8. Integrate movement, lot/household state, and the scripting boundary.
 
 Each step should preserve working behavior, add focused tests, and
 document user-facing APIs once they are supported.

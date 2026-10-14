@@ -11,6 +11,7 @@ In theory, it should be possible run this from the terminal using nothing but an
 
 ## Start here
 
+- [Roadmap](./ROADMAP.md) — completed foundations and planned milestones.
 - [Architecture overview](./architecture.md) — current foundations and
   the proposed data-oriented direction.
 
