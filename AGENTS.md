@@ -201,8 +201,8 @@ Content files are a public contract with modders.
   `schema/pack-items.json`, its example, and [docs/modding.md](./docs/modding.md)
   in the same change. The same goes for `pack.json` and `swaf.json`.
 - Optional new fields keep existing packs loading. A change that existing
-  packs can't load is a new content `format`: raise
-  `ContentPackManifest.supportedFormats` deliberately and say so.
+  packs can't load is a new pack format `version`: raise
+  `ContentPackManifest.supportedVersions` deliberately and say so.
 - Every schema example must be decoded by a test.
 - Content errors name the file at fault (`ContentPackError.invalidFile`), and
   no pack may read outside its own folder.

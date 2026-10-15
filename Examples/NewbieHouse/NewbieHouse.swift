@@ -117,7 +117,7 @@ private enum NewbieHouse {
             let overrides = manifest.overrides.isEmpty
                 ? ""
                 : ", replaces \(manifest.overrides.map(\.rawValue).joined(separator: ", "))"
-            print("  \(manifest.id.rawValue): \(manifest.name) \(manifest.version)\(dependencies)\(overrides)")
+            print("  \(manifest.id.rawValue): \(manifest.name)\(dependencies)\(overrides)")
         }
         for conflict in composition.conflicts {
             let packs = conflict.packIDs.map(\.rawValue).joined(separator: ", ")

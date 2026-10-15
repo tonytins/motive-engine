@@ -16,12 +16,12 @@ pull request. Statuses are `done`, `partial`, and `missing`.
 | [Simulation core](#simulation-core) | 10 | 1 | 3 | |
 | [Buffs](#buffs) | 5 | 0 | 0 | |
 | [Scripting](#scripting) | 7 | 0 | 1 | 100,000-instruction and 256-call limits |
-| [Content packs](#content-packs) | 8 | 0 | 2 | pack format 1 |
+| [Content packs](#content-packs) | 8 | 0 | 2 | pack format version 1 |
 | [Wants and fears](#wants-and-fears) | 8 | 0 | 1 | |
 | [Reliability](#reliability) | 4 | 1 | 1 | 0 force unwraps, `try!`, `fatalError`, or `precondition` in `Sources/` |
 | [Documentation and schemas](#documentation-and-schemas) | 3 | 0 | 1 | 4 schemas, all with decoded examples |
 | [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
-| [Known issues](#known-issues) | | | | 4 open, 2 resolved |
+| [Known issues](#known-issues) | | | | 3 open, 3 resolved |
 
 `swift test` passed all 174 tests across both libraries on 2026-10-15.
 
@@ -105,7 +105,7 @@ number is recorded. Budgets are proposals until a first measurement.
 
 | Id | Target | Status | Evidence |
 |---|---|---|---|
-| PACK-1 | Manifests validate IDs, names, format, dependencies, and overrides | done | `packIDsRejectSeparatorsAndWhitespace`, `manifestsDecodeWithDefaults`, `manifestsRejectInvalidValues` |
+| PACK-1 | Manifests validate IDs, names, the format version, dependencies, and overrides | done | `packIDsRejectSeparatorsAndWhitespace`, `manifestsDecodeWithDefaults`, `manifestsRejectInvalidValues` |
 | PACK-2 | Packs load items and compile scripts, reporting each bad file with its path | done | `packsLoadManifestItemsAndScripts`, `packsWithoutItemsLoadEmpty`, `invalidFilesAreReportedWithTheirPath` |
 | PACK-3 | Unpacked folders load, and no path or symbolic link can leave the pack | done | `unpackedFoldersLoadThroughTheDirectorySource`, `directorySourcesRejectPathsOutsideThePack`, `directorySourcesRejectLinksThatLeaveThePack` |
 | PACK-4 | Composition orders packs after dependencies, namespaces IDs, and rejects broken sets | done | `compositionQualifiesIDsAndOrdersDependenciesFirst`, `compositionRejectsBrokenPackSets` |
@@ -169,4 +169,4 @@ number is recorded. Budgets are proposals until a first measurement.
 | BUG-3 | A disabled pack's overrides leave the original item inert until the game recomposes | accepted | By design; recomposing without the pack restores the original |
 | BUG-4 | The legacy item decoder (`Item`) skipped unknown motive names silently | fixed | It now rejects unknown motives and entries without exactly one motive (`invalidMotiveEntriesAreRejected`), matching `schema/items.json` |
 | BUG-5 | Enabling a pack that isn't disabled clears its interactions' history and reports `packEnabled` | resolved | Kept as a deliberate reset (owner decision, 2026-10-15); `enablingAPackThatIsNotDisabledResetsItsHistory` |
-| BUG-6 | The manifest's `version` and `format` field names | deferred | Owner decision pending |
+| BUG-6 | The manifest's `version` and `format` field names | resolved | One field, `version`, is the pack format version (owner decision, 2026-10-15); `manifestsRejectInvalidValues` covers unsupported and string versions |

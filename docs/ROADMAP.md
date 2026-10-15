@@ -1,6 +1,6 @@
 # Motive Engine roadmap
 
-> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (BUG-5 resolved: enabling an enabled pack is a deliberate reset; estimates unchanged) · **Stage:** pre-alpha
+> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (BUG-6 resolved: the manifest has a single `version`, the pack format version; estimates unchanged) · **Stage:** pre-alpha
 
 Forward-looking: where the engine stands, what blocks the next stage, and
 what comes next. Measured numbers and verified checklists are in the
@@ -53,8 +53,8 @@ In order:
 4. **Measure the session** (Akita): benchmark a full step, pack loading, and
    script runs, then generate and check the scorecard in CI.
 
-Deferred by the owner: the naming of the manifest's `version` and `format`
-fields, and the packed pack format, which is decided in Yamagata Phase 4.
+Deferred by the owner: the packed pack format, which is decided in Yamagata
+Phase 4.
 
 ## Milestones
 
@@ -237,6 +237,7 @@ measurements. The long poles are Yamanote and Joban.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-15 | minor | BUG-6 resolved by owner decision: the manifest's single `version` field is the pack format version. The display `version` string and the `format` field are gone. Estimates unchanged. |
 | 2026-10-15 | minor | BUG-5 resolved by owner decision: enabling a pack that isn't disabled resets its interactions' history. Documented and covered by a test. Estimates unchanged. |
 | 2026-10-14 | minor | BUG-4 fixed: the legacy item decoder rejects unknown motive names and entries that don't name exactly one motive, instead of skipping them. Estimates unchanged. |
 | 2026-10-14 | minor | NewbieHouse runs on content packs: a base pack, a `newbie-extras` mod with a dependency, override, and script, an opt-in broken mod that shows script health, and extra pack folders from the command line. `lot.json` now only places items and Sims. Estimates unchanged. |

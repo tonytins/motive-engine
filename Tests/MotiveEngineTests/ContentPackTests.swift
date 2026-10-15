@@ -10,7 +10,7 @@ private func manifest(
     let dependencyList = dependencies.map { #""\#($0)""# }.joined(separator: ",")
     let overrideList = overrides.map { #""\#($0)""# }.joined(separator: ",")
     return #"""
-    {"id": "\#(id)", "name": "\#(id) pack", "version": "1.0", "format": 1,
+    {"id": "\#(id)", "name": "\#(id) pack", "version": 1,
      "dependencies": [\#(dependencyList)], "overrides": [\#(overrideList)]}
     """#
 }
@@ -50,7 +50,7 @@ struct ContentPackTests {
 
     @Test func manifestsDecodeWithDefaults() throws {
         let decoded = try ContentPackManifest(jsonData: Data(
-            #"{"id": "base", "name": "Base Game", "version": "1.0", "format": 1}"#.utf8
+            #"{"id": "base", "name": "Base Game", "version": 1}"#.utf8
         ))
 
         #expect(decoded.id == (try packID("base")))
@@ -60,23 +60,26 @@ struct ContentPackTests {
 
     @Test func manifestsRejectInvalidValues() throws {
         let base = try packID("base")
-        #expect(throws: ContentPackError.unsupportedFormat(base, format: 2)) {
-            try ContentPackManifest(id: base, name: "Base", version: "1", format: 2)
+        #expect(throws: ContentPackError.unsupportedVersion(base, version: 2)) {
+            try ContentPackManifest(id: base, name: "Base", version: 2)
+        }
+        #expect(throws: DecodingError.self) {
+            try ContentPackManifest(jsonData: Data(#"{"id": "base", "name": "Base", "version": "1.0"}"#.utf8))
         }
         #expect(throws: ContentPackError.self) {
-            try ContentPackManifest(id: base, name: "", version: "1", format: 1)
+            try ContentPackManifest(id: base, name: "", version: 1)
         }
         #expect(throws: ContentPackError.self) {
-            try ContentPackManifest(id: base, name: "Base", version: "1", format: 1, dependencies: [base])
+            try ContentPackManifest(id: base, name: "Base", version: 1, dependencies: [base])
         }
         #expect(throws: ContentPackError.self) {
-            try ContentPackManifest(id: base, name: "Base", version: "1", format: 1, dependencies: [packID("a"), packID("a")])
+            try ContentPackManifest(id: base, name: "Base", version: 1, dependencies: [packID("a"), packID("a")])
         }
         #expect(throws: ContentPackError.invalidOverride(base, definitionID: try id("fridge"))) {
-            try ContentPackManifest(id: base, name: "Base", version: "1", format: 1, overrides: [id("fridge")])
+            try ContentPackManifest(id: base, name: "Base", version: 1, overrides: [id("fridge")])
         }
         #expect(throws: ContentPackError.invalidOverride(base, definitionID: try id("base:fridge"))) {
-            try ContentPackManifest(id: base, name: "Base", version: "1", format: 1, overrides: [id("base:fridge")])
+            try ContentPackManifest(id: base, name: "Base", version: 1, overrides: [id("base:fridge")])
         }
     }
 

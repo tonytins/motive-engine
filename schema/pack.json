@@ -15,12 +15,11 @@
   "properties": {
     "id": { "$ref": "#/$defs/packID" },
     "name": { "type": "string", "minLength": 1, "description": "Player-facing name." },
-    "version": { "type": "string", "minLength": 1, "description": "The pack's own version, for display only." },
-    "format": {
+    "version": {
       "type": "integer",
       "minimum": 1,
       "maximum": 1,
-      "description": "The content format the pack is written in. The engine rejects formats it cannot read."
+      "description": "The version of the pack format the pack is written in. The engine rejects versions it cannot read."
     },
     "dependencies": {
       "type": "array",
@@ -35,14 +34,13 @@
       "description": "Qualified item IDs, such as \"base:fridge\", that this pack replaces. Each must belong to a direct or indirect dependency and be defined in this pack's items.json."
     }
   },
-  "required": ["id", "name", "version", "format"],
+  "required": ["id", "name", "version"],
   "additionalProperties": false,
   "examples": [
     {
       "id": "kitchen-plus",
       "name": "Kitchen Plus",
-      "version": "1.2",
-      "format": 1,
+      "version": 1,
       "dependencies": ["base"],
       "overrides": ["base:fridge"]
     }

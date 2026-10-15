@@ -36,8 +36,7 @@ format for distribution is planned.
 {
   "id": "kitchen-plus",
   "name": "Kitchen Plus",
-  "version": "1.2",
-  "format": 1,
+  "version": 1,
   "dependencies": ["base"],
   "overrides": ["base:fridge"]
 }
@@ -47,8 +46,7 @@ format for distribution is planned.
 | --- | --- | --- |
 | `id` | Yes | Your pack's identifier. It prefixes every item you define, so it can't contain `:` or spaces. Pick something unlikely to clash with other mods. |
 | `name` | Yes | The name players see. |
-| `version` | Yes | Your mod's own version, shown to players. The engine never compares it. |
-| `format` | Yes | The pack format you wrote. This engine reads format `1`; it refuses packs written in a format it doesn't know. |
+| `version` | Yes | The version of the pack format you wrote, as a whole number. This engine reads version `1`; it refuses packs written for a version it doesn't know. It isn't your mod's own version; track that in your change notes or wherever you publish the mod. |
 | `dependencies` | No | Packs that must load before yours. List every pack whose items you use or replace. |
 | `overrides` | No | Items from other packs that you replace. See [Replacing another pack's items](#replacing-another-packs-items). |
 
@@ -184,8 +182,7 @@ and list it in your manifest. In `pack.json`:
 {
   "id": "kitchen-plus",
   "name": "Kitchen Plus",
-  "version": "1.2",
-  "format": 1,
+  "version": 1,
   "dependencies": ["base"],
   "overrides": ["base:fridge"]
 }

@@ -261,9 +261,10 @@ my-mod/
   scripts/eat.rob  Robusta scripts named by interactions
 ```
 
-- **Manifest.** `ContentPackManifest` holds a `ContentPackID`, a name, a
-  display version, a content `format` (this engine reads format 1), the
-  packs it depends on, and the definitions it overrides.
+- **Manifest.** `ContentPackManifest` holds a `ContentPackID`, a name, the
+  pack format `version` (this engine reads version 1), the packs it depends
+  on, and the definitions it overrides. A mod's own release version is not
+  part of the manifest.
 - **Loading.** `ContentPack(loadingFrom:)` reads a pack through a
   `ContentSource`. `DirectoryContentSource` reads an unpacked folder and
   rejects absolute paths and paths that leave the folder, including through

@@ -25,8 +25,8 @@ public struct ContentPackID: StringIdentifier {
 ///
 /// A manifest is the `pack.json` file at the root of a pack.
 public struct ContentPackManifest: Equatable, Sendable {
-    /// The pack content formats this engine can read.
-    public static let supportedFormats: ClosedRange<Int> = 1 ... 1
+    /// The pack format versions this engine can read.
+    public static let supportedVersions: ClosedRange<Int> = 1 ... 1
 
     /// The pack's stable identity.
     public let id: ContentPackID
@@ -34,11 +34,8 @@ public struct ContentPackManifest: Equatable, Sendable {
     /// The player-facing name.
     public let name: String
 
-    /// The pack's own version, for display. The engine does not compare it.
-    public let version: String
-
-    /// The content format the pack is written in.
-    public let format: Int
+    /// The version of the pack format the pack is written in.
+    public let version: Int
 
     /// Packs that must load before this one.
     public let dependencies: [ContentPackID]
@@ -51,22 +48,21 @@ public struct ContentPackManifest: Equatable, Sendable {
 
     /// Creates a validated manifest.
     ///
-    /// - Throws: `ContentPackError` for an empty name or version, an
-    ///   unsupported format, a dependency on itself, duplicate dependencies or
-    ///   overrides, or an override that is not qualified with another pack's ID.
+    /// - Throws: `ContentPackError` for an empty name, an unsupported format
+    ///   version, a dependency on itself, duplicate dependencies or overrides,
+    ///   or an override that is not qualified with another pack's ID.
     public init(
         id: ContentPackID,
         name: String,
-        version: String,
-        format: Int,
+        version: Int,
         dependencies: [ContentPackID] = [],
         overrides: [ItemDefinitionID] = []
     ) throws {
-        guard !name.isEmpty, !version.isEmpty else {
-            throw ContentPackError.invalidManifest(id, reason: "The name and version must not be empty.")
+        guard !name.isEmpty else {
+            throw ContentPackError.invalidManifest(id, reason: "The name must not be empty.")
         }
-        guard Self.supportedFormats.contains(format) else {
-            throw ContentPackError.unsupportedFormat(id, format: format)
+        guard Self.supportedVersions.contains(version) else {
+            throw ContentPackError.unsupportedVersion(id, version: version)
         }
         guard !dependencies.contains(id) else {
             throw ContentPackError.invalidManifest(id, reason: "A pack cannot depend on itself.")
@@ -86,7 +82,6 @@ public struct ContentPackManifest: Equatable, Sendable {
         self.id = id
         self.name = name
         self.version = version
-        self.format = format
         self.dependencies = dependencies
         self.overrides = overrides
     }
@@ -101,7 +96,6 @@ public struct ContentPackManifest: Equatable, Sendable {
             id: payload.id,
             name: payload.name,
             version: payload.version,
-            format: payload.format,
             dependencies: payload.dependencies ?? [],
             overrides: payload.overrides ?? []
         )
@@ -111,8 +105,7 @@ public struct ContentPackManifest: Equatable, Sendable {
 private struct ManifestPayload: Decodable {
     let id: ContentPackID
     let name: String
-    let version: String
-    let format: Int
+    let version: Int
     let dependencies: [ContentPackID]?
     let overrides: [ItemDefinitionID]?
 }
@@ -132,8 +125,8 @@ public enum ContentPackError: Error, Equatable, Sendable {
     /// The manifest has an invalid value.
     case invalidManifest(ContentPackID, reason: String)
 
-    /// The pack uses a content format this engine cannot read.
-    case unsupportedFormat(ContentPackID, format: Int)
+    /// The pack is written in a format version this engine cannot read.
+    case unsupportedVersion(ContentPackID, version: Int)
 
     /// An override is unqualified, names the pack itself, or is not declared
     /// in the manifest.

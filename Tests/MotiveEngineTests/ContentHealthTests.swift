@@ -38,7 +38,7 @@ private func itemsFile(_ entries: [(id: String, script: String, written: Bool)])
 
 private func manifest(_ id: String, dependencies: [String] = []) -> String {
     let list = dependencies.map { #""\#($0)""# }.joined(separator: ",")
-    return #"{"id": "\#(id)", "name": "\#(id)", "version": "1", "format": 1, "dependencies": [\#(list)]}"#
+    return #"{"id": "\#(id)", "name": "\#(id)", "version": 1, "dependencies": [\#(list)]}"#
 }
 
 private func loadPack(_ id: String, dependencies: [String] = [], items: String? = nil) throws -> ContentPack {
