@@ -1,6 +1,6 @@
 # Motive Engine roadmap
 
-> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** major (rewritten with an alpha gate, estimates, and ranked work) · **Stage:** pre-alpha
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (later milestones renamed after regular JR lines; estimates unchanged) · **Stage:** pre-alpha
 
 Forward-looking: where the engine stands, what blocks the next stage, and
 what comes next. Measured numbers and verified checklists are in the
@@ -10,9 +10,10 @@ what comes next. Measured numbers and verified checklists are in the
 Keep it current: when work lands, update its milestone row and checklist,
 re-estimate what remains, and add a line to the revision history.
 
-Milestones are named after Shinkansen routes, including routes that are
-planned or under construction. The names are labels, not claims about speed
-or release dates. Estimates are rough hours for one developer and are
+Milestones through Nishi-Kyushu, plus Akita and Yamagata, are named after
+Shinkansen routes. With those used up, later milestones are named after
+regular JR lines. The names are labels, not claims about speed or release
+dates. Estimates are rough hours for one developer and are
 re-measured when a milestone lands.
 
 ## Alpha gate
@@ -35,7 +36,7 @@ it a beta item.
 | Daily rhythm: sleep and posture | partial, not blocking | A bed works as an energy item, but there is no day clock, sleep state, or posture change from chairs and beds | 20–40 |
 
 **Result: pre-alpha.** Socializing is the only blocking row, about 35–70
-hours of work (Chuo). If socializing is deliberately left out of alpha, the
+hours of work (Yamanote). If socializing is deliberately left out of alpha, the
 engine is alpha today and the three partial rows are the first beta items.
 That scope call belongs to the owner.
 
@@ -43,11 +44,11 @@ That scope call belongs to the owner.
 
 In order:
 
-1. **Decide whether socializing is in alpha scope**, then start Chuo or
+1. **Decide whether socializing is in alpha scope**, then start Yamanote or
    move to beta work.
 2. **Finish Yamagata:** choose the packed pack format (Phase 4) and report
    source lines in script errors (Phase 5).
-3. **Make games saveable** (Shikoku): `Codable` world state and restorable
+3. **Make games saveable** (Sobu): `Codable` world state and restorable
    actions.
 4. **Measure the session** (Akita): benchmark a full step, pack loading, and
    script runs, then generate and check the scorecard in CI.
@@ -72,21 +73,21 @@ fields, and the packed pack format, which is decided in Yamagata Phase 4.
 | Nishi-Kyushu | Optional extensions | 80% | 19–38 | Buffs, scripts in the session, SWAF with wish mode. Missing: targeted and lifetime wants; wants and fears in packs |
 | Akita | Measure before optimizing | 33% | 10–20 | Four benchmarks. Missing: session benchmarks, scorecard in CI; storage changes only if measured |
 | Yamagata | Content packs, safely | 60% | 14–32 | Packs and script health done. Missing: packed format, script line numbers |
-| Chuo | Sims together | 0% | 35–70 | Sim-to-Sim interactions and relationships |
-| Shikoku | Save and change the world | 0% | 20–40 | `Codable` state, restorable actions, editing a running world |
-| San'in | Daily life | 0% | 20–40 | Day clock, sleep, posture changes |
+| Yamanote | Sims together | 0% | 35–70 | Sim-to-Sim interactions and relationships |
+| Sobu | Save and change the world | 0% | 20–40 | `Codable` state, restorable actions, editing a running world |
+| Joban | Daily life | 0% | 20–40 | Day clock, sleep, posture changes |
 | | **Total** | | **≈ 130–264** | |
 
 ## Upcoming work, ranked
 
 | Rank | Work | Milestone | Estimate (h) |
 |---|---|---|---|
-| 1 | Sim-to-Sim interactions and relationships | Chuo | 35–70 |
+| 1 | Sim-to-Sim interactions and relationships | Yamanote | 35–70 |
 | 2 | Packed pack format and script line numbers | Yamagata | 14–32 |
-| 3 | `Codable` world state and restorable actions | Shikoku | 8–15 |
+| 3 | `Codable` world state and restorable actions | Sobu | 8–15 |
 | 4 | Session benchmarks and the scorecard in CI | Akita | 10–20 |
-| 5 | Editing a running world, moving Sims between lots | Shikoku | 12–25 |
-| 6 | Day clock, sleep, and posture | San'in | 20–40 |
+| 5 | Editing a running world, moving Sims between lots | Sobu | 12–25 |
+| 6 | Day clock, sleep, and posture | Joban | 20–40 |
 | 7 | Targeted and lifetime wants; wants and fears in packs | Nishi-Kyushu | 19–38 |
 | 8 | Contextual offers and broader eligibility | Tohoku, Hokuriku | 12–24 |
 
@@ -190,21 +191,21 @@ Beta needs ranks 1–6 in substance, about 100–200 hours.
 - [ ] Phase 4: choose and support a packed pack format.
 - [ ] Phase 5: report source line numbers in Robusta runtime errors.
 
-### Chuo: Sims together
+### Yamanote: Sims together
 
 - [ ] Sims offer interactions to other Sims (the `sim` modifier).
 - [ ] Two-party actions that occupy and affect both Sims.
 - [ ] Relationships between Sims as validated, saveable state.
 - [ ] The `social` motive filled by other Sims, scaled by relationship.
 
-### Shikoku: Save and change the world
+### Sobu: Save and change the world
 
 - [ ] `Codable` world state, validated when decoded.
 - [ ] Restorable running actions.
 - [ ] Session commands to place and remove items and add and remove Sims.
 - [ ] Moving Sims between lots.
 
-### San'in: Daily life
+### Joban: Daily life
 
 - [ ] A simulated day clock.
 - [ ] Sleep as a Sim state, with wake rules.
@@ -214,9 +215,9 @@ Beta needs ranks 1–6 in substance, about 100–200 hours.
 
 Tokaido through Hokkaido had to happen in order, and did. Everything after
 builds on the session and can proceed in parallel, with two exceptions:
-Shikoku's restorable actions should follow Chuo, because two-party actions
+Sobu's restorable actions should follow Yamanote, because two-party actions
 change what an action holds, and Akita's storage work waits for its own
-measurements. The long poles are Chuo and San'in.
+measurements. The long poles are Yamanote and Joban.
 
 ## Risks most likely to push estimates up
 
@@ -236,4 +237,5 @@ measurements. The long poles are Chuo and San'in.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | Renamed Chuo, Shikoku, and San'in to Yamanote, Sobu, and Joban: later milestones use regular JR lines once the Shinkansen routes run out. Estimates unchanged. |
 | 2026-10-14 | major | Rewritten with an alpha gate (pre-alpha: socializing blocks), estimates, ranked work, and three new milestones (Chuo, Shikoku, San'in) from gaps found while assessing the gate. Earlier history is in git. |

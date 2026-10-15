@@ -73,10 +73,10 @@ number is recorded. Budgets are proposals until a first measurement.
 | CORE-8 | World state validates IDs, references, households, positions, and occupancy | done | `simulationStateRejectsMissingAndDuplicateReferences`, `simulationStateValidatesSimPositionsAndUniqueOccupancy`, `lotStateValidatesGridBoundsAndUniqueItemIDs`, `simulationEntitiesRejectDuplicateIDsAndHouseholdMembers` |
 | CORE-9 | The session runs every phase in the declared order and reserves capacity | done | `standardSimulationPhaseOrderMatchesTheDeclaredWriteSequence`, `simulationSessionRoutesThenExecutesRequestedInteraction`, `simulationSessionReservesItemCapacityAndRollsBackInvalidCommands` |
 | CORE-10 | Routing avoids blocking items and Sims, and waits when approaches are temporarily full | done | `interactionRoutingAvoidsBlockedAndOccupiedPositions`, `interactionRoutingReportsNoFreeApproachTile`, `simulationSessionWaitsWhenSimsBlockEveryApproachTile` |
-| CORE-11 | Sims interact with each other, with relationships | missing | No Sim-to-Sim offers or relationship state; lot files' `relationship` field is ignored (Chuo) |
-| CORE-12 | A game in progress saves and restores, including running actions | partial | `ContentHealth` is `Codable` (`healthSurvivesASaveAndRejectsTamperedValues`); `SimulationState` is not, and `InteractionActionState` has no public initializer (Shikoku) |
-| CORE-13 | The world changes while running: items placed or removed, Sims arriving, leaving, or changing lots | missing | `SimulationSession` has no commands for these; a game must build a new session (Shikoku) |
-| CORE-14 | Posture changes and sleep | missing | `SimPosture` exists but the session never changes it; sleep tracking in `Household.swift` is internal and unused by the session (San'in) |
+| CORE-11 | Sims interact with each other, with relationships | missing | No Sim-to-Sim offers or relationship state; lot files' `relationship` field is ignored (Yamanote) |
+| CORE-12 | A game in progress saves and restores, including running actions | partial | `ContentHealth` is `Codable` (`healthSurvivesASaveAndRejectsTamperedValues`); `SimulationState` is not, and `InteractionActionState` has no public initializer (Sobu) |
+| CORE-13 | The world changes while running: items placed or removed, Sims arriving, leaving, or changing lots | missing | `SimulationSession` has no commands for these; a game must build a new session (Sobu) |
+| CORE-14 | Posture changes and sleep | missing | `SimPosture` exists but the session never changes it; sleep tracking in `Household.swift` is internal and unused by the session (Joban) |
 
 ## Buffs
 
