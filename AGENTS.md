@@ -206,3 +206,26 @@ Content files are a public contract with modders.
 - Every schema example must be decoded by a test.
 - Content errors name the file at fault (`ContentPackError.invalidFile`), and
   no pack may read outside its own folder.
+
+## 9. Calling things out
+
+The owner often reviews changes alone, so make review easy. Put these in
+the summary and the commit message:
+
+- **Changes that break games or packs.** Public API changes, including a
+  new case in a public enum ([engine rule 8](#engine-rules)); a new pack
+  format `version` or schema change ([section 8](#8-keeping-content-formats-complete));
+  and anything that changes results for the same inputs, since games and
+  tests rely on [determinism](#engine-rules).
+- **Shared-surface changes.** New or renamed targets or products in
+  `Package.swift`, and benchmark budget changes or a workload that got
+  slower. New dependencies need the owner's approval first; don't just
+  mention them afterward.
+- **Judgment calls**, such as a scope decision, a default, or a trade-off
+  you picked between two reasonable options.
+- **Anything you couldn't verify.** Name each [section 5](#5-before-you-finish-a-task)
+  check you skipped and why, and report warnings or flaky tests, e.g.
+  "builds with two new warnings; benchmarks not run".
+- **Risks outside your task.** Report them; don't fix them quietly in an
+  unrelated change. If one is confirmed, add it to the scorecard's known
+  issues so it outlives the session.
