@@ -1,34 +1,56 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://motivesengine.dev/schemas/item.schema.json",
-  "title": "Item",
-  "description": "",
+  "title": "Legacy Item",
+  "description": "One item in the legacy single-item format, with raw motive values. Raw values are divided by 25 to give per-second rates. Content packs use schema/pack-items.json instead.",
   "type": "object",
+  "$defs": {
+    "modifier": {
+      "type": "string",
+      "enum": ["appliance", "bed", "shower", "toilet", "recreation", "sim", "ambient", "chair", "skill"]
+    },
+    "motiveValue": {
+      "type": "object",
+      "description": "One motive and its raw value, such as { \"hunger\": 50 }.",
+      "propertyNames": { "enum": ["hunger", "energy", "hygiene", "bladder", "social", "fun"] },
+      "additionalProperties": { "type": "number" },
+      "minProperties": 1,
+      "maxProperties": 1
+    }
+  },
   "properties": {
     "name": {
       "type": "string",
       "minLength": 1,
-      "description": "The broadcaster's display name and lookup key. Item names must be unique within whatever list they're decoded into — nothing in this schema enforces that across array elements, since JSON Schema can't express uniqueness on a derived key alone."
+      "description": "The item's display name."
     },
     "item": {
-      "$ref": "common.schema.json#/$defs/itemType"
+      "description": "One modifier, or a nonempty list of them.",
+      "oneOf": [
+        { "$ref": "#/$defs/modifier" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/modifier" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      ]
     },
     "motives": {
       "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "common.schema.json#/$defs/motiveSignal" },
-      "description": "Every motive this item fulfills while a Sim is actively using it. A skill item still needs at least one entry here to say which motive slot it occupies, even though (as of the Buffs.swift refactor) it fulfills that motive directly like everything else."
+      "items": { "$ref": "#/$defs/motiveValue" },
+      "description": "The motives this item fulfills while a Sim uses it."
     },
     "blocking": {
       "type": "boolean",
-      "description": "Optional. When present, used as-is. When absent, the item falls back to its type's default (ItemType.isBlockingByDefault): true for everything except sim and ambient."
+      "description": "Whether Sims can walk through the item. When absent, it blocks if any modifier except ambient or sim is present."
     }
   },
   "required": ["name", "item", "motives"],
   "additionalProperties": false,
   "examples": [
-    { "name": "Fridge", "item": "fridge", "motives": [{ "hunger": 50 }] },
+    { "name": "Fridge", "item": "appliance", "motives": [{ "hunger": 50 }] },
     { "name": "Television", "item": "recreation", "motives": [{ "fun": 25 }, { "social": 7.5 }] },
-    { "name": "Custom Fridge", "item": "fridge", "motives": [{ "hunger": 50 }], "blocking": false }
+    { "name": "Stereo", "item": ["ambient", "recreation"], "motives": [{ "fun": 15 }], "blocking": false }
   ]
 }

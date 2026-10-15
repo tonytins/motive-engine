@@ -356,6 +356,31 @@ struct PipelineTests {
             try RobustaVM.run(source)
         }
     }
+
+    @Test("unbounded recursion stops at the call-depth limit")
+    func stopsUnboundedRecursionAtTheCallDepthLimit() throws {
+        let source = """
+        mod counter
+            func down(depth)
+                if depth == 0
+                    return "bottom"
+                end
+                return counter.down(depth - 1)
+            end
+        end
+        state default
+            func stateEntry()
+                print counter.down(depthToReach)
+            end
+        end
+        """
+
+        // Shallow recursion still works, so the limit is what stops deep recursion.
+        #expect(try RobustaVM.run("val depthToReach = 200\n" + source) == ["bottom"])
+        #expect(throws: RuntimeError(message: "Program exceeded the 256-call recursion limit.")) {
+            try RobustaVM.run("val depthToReach = 10000\n" + source)
+        }
+    }
 }
 
 private struct FixtureFrontend: Frontend {

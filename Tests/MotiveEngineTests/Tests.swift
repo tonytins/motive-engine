@@ -90,6 +90,23 @@ struct ItemCodingTests {
         #expect(item.signals == [MotiveSignal(motiveType: .hunger, strengthPerSecond: 2)])
     }
 
+    @Test func legacySchemaExamplesDecode() throws {
+        let schemaURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("../../schema/items.json")
+        let schema = try JSONSerialization.jsonObject(with: Data(contentsOf: schemaURL)) as? [String: Any]
+        let examples = try #require(schema?["examples"] as? [Any])
+
+        let items = try examples.map {
+            try JSONDecoder().decode(Item.self, from: JSONSerialization.data(withJSONObject: $0))
+        }
+
+        #expect(items.map(\.identity.name) == ["Fridge", "Television", "Stereo"])
+        #expect(items[0].signals == [MotiveSignal(motiveType: .hunger, strengthPerSecond: 2)])
+        #expect(items[2].identity.itemTypes == [.ambient, .recreation])
+        #expect(!items[2].identity.isBlocking)
+    }
+
     @Test func explicitBlockingOverridesTheDefault() throws {
         let json = #"{"name":"Fridge","item":"appliance","blocking":false,"motives":[{"hunger":50}]}"#
         let item = try JSONDecoder().decode(Item.self, from: Data(json.utf8))

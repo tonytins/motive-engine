@@ -1,6 +1,6 @@
 # Motive Engine roadmap
 
-> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (later milestones renamed after regular JR lines; estimates unchanged) · **Stage:** pre-alpha
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (scorecard fixes: recursion-limit test and a self-contained legacy item schema; estimates unchanged) · **Stage:** pre-alpha
 
 Forward-looking: where the engine stands, what blocks the next stage, and
 what comes next. Measured numbers and verified checklists are in the
@@ -237,5 +237,6 @@ measurements. The long poles are Yamanote and Joban.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | Scorecard SCRIPT-4 and DOC-2 done: a test for Robusta's call-depth limit, and `schema/items.json` made self-contained with examples the decoder accepts and a test that decodes them. Estimates unchanged. |
 | 2026-10-14 | minor | Renamed Chuo, Shikoku, and San'in to Yamanote, Sobu, and Joban: later milestones use regular JR lines once the Shinkansen routes run out. Estimates unchanged. |
 | 2026-10-14 | major | Rewritten with an alpha gate (pre-alpha: socializing blocks), estimates, ranked work, and three new milestones (Chuo, Shikoku, San'in) from gaps found while assessing the gate. Earlier history is in git. |

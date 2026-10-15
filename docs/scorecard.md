@@ -15,15 +15,15 @@ pull request. Statuses are `done`, `partial`, and `missing`.
 | [Performance](#performance) | 4 | 0 | 4 | 4 benchmarks, all within budget; 4 scenarios not benchmarked yet (baseline 2026-10-14) |
 | [Simulation core](#simulation-core) | 10 | 1 | 3 | |
 | [Buffs](#buffs) | 5 | 0 | 0 | |
-| [Scripting](#scripting) | 6 | 1 | 1 | 100,000-instruction and 256-call limits |
+| [Scripting](#scripting) | 7 | 0 | 1 | 100,000-instruction and 256-call limits |
 | [Content packs](#content-packs) | 7 | 0 | 2 | pack format 1 |
 | [Wants and fears](#wants-and-fears) | 8 | 0 | 1 | |
 | [Reliability](#reliability) | 4 | 1 | 1 | 0 force unwraps, `try!`, `fatalError`, or `precondition` in `Sources/` |
-| [Documentation and schemas](#documentation-and-schemas) | 2 | 1 | 1 | 4 schemas, 3 with decoded examples |
+| [Documentation and schemas](#documentation-and-schemas) | 3 | 0 | 1 | 4 schemas, all with decoded examples |
 | [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
 | [Known issues](#known-issues) | | | | 6 open |
 
-`swift test` passed all 169 tests across both libraries on 2026-10-14.
+`swift test` passed all 171 tests across both libraries on 2026-10-14.
 
 ## Performance
 
@@ -95,7 +95,7 @@ number is recorded. Budgets are proposals until a first measurement.
 | SCRIPT-1 | The lexer handles every token kind and reports errors with line numbers | done | `LexerTests.swift`: 13 tests, including `unterminatedStringThrows` and `unrecognizedCharacterThrows` |
 | SCRIPT-2 | Source, syntax tree, and JSON IR run identically; malformed IR is rejected | done | `supportsAllPipelineRunEntryPoints`, `roundTripsMutableAndNestedInstructions`, `rejectsUnknownInstructions`, `rejectsUnexpectedOperands` |
 | SCRIPT-3 | Language semantics: references, Bool and Trilean logic, `match`, `try`, states | done | `aliasesShareTheReferencedValue`, `keepsBooleanAndTrileanLogicSeparate`, `runsMatchAndTryCatch`, `transitionsBetweenStates`, `rejectsUnknownStateTransition` |
-| SCRIPT-4 | Runaway scripts stop at the instruction and call-depth limits | partial | The instruction limit is tested (`runtimeFailuresPropagateWithoutPartialEffects`); the 256-call depth limit in `Runtime.swift` has no test |
+| SCRIPT-4 | Runaway scripts stop at the instruction and call-depth limits | done | `runtimeFailuresPropagateWithoutPartialEffects` (instruction limit), `stopsUnboundedRecursionAtTheCallDepthLimit` (256-call limit, with shallow recursion still working) |
 | SCRIPT-5 | Interaction scripts read declared, read-only inputs and report effects only through `effect.fulfill` | done | `scriptsReadDeclaredInputsAndReportEffects`, `everyMotiveIsAvailableAsAnInput`, `scriptsCannotRedeclareInputsOrHostFunctions` |
 | SCRIPT-6 | Invalid effects are rejected at load when literal, and at run time otherwise | done | `invalidLiteralEffectsAreRejectedWhenLoaded`, `invalidComputedEffectsAreRejectedWhenRun`, `computedArgumentsAreAcceptedWhenLoaded` |
 | SCRIPT-7 | The session runs scripts when actions start; a failure fails only that action | done | `ScriptedSessionTests.swift`: `scriptEffectsReplaceWrittenEffectsAndStayFixedForTheAction`, `autonomyReportsAFailedScriptAndChoosesTheNextUsefulOffer`, `invalidRuntimeEffectsAreReportedAsTypedFailures` |
@@ -145,7 +145,7 @@ number is recorded. Budgets are proposals until a first measurement.
 | Id | Target | Status | Evidence |
 |---|---|---|---|
 | DOC-1 | Every public declaration has a documentation comment | done | Checked across `Sources/` on 2026-10-14 |
-| DOC-2 | Every content file has a schema whose example is decoded by a test | partial | `pack.json`, `pack-items.json`, and `swaf.json` examples are decoded (`schemaExamplesLoadAndCompose`, `schemaExampleDecodes`); legacy `schema/items.json` has no decode test and references a missing `common.schema.json` |
+| DOC-2 | Every content file has a schema whose example is decoded by a test | done | `schemaExamplesLoadAndCompose` (`pack.json`, `pack-items.json`), `schemaExampleDecodes` (`swaf.json`), `legacySchemaExamplesDecode` (`items.json`) |
 | DOC-3 | Schemas are checked by a JSON Schema validator | missing | Tests decode examples with the engine only |
 | DOC-4 | Architecture, modding, and contributor guides match the code | done | Reviewed 2026-10-14 |
 
