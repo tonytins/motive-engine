@@ -8,6 +8,12 @@ This guide covers what you can build today: items, their interactions, and
 Robusta scripts that decide what an interaction does. Features that are
 planned but not finished are listed at the end.
 
+Working packs to copy from are in
+[`Examples/NewbieHouse/Content`](../Examples/NewbieHouse/Content): a base
+pack, a mod that depends on it and overrides its TV, and a deliberately
+broken mod. Run `swift run NewbieHouse path/to/your-pack` to try your own
+pack against them.
+
 ## Your first pack
 
 A pack is a folder. Only the manifest is required.

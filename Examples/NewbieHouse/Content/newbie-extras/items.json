@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "base:television", "name": "Big-Screen TV", "modifiers": ["recreation"],
+      "interactions": [
+        { "id": "watch", "name": "Watch the Big Screen", "duration": 20,
+          "advertises": { "fun": 1.4, "social": 0.3 }, "effects": { "fun": 1.4, "social": 0.3 },
+          "script": "watch" }
+      ]
+    },
+    {
+      "id": "aquarium", "name": "Aquarium", "modifiers": ["ambient"], "signals": { "fun": 0.3 },
+      "interactions": [
+        { "id": "feed", "name": "Feed the Fish", "duration": 10,
+          "advertises": { "fun": 0.8 }, "effects": { "fun": 0.8 } }
+      ]
+    }
+  ]
+}

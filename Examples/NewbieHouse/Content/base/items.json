@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "id": "fridge", "name": "Fridge", "modifiers": ["appliance"],
+      "interactions": [
+        { "id": "eat", "name": "Have a Snack", "duration": 20,
+          "advertises": { "hunger": 2 }, "effects": { "hunger": 2 }, "script": "eat" }
+      ]
+    },
+    {
+      "id": "coffee", "name": "Coffee Maker", "modifiers": ["appliance"],
+      "interactions": [
+        { "id": "drink", "name": "Drink Coffee", "duration": 20,
+          "advertises": { "energy": 0.8 }, "effects": { "energy": 0.8 } }
+      ]
+    },
+    {
+      "id": "bed", "name": "Bed", "modifiers": ["bed"],
+      "interactions": [
+        { "id": "sleep", "name": "Sleep", "duration": 20,
+          "advertises": { "energy": 1.5 }, "effects": { "energy": 1.5 } }
+      ]
+    },
+    {
+      "id": "shower", "name": "Shower", "modifiers": ["shower"],
+      "interactions": [
+        { "id": "shower", "name": "Take a Shower", "duration": 20,
+          "advertises": { "hygiene": 2.5 }, "effects": { "hygiene": 2.5 } }
+      ]
+    },
+    {
+      "id": "toilet", "name": "Toilet", "modifiers": ["toilet"],
+      "interactions": [
+        { "id": "use", "name": "Use the Toilet", "duration": 20,
+          "advertises": { "bladder": 3 }, "effects": { "bladder": 3 } }
+      ]
+    },
+    {
+      "id": "television", "name": "Television", "modifiers": ["recreation"],
+      "interactions": [
+        { "id": "watch", "name": "Watch TV", "duration": 20,
+          "advertises": { "fun": 1, "social": 0.3 }, "effects": { "fun": 1, "social": 0.3 } }
+      ]
+    },
+    {
+      "id": "armchair", "name": "Armchair", "modifiers": ["chair"],
+      "interactions": [
+        { "id": "sit", "name": "Sit Down", "duration": 20,
+          "advertises": { "energy": 0.4 }, "effects": { "energy": 0.4 } }
+      ]
+    },
+    {
+      "id": "chess-set", "name": "Chess Set", "modifiers": [],
+      "interactions": [
+        { "id": "play", "name": "Play Chess", "duration": 20,
+          "advertises": { "fun": 0.6 }, "effects": { "fun": 0.6 } }
+      ]
+    },
+    { "id": "stereo", "name": "Stereo", "modifiers": ["ambient", "recreation"], "signals": { "fun": 0.6 } },
+    { "id": "rare-gem", "name": "Rare Gem", "modifiers": ["ambient"], "signals": { "energy": 0.2 } }
+  ]
+}

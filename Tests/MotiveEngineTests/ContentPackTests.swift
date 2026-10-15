@@ -219,6 +219,29 @@ struct ContentPackTests {
         #expect(try source.data(atPath: "alias.txt") == Data("inside".utf8))
     }
 
+    @Test func newbieHouseExampleContentLoadsAndCoversItsLayout() throws {
+        let example = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("../../Examples/NewbieHouse")
+        let packs = try ["base", "newbie-extras", "broken-gadgets"].map { name in
+            try ContentPack(loadingFrom: DirectoryContentSource(
+                directory: example.appendingPathComponent("Content/\(name)")
+            ))
+        }
+
+        let composition = try ContentComposer.compose(packs)
+        let layout = try #require(
+            JSONSerialization.jsonObject(with: Data(contentsOf: example.appendingPathComponent("lot.json"))) as? [String: Any]
+        )
+        let placements = try #require(layout["items"] as? [[String: Any]])
+
+        #expect(composition.owner(of: try id("base:television")) == (try packID("newbie-extras")))
+        for placement in placements {
+            let definition = try #require(placement["definition"] as? String)
+            #expect(composition.catalog.definition(for: try id(definition)) != nil, "\(definition)")
+        }
+    }
+
     // MARK: Composition
 
     @Test func compositionQualifiesIDsAndOrdersDependenciesFirst() throws {

@@ -56,13 +56,17 @@ Wants and fears are optional. To use them, also add
 
 ## 🏠 Example
 
-`Examples/NewbieHouse` runs Bob and Betty Newbie through a short simulation on
-the lot in its bundled `lot.json`, printing events, a map, and motive levels as
-time advances:
+`Examples/NewbieHouse` runs Bob and Betty Newbie through a short simulation,
+printing events, a map, and motive levels as time advances. Its items come
+from content packs in `Examples/NewbieHouse/Content`: a `base` pack and a
+`newbie-extras` mod that replaces the base TV and adds an aquarium. Its
+`lot.json` only places items and Sims.
 
 ```sh
-swift run NewbieHouse              # bundled lot
-swift run NewbieHouse path/to/lot.json
+swift run NewbieHouse                    # base content and the newbie-extras mod
+swift run NewbieHouse --broken-mod       # also load a mod whose scripts fail, to watch script health at work
+swift run NewbieHouse path/to/my-mod     # try your own pack against the example
+swift run NewbieHouse --lot my-lot.json  # use a different layout
 ```
 
 Ambient items, such as the Stereo, buff nearby Sims. Lot fields the engine

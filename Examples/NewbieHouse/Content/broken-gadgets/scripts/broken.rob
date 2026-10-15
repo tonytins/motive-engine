@@ -1,0 +1,6 @@
+// Always fails, to show how the engine handles a broken mod.
+state default
+    func stateEntry()
+        throw "this gadget is broken"
+    end
+end

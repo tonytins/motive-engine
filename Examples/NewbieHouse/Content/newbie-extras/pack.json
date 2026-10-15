@@ -1,0 +1,8 @@
+{
+  "id": "newbie-extras",
+  "name": "Newbie Extras",
+  "version": "1.0",
+  "format": 1,
+  "dependencies": ["base"],
+  "overrides": ["base:television"]
+}

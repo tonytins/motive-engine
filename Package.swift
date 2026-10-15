@@ -49,6 +49,7 @@ let package = Package(
             path: "Examples/NewbieHouse",
             resources: [
                 .copy("lot.json"),
+                .copy("Content"),
             ],
         ),
     ],

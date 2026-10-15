@@ -1,0 +1,11 @@
+// Bored Sims get more out of the big screen.
+state default
+    func stateEntry()
+        if sim.fun < 25
+            effect.fulfill("fun", 2)
+        else
+            effect.fulfill("fun", 1.4)
+        end
+        effect.fulfill("social", 0.3)
+    end
+end

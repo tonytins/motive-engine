@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "id": "haunted-radio", "name": "Haunted Radio", "modifiers": ["recreation"],
+      "interactions": [
+        { "id": "listen", "name": "Listen to the Radio", "duration": 20,
+          "advertises": { "fun": 3 }, "effects": { "fun": 1 }, "script": "broken" }
+      ]
+    },
+    {
+      "id": "cursed-lamp", "name": "Cursed Lamp", "modifiers": [],
+      "interactions": [
+        { "id": "admire", "name": "Admire the Lamp", "duration": 20,
+          "advertises": { "energy": 3 }, "script": "broken" }
+      ]
+    },
+    {
+      "id": "glitchy-toaster", "name": "Glitchy Toaster", "modifiers": ["appliance"],
+      "interactions": [
+        { "id": "toast", "name": "Make Toast", "duration": 20,
+          "advertises": { "hunger": 4 }, "script": "broken" }
+      ]
+    }
+  ]
+}

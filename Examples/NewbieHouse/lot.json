@@ -1,151 +1,26 @@
 {
-   "height": 6,
-   "items": [
-      {
-         "item": "appliance",
-         "motives": [
-            {
-               "hunger": 50
-            }
-         ],
-         "name": "Fridge",
-         "x": 0,
-         "y": 0
-      },
-      {
-         "item": "appliance",
-         "motives": [
-            {
-               "energy": 20
-            }
-         ],
-         "name": "Coffee",
-         "x": 1,
-         "y": 0
-      },
-      {
-         "item": "comfort",
-         "modifiers": [
-            "bed"
-         ],
-         "motives": [
-            {
-               "energy": 37.5
-            }
-         ],
-         "name": "Bed",
-         "x": 7,
-         "y": 0
-      },
-      {
-         "item": "plumbing",
-         "modifiers": [
-            "shower"
-         ],
-         "motives": [
-            {
-               "hygiene": 62.5
-            }
-         ],
-         "name": "Shower",
-         "x": 7,
-         "y": 5
-      },
-      {
-         "item": "plumbing",
-         "modifiers": [
-            "toilet"
-         ],
-         "motives": [
-            {
-               "bladder": 75
-            }
-         ],
-         "name": "Toilet",
-         "x": 5,
-         "y": 5
-      },
-      {
-         "item": "recreation",
-         "motives": [
-            {
-               "fun": 25
-            },
-            {
-               "social": 7.5
-            }
-         ],
-         "name": "Television",
-         "x": 3,
-         "y": 0
-      },
-      {
-         "item": "comfort",
-         "modifiers": [
-            "chair"
-         ],
-         "motives": [
-            {
-               "energy": 10
-            }
-         ],
-         "name": "Armchair",
-         "x": 3,
-         "y": 1
-      },
-      {
-         "item": "activity",
-         "motives": [
-            {
-               "fun": 15
-            }
-         ],
-         "name": "Chess Set",
-         "x": 1,
-         "y": 4
-      },
-      {
-         "item": "recreation",
-         "modifiers": [
-            "ambient"
-         ],
-         "motives": [
-            {
-               "fun": 15
-            }
-         ],
-         "name": "Stereo",
-         "x": 0,
-         "y": 5
-      },
-      {
-         "item": "decoration",
-         "modifiers": [
-            "ambient"
-         ],
-         "motives": [
-            {
-               "energy": 5
-            }
-         ],
-         "name": "Rare Gem",
-         "x": 6,
-         "y": 2
-      }
-   ],
-   "sims": [
-      {
-         "name": "Bob",
-         "relationship": 30,
-         "x": 0,
-         "y": 3
-      },
-      {
-         "name": "Betty",
-         "relationship": 50,
-         "x": 7,
-         "y": 3
-      }
-   ],
-   "width": 8
+  "width": 8,
+  "height": 6,
+  "items": [
+    { "id": "fridge", "definition": "base:fridge", "x": 0, "y": 0 },
+    { "id": "coffee", "definition": "base:coffee", "x": 1, "y": 0 },
+    { "id": "television", "definition": "base:television", "x": 3, "y": 0 },
+    { "id": "bed", "definition": "base:bed", "x": 7, "y": 0 },
+    { "id": "armchair", "definition": "base:armchair", "x": 3, "y": 1 },
+    { "id": "rare-gem", "definition": "base:rare-gem", "x": 6, "y": 2 },
+    { "id": "chess-set", "definition": "base:chess-set", "x": 1, "y": 4 },
+    { "id": "stereo", "definition": "base:stereo", "x": 0, "y": 5 },
+    { "id": "toilet", "definition": "base:toilet", "x": 5, "y": 5 },
+    { "id": "shower", "definition": "base:shower", "x": 7, "y": 5 },
+    { "id": "aquarium", "definition": "newbie-extras:aquarium", "x": 4, "y": 3 },
+    { "id": "haunted-radio", "definition": "broken-gadgets:haunted-radio", "x": 2, "y": 2 },
+    { "id": "cursed-lamp", "definition": "broken-gadgets:cursed-lamp", "x": 2, "y": 5 },
+    { "id": "glitchy-toaster", "definition": "broken-gadgets:glitchy-toaster", "x": 5, "y": 0 }
+  ],
+  "sims": [
+    { "name": "Bob", "relationship": 30, "x": 0, "y": 3,
+      "motives": { "hunger": 25, "energy": 70, "hygiene": 80, "bladder": 60, "social": 55, "fun": 40 } },
+    { "name": "Betty", "relationship": 50, "x": 7, "y": 3,
+      "motives": { "hunger": 65, "energy": 45, "hygiene": 20, "bladder": 70, "social": 60, "fun": 50 } }
+  ]
 }

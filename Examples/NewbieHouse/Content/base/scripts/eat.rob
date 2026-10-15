@@ -1,0 +1,10 @@
+// Hungrier Sims eat faster. The written effects in items.json are the fallback.
+state default
+    func stateEntry()
+        if sim.hunger < 30
+            effect.fulfill("hunger", 3)
+        else
+            effect.fulfill("hunger", 2)
+        end
+    end
+end

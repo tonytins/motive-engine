@@ -16,14 +16,14 @@ pull request. Statuses are `done`, `partial`, and `missing`.
 | [Simulation core](#simulation-core) | 10 | 1 | 3 | |
 | [Buffs](#buffs) | 5 | 0 | 0 | |
 | [Scripting](#scripting) | 7 | 0 | 1 | 100,000-instruction and 256-call limits |
-| [Content packs](#content-packs) | 7 | 0 | 2 | pack format 1 |
+| [Content packs](#content-packs) | 8 | 0 | 2 | pack format 1 |
 | [Wants and fears](#wants-and-fears) | 8 | 0 | 1 | |
 | [Reliability](#reliability) | 4 | 1 | 1 | 0 force unwraps, `try!`, `fatalError`, or `precondition` in `Sources/` |
 | [Documentation and schemas](#documentation-and-schemas) | 3 | 0 | 1 | 4 schemas, all with decoded examples |
 | [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
 | [Known issues](#known-issues) | | | | 6 open |
 
-`swift test` passed all 171 tests across both libraries on 2026-10-14.
+`swift test` passed all 172 tests across both libraries on 2026-10-14.
 
 ## Performance
 
@@ -114,6 +114,7 @@ number is recorded. Budgets are proposals until a first measurement.
 | PACK-7 | Content health saves and restores; tampered values are rejected | done | `healthSurvivesASaveAndRejectsTamperedValues` |
 | PACK-8 | A packed format for distributing packs | missing | Format not chosen yet (Yamagata Phase 4) |
 | PACK-9 | Wants and fears load from packs | missing | `MotiveEngineSWAF` reads only standalone JSON (Nishi-Kyushu) |
+| PACK-10 | The NewbieHouse example runs on content packs end to end, including a mod and a broken mod | done | `Examples/NewbieHouse/Content`; `newbieHouseExampleContentLoadsAndCoversItsLayout` |
 
 ## Wants and fears
 
