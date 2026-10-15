@@ -300,6 +300,24 @@ struct ContentHealthTests {
         #expect(!session.contentHealth.isInteractionDisabled(try reference("mod:oven")))
     }
 
+    @Test func enablingAPackThatIsNotDisabledResetsItsHistory() throws {
+        let content = try ContentComposer.compose([
+            loadPack("base", items: itemsFile([("oven", "broken", true)])),
+        ])
+        var session = try World(content: content, items: ["base:oven"], sims: [("ann", 80)], hunger: 100)
+            .session(policy: policy(failures: 3))
+        let oven = try reference("base:oven")
+        try session.step(bySeconds: 0, commands: [eat("ann", item: 0)])
+        #expect(session.contentHealth.failureCounts[oven] == 1)
+        #expect(session.contentHealth.isCoolingDown(oven))
+
+        let reset = try session.step(bySeconds: 0, commands: [.enablePack(packID("base"))])
+
+        #expect(healthEvents(reset.events) == [.packEnabled(try packID("base"))])
+        #expect(session.contentHealth.failureCounts.isEmpty)
+        #expect(!session.contentHealth.isCoolingDown(oven))
+    }
+
     @Test func sessionsWithoutPacksDisableInteractionsOnly() throws {
         let content = try ContentComposer.compose([
             loadPack("base", items: itemsFile([("oven", "broken", false)])),

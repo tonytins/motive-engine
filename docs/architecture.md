@@ -314,6 +314,9 @@ commands phase. Cooldowns count down by each step's elapsed time.
 session, which rejects invalid saved values. Disabled content stays disabled
 until the player sends `enableInteraction` or `enablePack`; enabling a pack
 also restores the packs disabled because of it and clears their history.
+Enabling a pack that isn't disabled is a deliberate reset: it clears its
+interactions' failures, cooldowns, and disabled scripts, and still reports
+`packEnabled`.
 A disabled pack that overrode another pack's item leaves that item inert;
 recomposing without the pack at the next load restores the original.
 

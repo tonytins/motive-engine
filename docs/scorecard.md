@@ -21,9 +21,9 @@ pull request. Statuses are `done`, `partial`, and `missing`.
 | [Reliability](#reliability) | 4 | 1 | 1 | 0 force unwraps, `try!`, `fatalError`, or `precondition` in `Sources/` |
 | [Documentation and schemas](#documentation-and-schemas) | 3 | 0 | 1 | 4 schemas, all with decoded examples |
 | [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
-| [Known issues](#known-issues) | | | | 5 open, 1 fixed |
+| [Known issues](#known-issues) | | | | 4 open, 2 resolved |
 
-`swift test` passed all 173 tests across both libraries on 2026-10-14.
+`swift test` passed all 174 tests across both libraries on 2026-10-15.
 
 ## Performance
 
@@ -168,5 +168,5 @@ number is recorded. Budgets are proposals until a first measurement.
 | BUG-2 | One Sim's state-specific script failures count toward disabling the script for every Sim | accepted | By design; the threshold and reset on success soften it |
 | BUG-3 | A disabled pack's overrides leave the original item inert until the game recomposes | accepted | By design; recomposing without the pack restores the original |
 | BUG-4 | The legacy item decoder (`Item`) skipped unknown motive names silently | fixed | It now rejects unknown motives and entries without exactly one motive (`invalidMotiveEntriesAreRejected`), matching `schema/items.json` |
-| BUG-5 | Enabling a pack that isn't disabled still clears its interactions' history and reports `packEnabled` | open | Owner decision: keep as a reset, or make it a no-op |
+| BUG-5 | Enabling a pack that isn't disabled clears its interactions' history and reports `packEnabled` | resolved | Kept as a deliberate reset (owner decision, 2026-10-15); `enablingAPackThatIsNotDisabledResetsItsHistory` |
 | BUG-6 | The manifest's `version` and `format` field names | deferred | Owner decision pending |
