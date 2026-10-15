@@ -244,6 +244,31 @@ struct ContentPackTests {
         #expect(world.state.lots.values.first?.placedItems.count == layout.items.count)
     }
 
+    @Test func newbieHouseFilesReferenceTheirSchemas() throws {
+        let repository = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("../..")
+            .standardizedFileURL
+        let schemaBase = "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/"
+        let schemaNames = ["pack.json": "pack.json", "items.json": "pack-items.json", "lot.json": "lot.json"]
+        let files = try #require(FileManager.default.enumerator(
+            at: repository.appendingPathComponent("Examples/NewbieHouse"),
+            includingPropertiesForKeys: nil
+        )).compactMap { $0 as? URL }.filter { $0.pathExtension == "json" }
+
+        #expect(files.count == 7)
+        for file in files {
+            let schemaName = try #require(schemaNames[file.lastPathComponent], "\(file.path)")
+            let document = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+            let schema = try #require(JSONSerialization.jsonObject(
+                with: Data(contentsOf: repository.appendingPathComponent("schema/\(schemaName)"))
+            ) as? [String: Any])
+
+            #expect(document["$schema"] as? String == schemaBase + schemaName, "\(file.path)")
+            #expect(schema["$id"] as? String == schemaBase + schemaName, "\(schemaName)")
+        }
+    }
+
     // MARK: Composition
 
     @Test func compositionQualifiesIDsAndOrdersDependenciesFirst() throws {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://motivesengine.dev/schemas/item.schema.json",
+  "$id": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/items.json",
   "title": "Legacy Item",
   "description": "One item in the legacy single-item format, with raw motive values. Raw values are divided by 25 to give per-second rates. Content packs use schema/pack-items.json instead.",
   "type": "object",
@@ -19,6 +19,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The URL of this schema, so editors can validate the file."
+    },
     "name": {
       "type": "string",
       "minLength": 1,

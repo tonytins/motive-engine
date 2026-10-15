@@ -34,6 +34,7 @@ format for distribution is planned.
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/pack.json",
   "id": "kitchen-plus",
   "name": "Kitchen Plus",
   "version": 1,
@@ -51,6 +52,11 @@ format for distribution is planned.
 | `overrides` | No | Items from other packs that you replace. See [Replacing another pack's items](#replacing-another-packs-items). |
 
 The full schema is [`schema/pack.json`](../schema/pack.json).
+
+**Tip:** start each file with a `"$schema"` line pointing to its schema, as
+above. Editors such as VS Code then check the file as you type and suggest
+fields. Use `schema/pack-items.json` for `items.json` and `schema/lot.json`
+for lot layouts, at the same address. The engine ignores the line.
 
 ## Items: `items.json`
 

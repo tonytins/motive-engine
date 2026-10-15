@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://motivesengine.dev/schemas/swaf.schema.json",
+  "$id": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/swaf.json",
   "title": "SWAF Wants & Fears Catalog",
   "description": "Want and fear definitions decoded by WantFearCatalog(jsonData:). Tags, game events, and item/interaction IDs are game-defined strings; the engine only compares them.",
   "type": "object",
@@ -115,6 +115,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The URL of this schema, so editors can validate the file."
+    },
     "entries": {
       "type": "array",
       "items": { "$ref": "#/$defs/entry" },

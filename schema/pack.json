@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://motivesengine.dev/schemas/pack.schema.json",
+  "$id": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/pack.json",
   "title": "Content Pack Manifest",
   "description": "The pack.json file at the root of a content pack, decoded by ContentPackManifest(jsonData:). Base content, expansions, and mods all use this format.",
   "type": "object",
@@ -13,6 +13,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The URL of this schema, so editors can validate the file."
+    },
     "id": { "$ref": "#/$defs/packID" },
     "name": { "type": "string", "minLength": 1, "description": "Player-facing name." },
     "version": {

@@ -23,7 +23,7 @@ pull request. Statuses are `done`, `partial`, and `missing`.
 | [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
 | [Known issues](#known-issues) | | | | 3 open, 3 resolved |
 
-`swift test` passed all 180 tests across both libraries on 2026-10-15.
+`swift test` passed all 181 tests across both libraries on 2026-10-15.
 
 ## Performance
 
@@ -147,7 +147,7 @@ number is recorded. Budgets are proposals until a first measurement.
 | Id | Target | Status | Evidence |
 |---|---|---|---|
 | DOC-1 | Every public declaration has a documentation comment | done | Checked across `Sources/` on 2026-10-14 |
-| DOC-2 | Every content file has a schema whose example is decoded by a test | done | `schemaExamplesLoadAndCompose` (`pack.json`, `pack-items.json`), `schemaExampleDecodes` (`swaf.json`), `legacySchemaExamplesDecode` (`items.json`), `schemaExampleDecodesAndBuilds` (`lot.json`) |
+| DOC-2 | Every content file has a schema whose example is decoded by a test | done | `schemaExamplesLoadAndCompose` (`pack.json`, `pack-items.json`), `schemaExampleDecodes` (`swaf.json`), `legacySchemaExamplesDecode` (`items.json`), `schemaExampleDecodesAndBuilds` (`lot.json`); every NewbieHouse file references its schema by `$schema` (`newbieHouseFilesReferenceTheirSchemas`) |
 | DOC-3 | Schemas are checked by a JSON Schema validator | missing | Tests decode examples with the engine only |
 | DOC-4 | Architecture, modding, and contributor guides match the code | done | Reviewed 2026-10-14 |
 

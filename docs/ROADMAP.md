@@ -1,6 +1,6 @@
 # Motive Engine roadmap
 
-> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (lot layouts move into the core; NewbieHouse split into files; estimates unchanged) · **Stage:** pre-alpha
+> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (schema IDs point to GitHub; example files reference their schemas; estimates unchanged) · **Stage:** pre-alpha
 
 Forward-looking: where the engine stands, what blocks the next stage, and
 what comes next. Measured numbers and verified checklists are in the
@@ -237,6 +237,7 @@ measurements. The long poles are Yamanote and Joban.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-15 | minor | Schema `$id`s point to their files on GitHub raw instead of an unregistered domain. Schemas allow a `$schema` line, every NewbieHouse file references its schema, and a test enforces it. Estimates unchanged. |
 | 2026-10-15 | minor | Lot layouts move into the core as `LotLayout`, a format with `schema/lot.json`, that builds a validated world and rejects or explicitly skips missing content. NewbieHouse uses it and is split into files; its output is unchanged. Estimates unchanged. |
 | 2026-10-15 | minor | BUG-6 resolved by owner decision: the manifest's single `version` field is the pack format version. The display `version` string and the `format` field are gone. Estimates unchanged. |
 | 2026-10-15 | minor | BUG-5 resolved by owner decision: enabling a pack that isn't disabled resets its interactions' history. Documented and covered by a test. Estimates unchanged. |

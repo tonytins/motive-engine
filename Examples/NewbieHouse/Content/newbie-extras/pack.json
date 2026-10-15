@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/pack.json",
   "id": "newbie-extras",
   "name": "Newbie Extras",
   "version": 1,

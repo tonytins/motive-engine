@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://motivesengine.dev/schemas/pack-items.schema.json",
+  "$id": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/pack-items.json",
   "title": "Content Pack Items",
   "description": "The optional items.json file of a content pack. IDs without a pack prefix are qualified with the pack's ID; a prefixed ID overrides another pack's definition and must be listed in the manifest's overrides. Motive values are per-second rates.",
   "type": "object",
@@ -51,6 +51,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The URL of this schema, so editors can validate the file."
+    },
     "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
   },
   "required": ["items"],

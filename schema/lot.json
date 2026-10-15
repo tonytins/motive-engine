@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://motivesengine.dev/schemas/lot.schema.json",
+  "$id": "https://raw.githubusercontent.com/tonytins/motive-engine/main/schema/lot.json",
   "title": "Lot Layout",
   "description": "A lot layout, decoded by LotLayout(jsonData:): its size, where items go, and the Sims who start there. Items are placed by qualified definition ID from loaded content packs.",
   "type": "object",
@@ -22,6 +22,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The URL of this schema, so editors can validate the file."
+    },
     "width": { "type": "integer", "minimum": 1 },
     "height": { "type": "integer", "minimum": 1 },
     "household": {
