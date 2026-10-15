@@ -287,6 +287,20 @@ my-mod/
   `OverrideConflict`. `owner(of:)` reports which pack's content is in use,
   and `dependents(of:)` lists the packs that rely on a pack.
 
+### Lot layouts
+
+`LotLayout` is the starting point for a lot: its size, an
+optional household, items placed by qualified definition ID, and the Sims
+who start there, each with an ID, a display name, a position, and complete
+starting motives. It decodes from JSON matching `schema/lot.json` and
+rejects a non-positive size, duplicate item or Sim IDs, empty names, and
+unknown or missing motives. `makeState(lotID:catalog:missingContent:)`
+builds a validated `SimulationState`: every Sim starts standing on the lot,
+in the layout's household. A placement whose definition isn't loaded is an
+error by default; with `MissingContentPolicy.skip` it is left off and
+returned in `skippedItems`, so the game can tell the player. A layout is not
+a save of a running simulation.
+
 ### Script health
 
 `SimulationSession` tracks failing interaction scripts in `contentHealth`,

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://motivesengine.dev/schemas/lot.schema.json",
+  "title": "Lot Layout",
+  "description": "A lot layout, decoded by LotLayout(jsonData:): its size, where items go, and the Sims who start there. Items are placed by qualified definition ID from loaded content packs.",
+  "type": "object",
+  "$defs": {
+    "id": { "type": "string", "minLength": 1 },
+    "motiveLevels": {
+      "type": "object",
+      "description": "A starting level from 0 to 100 for every motive.",
+      "properties": {
+        "hunger": { "type": "number" },
+        "energy": { "type": "number" },
+        "hygiene": { "type": "number" },
+        "bladder": { "type": "number" },
+        "social": { "type": "number" },
+        "fun": { "type": "number" }
+      },
+      "required": ["hunger", "energy", "hygiene", "bladder", "social", "fun"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "width": { "type": "integer", "minimum": 1 },
+    "height": { "type": "integer", "minimum": 1 },
+    "household": {
+      "$ref": "#/$defs/id",
+      "description": "The household every Sim on the lot belongs to. Optional."
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/$defs/id", "description": "The placed item's ID, unique on the lot." },
+          "definition": {
+            "type": "string",
+            "pattern": "^[^:\\s]+:.+$",
+            "description": "A qualified item ID from a content pack, such as \"base:fridge\"."
+          },
+          "x": { "type": "integer", "minimum": 0 },
+          "y": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "definition", "x", "y"],
+        "additionalProperties": false
+      }
+    },
+    "sims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/$defs/id", "description": "The Sim's ID, unique on the lot." },
+          "name": { "type": "string", "minLength": 1, "description": "The name players see." },
+          "x": { "type": "integer", "minimum": 0 },
+          "y": { "type": "integer", "minimum": 0 },
+          "motives": { "$ref": "#/$defs/motiveLevels" },
+          "relationship": {
+            "type": "number",
+            "description": "Reserved for relationships, which aren't simulated yet. Ignored."
+          }
+        },
+        "required": ["id", "name", "x", "y", "motives"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["width", "height", "items", "sims"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "width": 4,
+      "height": 3,
+      "household": "newbie",
+      "items": [
+        { "id": "fridge", "definition": "base:fridge", "x": 0, "y": 0 },
+        { "id": "television", "definition": "base:television", "x": 3, "y": 0 }
+      ],
+      "sims": [
+        {
+          "id": "bob", "name": "Bob", "x": 1, "y": 2,
+          "motives": { "hunger": 25, "energy": 70, "hygiene": 80, "bladder": 60, "social": 55, "fun": 40 }
+        }
+      ]
+    }
+  ]
+}

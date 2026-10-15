@@ -1,6 +1,6 @@
 # Motive Engine roadmap
 
-> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (BUG-6 resolved: the manifest has a single `version`, the pack format version; estimates unchanged) · **Stage:** pre-alpha
+> **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (lot layouts move into the core; NewbieHouse split into files; estimates unchanged) · **Stage:** pre-alpha
 
 Forward-looking: where the engine stands, what blocks the next stage, and
 what comes next. Measured numbers and verified checklists are in the
@@ -237,6 +237,7 @@ measurements. The long poles are Yamanote and Joban.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-15 | minor | Lot layouts move into the core as `LotLayout`, a format with `schema/lot.json`, that builds a validated world and rejects or explicitly skips missing content. NewbieHouse uses it and is split into files; its output is unchanged. Estimates unchanged. |
 | 2026-10-15 | minor | BUG-6 resolved by owner decision: the manifest's single `version` field is the pack format version. The display `version` string and the `format` field are gone. Estimates unchanged. |
 | 2026-10-15 | minor | BUG-5 resolved by owner decision: enabling a pack that isn't disabled resets its interactions' history. Documented and covered by a test. Estimates unchanged. |
 | 2026-10-14 | minor | BUG-4 fixed: the legacy item decoder rejects unknown motive names and entries that don't name exactly one motive, instead of skipping them. Estimates unchanged. |

@@ -199,7 +199,7 @@ Content files are a public contract with modders.
 
 - When the item decoder gains a field (`ItemContentFile.swift`), add it to
   `schema/pack-items.json`, its example, and [docs/modding.md](./docs/modding.md)
-  in the same change. The same goes for `pack.json` and `swaf.json`.
+  in the same change. The same goes for `pack.json`, `lot.json`, and `swaf.json`.
 - Optional new fields keep existing packs loading. A change that existing
   packs can't load is a new pack format `version`: raise
   `ContentPackManifest.supportedVersions` deliberately and say so.

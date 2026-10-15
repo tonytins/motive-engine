@@ -16,14 +16,14 @@ pull request. Statuses are `done`, `partial`, and `missing`.
 | [Simulation core](#simulation-core) | 10 | 1 | 3 | |
 | [Buffs](#buffs) | 5 | 0 | 0 | |
 | [Scripting](#scripting) | 7 | 0 | 1 | 100,000-instruction and 256-call limits |
-| [Content packs](#content-packs) | 8 | 0 | 2 | pack format version 1 |
+| [Content packs](#content-packs) | 9 | 0 | 2 | pack format version 1 |
 | [Wants and fears](#wants-and-fears) | 8 | 0 | 1 | |
 | [Reliability](#reliability) | 4 | 1 | 1 | 0 force unwraps, `try!`, `fatalError`, or `precondition` in `Sources/` |
-| [Documentation and schemas](#documentation-and-schemas) | 3 | 0 | 1 | 4 schemas, all with decoded examples |
+| [Documentation and schemas](#documentation-and-schemas) | 3 | 0 | 1 | 5 schemas, all with decoded examples |
 | [Distribution](#distribution) | 3 | 0 | 2 | CI on macOS only |
 | [Known issues](#known-issues) | | | | 3 open, 3 resolved |
 
-`swift test` passed all 174 tests across both libraries on 2026-10-15.
+`swift test` passed all 180 tests across both libraries on 2026-10-15.
 
 ## Performance
 
@@ -115,6 +115,7 @@ number is recorded. Budgets are proposals until a first measurement.
 | PACK-8 | A packed format for distributing packs | missing | Format not chosen yet (Yamagata Phase 4) |
 | PACK-9 | Wants and fears load from packs | missing | `MotiveEngineSWAF` reads only standalone JSON (Nishi-Kyushu) |
 | PACK-10 | The NewbieHouse example runs on content packs end to end, including a mod and a broken mod | done | `Examples/NewbieHouse/Content`; `newbieHouseExampleContentLoadsAndCoversItsLayout` |
+| PACK-11 | Lot layouts decode, validate, and build worlds; missing content is rejected or skipped explicitly | done | `LotLayoutTests.swift`: `layoutsDecodeAndBuildAValidatedWorld`, `missingContentIsRejectedUnlessTheGameSkipsIt`, `invalidLayoutsAreRejected`, `incompleteMotivesAndOutOfBoundsPositionsAreRejected` |
 
 ## Wants and fears
 
@@ -146,7 +147,7 @@ number is recorded. Budgets are proposals until a first measurement.
 | Id | Target | Status | Evidence |
 |---|---|---|---|
 | DOC-1 | Every public declaration has a documentation comment | done | Checked across `Sources/` on 2026-10-14 |
-| DOC-2 | Every content file has a schema whose example is decoded by a test | done | `schemaExamplesLoadAndCompose` (`pack.json`, `pack-items.json`), `schemaExampleDecodes` (`swaf.json`), `legacySchemaExamplesDecode` (`items.json`) |
+| DOC-2 | Every content file has a schema whose example is decoded by a test | done | `schemaExamplesLoadAndCompose` (`pack.json`, `pack-items.json`), `schemaExampleDecodes` (`swaf.json`), `legacySchemaExamplesDecode` (`items.json`), `schemaExampleDecodesAndBuilds` (`lot.json`) |
 | DOC-3 | Schemas are checked by a JSON Schema validator | missing | Tests decode examples with the engine only |
 | DOC-4 | Architecture, modding, and contributor guides match the code | done | Reviewed 2026-10-14 |
 

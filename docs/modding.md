@@ -208,6 +208,33 @@ The rules:
 When two mods replace the same item, the one that loads later wins. The game
 can show players which mods conflict.
 
+## Lots
+
+A lot layout places items from any loaded pack, and the Sims who start
+there. It's a separate file from your pack, usually written by the game or
+a lot designer:
+
+```json
+{
+  "width": 8,
+  "height": 6,
+  "household": "newbie",
+  "items": [
+    { "id": "fridge", "definition": "base:fridge", "x": 0, "y": 0 },
+    { "id": "radio", "definition": "kitchen-plus:radio", "x": 3, "y": 1 }
+  ],
+  "sims": [
+    { "id": "bob", "name": "Bob", "x": 0, "y": 3,
+      "motives": { "hunger": 25, "energy": 70, "hygiene": 80, "bladder": 60, "social": 55, "fun": 40 } }
+  ]
+}
+```
+
+Items use the full ID, with the pack prefix. Every Sim needs a starting
+level for all six motives. If a layout places an item from a pack that
+isn't loaded, the game decides whether that's an error or the item is left
+off and reported. The full schema is [`schema/lot.json`](../schema/lot.json).
+
 ## Load order
 
 The game or player decides the order packs load in. The engine changes it

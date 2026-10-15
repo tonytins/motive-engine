@@ -233,16 +233,15 @@ struct ContentPackTests {
         }
 
         let composition = try ContentComposer.compose(packs)
-        let layout = try #require(
-            JSONSerialization.jsonObject(with: Data(contentsOf: example.appendingPathComponent("lot.json"))) as? [String: Any]
-        )
-        let placements = try #require(layout["items"] as? [[String: Any]])
+        let layout = try LotLayout(jsonData: Data(contentsOf: example.appendingPathComponent("lot.json")))
+
+        // The default policy rejects any placement whose content is missing.
+        let lotID = try #require(LotID("newbie-lot"))
+        let world = try layout.makeState(lotID: lotID, catalog: composition.catalog)
 
         #expect(composition.owner(of: try id("base:television")) == (try packID("newbie-extras")))
-        for placement in placements {
-            let definition = try #require(placement["definition"] as? String)
-            #expect(composition.catalog.definition(for: try id(definition)) != nil, "\(definition)")
-        }
+        #expect(world.skippedItems.isEmpty)
+        #expect(world.state.lots.values.first?.placedItems.count == layout.items.count)
     }
 
     // MARK: Composition

@@ -1,6 +1,7 @@
 {
   "width": 8,
   "height": 6,
+  "household": "newbie",
   "items": [
     { "id": "fridge", "definition": "base:fridge", "x": 0, "y": 0 },
     { "id": "coffee", "definition": "base:coffee", "x": 1, "y": 0 },
@@ -18,9 +19,9 @@
     { "id": "glitchy-toaster", "definition": "broken-gadgets:glitchy-toaster", "x": 5, "y": 0 }
   ],
   "sims": [
-    { "name": "Bob", "relationship": 30, "x": 0, "y": 3,
+    { "id": "bob", "name": "Bob", "relationship": 30, "x": 0, "y": 3,
       "motives": { "hunger": 25, "energy": 70, "hygiene": 80, "bladder": 60, "social": 55, "fun": 40 } },
-    { "name": "Betty", "relationship": 50, "x": 7, "y": 3,
+    { "id": "betty", "name": "Betty", "relationship": 50, "x": 7, "y": 3,
       "motives": { "hunger": 65, "energy": 45, "hygiene": 20, "bladder": 70, "social": 60, "fun": 50 } }
   ]
 }
