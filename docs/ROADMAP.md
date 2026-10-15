@@ -1,6 +1,6 @@
 # Motive Engine roadmap
 
-> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (NewbieHouse runs on content packs; estimates unchanged) · **Stage:** pre-alpha
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (BUG-4 fixed: the legacy item decoder rejects unknown motives; estimates unchanged) · **Stage:** pre-alpha
 
 Forward-looking: where the engine stands, what blocks the next stage, and
 what comes next. Measured numbers and verified checklists are in the
@@ -237,6 +237,7 @@ measurements. The long poles are Yamanote and Joban.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | BUG-4 fixed: the legacy item decoder rejects unknown motive names and entries that don't name exactly one motive, instead of skipping them. Estimates unchanged. |
 | 2026-10-14 | minor | NewbieHouse runs on content packs: a base pack, a `newbie-extras` mod with a dependency, override, and script, an opt-in broken mod that shows script health, and extra pack folders from the command line. `lot.json` now only places items and Sims. Estimates unchanged. |
 | 2026-10-14 | minor | Scorecard SCRIPT-4 and DOC-2 done: a test for Robusta's call-depth limit, and `schema/items.json` made self-contained with examples the decoder accepts and a test that decodes them. Estimates unchanged. |
 | 2026-10-14 | minor | Renamed Chuo, Shikoku, and San'in to Yamanote, Sobu, and Joban: later milestones use regular JR lines once the Shinkansen routes run out. Estimates unchanged. |

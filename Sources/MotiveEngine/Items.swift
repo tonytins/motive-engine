@@ -410,7 +410,25 @@ struct Item: Broadcasting, Codable, Equatable {
             itemTypes: ItemModifier.decodedSet(from: container, forKey: .itemType),
             isBlocking: container.decodeIfPresent(Bool.self, forKey: .blocking)
         )
-        signals = try Self.signals(fromRawMotives: container.decode([[String: Double]].self, forKey: .motives))
+        // Each entry names one motive and its raw value, divided by the scale.
+        let rawMotives = try container.decode([[String: Double]].self, forKey: .motives)
+        signals = try rawMotives.map { entry in
+            guard entry.count == 1, let (name, rawValue) = entry.first else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .motives,
+                    in: container,
+                    debugDescription: "Each motive entry must name exactly one motive"
+                )
+            }
+            guard let motiveType = MotiveType(rawValue: name) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .motives,
+                    in: container,
+                    debugDescription: "Unknown motive '\(name)'"
+                )
+            }
+            return MotiveSignal(motiveType: motiveType, strengthPerSecond: rawValue / motiveStrengthScale)
+        }
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -426,17 +444,5 @@ struct Item: Broadcasting, Codable, Equatable {
             [$0.motiveType.rawValue: $0.strengthPerSecond * motiveStrengthScale]
         }
         try container.encode(rawMotives, forKey: .motives)
-    }
-
-    /// Converts raw JSON motive values to per-second signals, skipping unknown motives.
-    static func signals(fromRawMotives rawMotives: [[String: Double]]) -> [MotiveSignal] {
-        rawMotives.flatMap { motiveValues in
-            motiveValues.compactMap { name, rawValue -> MotiveSignal? in
-                guard let motiveType = MotiveType(rawValue: name) else {
-                    return nil
-                }
-                return MotiveSignal(motiveType: motiveType, strengthPerSecond: rawValue / motiveStrengthScale)
-            }
-        }
     }
 }

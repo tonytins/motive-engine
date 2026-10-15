@@ -107,6 +107,19 @@ struct ItemCodingTests {
         #expect(!items[2].identity.isBlocking)
     }
 
+    @Test(arguments: [
+        #"[{"thirst": 50}]"#,
+        #"[{"hunger": 50, "fun": 10}]"#,
+        #"[{}]"#,
+    ])
+    func invalidMotiveEntriesAreRejected(motives: String) {
+        let json = #"{"name":"Fridge","item":"appliance","motives":\#(motives)}"#
+
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(Item.self, from: Data(json.utf8))
+        }
+    }
+
     @Test func explicitBlockingOverridesTheDefault() throws {
         let json = #"{"name":"Fridge","item":"appliance","blocking":false,"motives":[{"hunger":50}]}"#
         let item = try JSONDecoder().decode(Item.self, from: Data(json.utf8))
