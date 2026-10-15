@@ -1,6 +1,6 @@
 ---
 name: swift-guidelines
-description: These are conventions for writing Swift, not rigid rules. Treat every section here as a tool to reach for, not a rule to enforce. Treat every code snippet below as an example of the pattern, not a template to copy verbatim. When a guideline and the user's existing codebase conventions disagree, match the codebase and mention the tension briefly.
+description: Swift design and coding conventions covering naming, terminology, comments, control flow, protocols, extensions, fluent APIs, argument labels, error handling, file and package structure, and Swift Testing. Use this whenever Swift comes up in any form — writing, editing, refactoring, reviewing, or explaining Swift code; reviewing a diff or PR that touches .swift files or Package.swift; or answering a Swift API-design or style question — even if the user never asks for "guidelines" or a "style guide".
 ---
 
 # Swift Programming Guidelines
